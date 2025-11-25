@@ -847,7 +847,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v5.77</span> <!-- Version -->
+                <span class="version-text">v5.78</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -1124,7 +1124,7 @@
                     MAX_STRING_LENGTH: 100,
                     MAX_JSON_SIZE: 4 * 1024 * 1024,
                     SCHEMA_VERSION: 3,
-                    MAX_OPERATIONS_PER_MINUTE: 3
+                    MAX_OPERATIONS_PER_MINUTE: 30
                 };
 
                 const REGEX_PATTERNS = {
@@ -1521,7 +1521,13 @@
 
                     let minTotal = minutosSalida - minutosEntrada;
 
-                    if (minTotal < 0) minTotal += 24 * 60;
+                    if (minTotal < 0) {
+                        if (minutosSalida < 360) { // 6:00 AM = 360 minutos
+                            minTotal += 24 * 60;
+                        } else {
+                            return { horas: 0, minutos: 0, total: 0 };
+                        }
+                    }
 
                     let minNeto = minTotal - tfMinutos;
                     if (minNeto < 0) minNeto = 0;
@@ -2659,8 +2665,17 @@
                                 } else {
                                     const ahora = new Date();
                                     const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
-                                    const t = D.calcularHoras(regHoy.entrada, horaActual, regHoy.tiempoFuera || null);
-                                    tiempoTranscurrido = t ? t.total : 0;
+
+                                    const [hE, mE] = regHoy.entrada.split(':').map(Number);
+                                    const minutosEntrada = hE * 60 + mE;
+                                    const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
+
+                                    if (minutosEntrada > minutosActuales) {
+                                        tiempoTranscurrido = 0;
+                                    } else {
+                                        const t = D.calcularHoras(regHoy.entrada, horaActual, regHoy.tiempoFuera || null);
+                                        tiempoTranscurrido = t ? t.total : 0;
+                                    }
                                 }
 
                                 const prog = objetivoDiario > 0 ? Math.min((tiempoTranscurrido / objetivoDiario) * 100, 100) : 100;
@@ -2950,7 +2965,8 @@
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.77
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.78
     // ====================================================================
-    1) Modificaciones en la tarjeta estadisticas
+    1) Ahora si registro una hora de forma adelanta en el dia actual, no cuenta 
+    como 24 horas adelantadas
     -->
