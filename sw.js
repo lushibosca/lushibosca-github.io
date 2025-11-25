@@ -7,7 +7,6 @@ const urlsToCache = [
   './icons/icon-512.png'
 ];
 
-// Instalación
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -17,10 +16,9 @@ self.addEventListener('install', event => {
       })
       .catch(err => console.error('Error al cachear:', err))
   );
-  self.skipWaiting(); // Activa inmediatamente el nuevo SW
+  self.skipWaiting();
 });
 
-// Activación y limpieza de caches antiguos
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
@@ -34,29 +32,25 @@ self.addEventListener('activate', event => {
       );
     })
   );
-  return self.clients.claim(); // Toma control inmediato
+  return self.clients.claim();
 });
 
-// Fetch con validación de origen y manejo de errores
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  // Solo intercepta peticiones del mismo origen
   if (url.origin !== location.origin) {
-    return; // Deja pasar peticiones externas sin interceptar
+    return; 
   }
 
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         if (response) {
-          return response; // Devuelve del cache
+          return response; 
         }
-        
-        // Intenta obtener de la red
+
         return fetch(event.request)
           .then(networkResponse => {
-            // Opcionalmente cachea nuevas respuestas
             if (networkResponse && networkResponse.status === 200) {
               const responseClone = networkResponse.clone();
               caches.open(CACHE_NAME).then(cache => {
@@ -67,7 +61,6 @@ self.addEventListener('fetch', event => {
           })
           .catch(err => {
             console.error('Fetch falló:', err);
-            // Opcionalmente devuelve una página offline
             return caches.match('./index.html');
           });
       })
