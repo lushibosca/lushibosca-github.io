@@ -471,6 +471,10 @@
             color: var(--c-purple);
         }
 
+        .registro-total.yellow-text {
+            color: var(--c-gold);
+        }
+
         /* --- Modal & Utilidades --- */
         .modal {
             display: flex;
@@ -585,22 +589,36 @@
             margin-top: 1rem;
         }
 
-        .stat-item {
-            text-align: center;
-            padding: 1rem;
-            background: var(--input-bg);
-            border-radius: 8px;
-            border: 1px solid var(--border);
+        /* Contenedor con scroll para estadísticas */
+        #modal-stats .modal-content {
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .stat-label {
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
+        #modal-stats .stats-grid {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
         }
 
-        .stat-value {
-            font-size: 1.5rem;
-            color: var(--text-main);
+        /* Scrollbar personalizado para estadísticas */
+        #modal-stats .stats-grid::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #modal-stats .stats-grid::-webkit-scrollbar-track {
+            background: var(--bg-body);
+            border-radius: 4px;
+        }
+
+        #modal-stats .stats-grid::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        #modal-stats .stats-grid::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
 
         @media (max-width: 640px) {
@@ -847,7 +865,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v5.78</span> <!-- Version -->
+                <span class="version-text">v5.79</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -1086,6 +1104,14 @@
                 <div class="stat-item">
                     <div class="stat-label">Días trabajados</div>
                     <div class="stat-value" id="stat-dias-trabajados">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Feriados</div>
+                    <div class="stat-value" id="stat-feriados">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Ausencias</div>
+                    <div class="stat-value" id="stat-ausencias">0</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Entrada promedio</div>
@@ -2437,10 +2463,10 @@
                                 totalText = 'Horas descontadas';
                                 totalEl.classList.add('purple-text');
                             } else if (isAusencia) {
-                                // LOGICA VISUAL DE AUSENCIA
                                 totalText = 'Justificado';
                                 totalEl.classList.add('purple-text');
                             } else if (r.entrada && r.salida) {
+                                // Registro completo
                                 totalText = `${r.horas}h ${r.minutos}m`;
                                 const diffText = formatoDiferencia(r.total);
                                 if (r.total >= horasDiarias) {
@@ -2449,7 +2475,22 @@
                                     totalEl.classList.add('red-text');
                                 }
                                 if (diffText) totalText += ` (${diffText})`;
+                            } else if (r.entrada && !r.salida) {
+                                // Solo tiene entrada, verificar si es hoy o día anterior
+                                const esHoy = r.fecha === hoy;
+                                if (esHoy) {
+                                    totalText = 'En curso . . .';
+                                    totalEl.classList.add('yellow-text'); // Color verde para "en curso"
+                                } else {
+                                    totalText = 'Incompleto';
+                                    totalEl.classList.add('yellow-text'); // Color rojo para "incompleto"
+                                }
+                            } else {
+                                // Sin entrada ni salida
+                                totalText = 'Sin datos';
                             }
+
+                            totalEl.textContent = totalText;
 
                             totalEl.textContent = totalText;
                             info.appendChild(fechaEl);
@@ -2472,6 +2513,15 @@
                         return año === añoActual && mes === mesActual + 1;
                     });
 
+                    // Contar feriados y ausencias
+                    const feriados = registrosMes.filter(r =>
+                        r.entrada === '00:00' && r.salida === '00:00'
+                    ).length;
+
+                    const ausencias = registrosMes.filter(r =>
+                        r.entrada === '11:11' && r.salida === '11:11'
+                    ).length;
+
                     // Filtrar solo registros válidos (excluir feriados y ausencias)
                     const registrosValidos = registrosMes.filter(r =>
                         r.entrada && r.salida &&
@@ -2483,7 +2533,9 @@
                             entradaPromedio: '--:--',
                             salidaPromedio: '--:--',
                             diasTrabajados: 0,
-                            promedioDiario: '0h 0m'
+                            promedioDiario: '0h 0m',
+                            feriados: feriados,
+                            ausencias: ausencias
                         };
                     }
 
@@ -2517,7 +2569,9 @@
                         entradaPromedio: `${String(hEntrada).padStart(2, '0')}:${String(mEntrada).padStart(2, '0')}`,
                         salidaPromedio: `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`,
                         diasTrabajados: registrosValidos.length,
-                        promedioDiario: `${hPromedio}h ${mPromedio}m`
+                        promedioDiario: `${hPromedio}h ${mPromedio}m`,
+                        feriados: feriados,
+                        ausencias: ausencias
                     };
                 }
 
@@ -2528,11 +2582,15 @@
                     const elSalida = $('stat-salida-promedio');
                     const elDias = $('stat-dias-trabajados');
                     const elPromedio = $('stat-promedio-diario');
+                    const elFeriados = $('stat-feriados');
+                    const elAusencias = $('stat-ausencias');
 
                     if (elEntrada) elEntrada.textContent = stats.entradaPromedio;
                     if (elSalida) elSalida.textContent = stats.salidaPromedio;
                     if (elDias) elDias.textContent = stats.diasTrabajados;
                     if (elPromedio) elPromedio.textContent = stats.promedioDiario;
+                    if (elFeriados) elFeriados.textContent = stats.feriados;
+                    if (elAusencias) elAusencias.textContent = stats.ausencias;
                 }
 
                 function esFinDeSemana() {
@@ -2965,8 +3023,8 @@
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.78
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.80
     // ====================================================================
-    1) Ahora si registro una hora de forma adelanta en el dia actual, no cuenta 
-    como 24 horas adelantadas
+    1) Agregado estadisticas de feriados y ausencias
+    2) Se agrega barra de desplazamiento en las estadisticas
     -->
