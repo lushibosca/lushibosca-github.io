@@ -2751,7 +2751,7 @@
                                 } else {
                                     setProgressBarColor(progressEl, 'blue');
                                     const faltante = Math.max(0, objetivoDiario - tiempoTranscurrido);
-                                    if (mensajeEl) mensajeEl.textContent = tiempoTranscurrido >= objetivoDiario ? `¡Cumplido! (+${horasATexto(tiempoTranscurrido - objetivoDiario)})` : `Faltan ${horasATexto(faltante)}`;
+                                    if (mensajeEl) mensajeEl.textContent = tiempoTranscurrido >= objetivoDiario ? `¡Te podes ir! (+${horasATexto(tiempoTranscurrido - objetivoDiario)})` : `Faltan ${horasATexto(faltante)}`;
                                 }
                             }
                         } else {
