@@ -1,0 +1,2956 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Políticas de Seguridad -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+                 script-src 'self' 'unsafe-inline'; 
+                 style-src 'self' 'unsafe-inline'; 
+                 img-src 'self' data: https:; 
+                 font-src 'self' data:; 
+                 connect-src 'self'; 
+                 object-src 'none'; 
+                 base-uri 'self'; 
+                 form-action 'self'; 
+                 frame-ancestors 'none'; 
+                 upgrade-insecure-requests;">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="no-referrer">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192.png">
+    <title>Horarios</title>
+    <style>
+        :root {
+            /* --- Variables de Color (Tema Claro por defecto) --- */
+            --bg-body: #f9fafb;
+            --bg-card: #ffffff;
+            --bg-header: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --text-inv: #ffffff;
+            --border: #e5e7eb;
+            --input-bg: #ffffff;
+            --input-focus: #272450;
+            --c-blue: #5382e6;
+            --c-green: #60ac94;
+            --c-red: #c05d76;
+            --c-purple: #8b5cf6;
+            --c-gold: #d6af66;
+            --c-gray-btn: #4b5563;
+            --c-gray-light: #cbd5e1;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --radius: 12px;
+        }
+
+        body.dark-mode {
+            /* --- Redefinición para Tema Oscuro --- */
+            --bg-body: #111827;
+            --bg-card: #1f2937;
+            --bg-header: #1f2937;
+            --text-main: #f9fafb;
+            --text-muted: #d1d5db;
+            --border: #374151;
+            --input-bg: #374151;
+            --input-focus: #4b5563;
+            --c-gray-btn: #4b5563;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-main);
+            overflow-anchor: none;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* --- Layout & Contenedores --- */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .header {
+            background: var(--bg-header);
+            padding: 0.3rem;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card,
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow);
+            color: var(--text-main);
+        }
+
+        .card h2,
+        .modal h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-main);
+        }
+
+        @media (min-width: 1024px) {
+            .container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                align-items: start;
+            }
+
+            .left-column {
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .right-column {
+                position: sticky;
+                top: 4.5rem;
+            }
+
+            #lista-registros {
+                max-height: 650px;
+                overflow-y: auto;
+                padding: 0.5rem;
+            }
+
+            /* Scrollbar Personalizado */
+            #lista-registros::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            #lista-registros::-webkit-scrollbar-track {
+                background: var(--bg-body);
+                border-radius: 4px;
+            }
+
+            #lista-registros::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 4px;
+            }
+
+            #lista-registros::-webkit-scrollbar-thumb:hover {
+                background: var(--text-muted);
+            }
+        }
+
+        /* --- Iconos --- */
+        .icon {
+            width: 1.2em;
+            height: 1.2em;
+            vertical-align: text-bottom;
+            fill: currentColor;
+            stroke: currentColor;
+            stroke-width: 0;
+        }
+
+        .icon-line {
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* --- Formularios --- */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            background: var(--input-bg);
+            color: var(--text-main);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--input-focus);
+        }
+
+        input.error {
+            border-color: var(--c-red);
+        }
+
+        .input-error {
+            color: var(--c-red);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .input-with-btn,
+        .input-number-group,
+        .contenedor-fechas {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .input-number-group input {
+            text-align: center;
+        }
+
+        .contenedor-fechas .form-group {
+            flex-grow: 1;
+        }
+
+        /* --- Botones --- */
+        button {
+            width: 100%;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: white;
+            background: var(--c-gray-btn);
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        button:active {
+            transform: scale(1);
+        }
+
+        button:disabled {
+            background: transparent;
+            cursor: not-allowed;
+            transform: none;
+            color: #6b7280;
+        }
+
+        /* Variantes de botones */
+        .btn-clean,
+        .btn-delete {
+            background: var(--c-red);
+        }
+
+        .btn-export {
+            background: var(--c-green);
+        }
+
+        .btn-backup,
+        .btn-edit {
+            background: var(--c-blue);
+        }
+
+        .btn-cancel {
+            background: #4b5563;
+        }
+
+        .btn-small {
+            width: auto;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .icon-btn,
+        .time-btn,
+        .btn-increment,
+        .filter-btn {
+            width: auto;
+            padding: 0.5rem;
+            min-width: 44px;
+            height: 44px;
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .icon-btn:hover,
+        .time-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .time-btn,
+        .btn-increment {
+            background: var(--border);
+            border: none;
+            font-size: 1.25rem;
+            width: 50px;
+            height: auto;
+        }
+
+        .filter-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+        }
+
+        .filter-btn.filtro-activo {
+            color: var(--c-red);
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-group,
+        .actions-row,
+        .export-import-stack {
+            /* --- este ultimo en desuso --- */
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .config-actions {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        /* --- Stats & Progreso --- */
+        .stats-card {
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .stats-card:hover {
+            transform: scale(1.02);
+        }
+
+        .stats-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: rgba(224, 224, 224, 0.3);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        body.dark-mode .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--bg-card);
+            transition: width 0.5s;
+        }
+
+        .progress-fill.blue {
+            background: var(--c-blue) !important;
+        }
+
+        .progress-fill.green {
+            background: var(--c-green) !important;
+        }
+
+        .progress-fill.red {
+            background: var(--c-red) !important;
+        }
+
+        .progress-fill.purple {
+            background: var(--c-purple) !important;
+        }
+
+        /* --- Lista de Registros --- */
+        .registro-grupo-titulo {
+            margin: 1rem;
+            color: var(--text-muted);
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .registro-item {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--input-bg);
+        }
+
+        .registro-item:hover {
+            transform: scale(1.02);
+        }
+
+        .registro-item:active {
+            transform: scale(1);
+        }
+
+        .registro-item.hoy {
+            border-left: 5px solid var(--text-main);
+        }
+
+        .registro-info {
+            flex: 1;
+        }
+
+        .registro-fecha {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--text-main);
+        }
+
+        .registro-horas {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .registro-total {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--c-gold);
+            margin-top: 0.25rem;
+        }
+
+        .registro-total.green-text {
+            color: var(--c-green);
+        }
+
+        .registro-total.red-text {
+            color: var(--c-red);
+        }
+
+        .registro-total.purple-text {
+            color: var(--c-purple);
+        }
+
+        /* --- Modal & Utilidades --- */
+        .modal {
+            display: flex;
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(2px);
+            transition: all 0.3s;
+        }
+
+        .modal.show {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .modal-title-block {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1f2937;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transform: translateY(100px);
+            transition: all 0.3s;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.success {
+            background: var(--c-green);
+        }
+
+        .toast.error,
+        .toast.warning {
+            background: var(--c-red);
+        }
+
+        .toast.info {
+            background: var(--c-blue);
+        }
+
+        /* --- Animaciones y Textos --- */
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .animated-card {
+            animation: zoomIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        .toggle-hint,
+        .config-hint-text,
+        .version-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: right;
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--text-muted);
+        }
+
+        /* --- Estadísticas Grid --- */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: var(--input-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        (function () { //Evitar parpadeo al actualizar, (modo oscuro)
+            try {
+                var stored = localStorage.getItem('temaOscuro');
+                if (stored === 'true' || stored === null) {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (e) { }
+        })();
+    </script>
+    <svg style="display: none;">
+        <symbol id="icon-moon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" class="icon-line" stroke-width="2"
+                stroke="currentColor" fill="none"></path>
+        </symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24">
+            <g class="icon-line" stroke-width="2" stroke="currentColor">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </g>
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" class="icon-line" stroke="currentColor"></circle>
+            <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" class="icon-line" stroke="currentColor"></circle>
+            <polyline points="12 6 12 12 16 14" class="icon-line" stroke="currentColor"></polyline>
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24">
+            <polyline points="3 6 5 6 21 6" class="icon-line" stroke="currentColor"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" class="icon-line"
+                stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" class="icon-line"
+                stroke="currentColor"></path>
+            <polyline points="17 21 17 13 7 13 7 21" class="icon-line" stroke="currentColor"></polyline>
+            <polyline points="7 3 7 8 15 8" class="icon-line" stroke="currentColor"></polyline>
+        </symbol>
+        <symbol id="icon-broom" viewBox="0 0 24 24">
+            <path class="icon-line"
+                d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM8 11v6M12 11v6M16 11v6M10 3L9 6h6l-1-3" />
+        </symbol>
+        <symbol id="icon-download" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" class="icon-line" stroke="currentColor"></path>
+            <polyline points="7 10 12 15 17 10" class="icon-line" stroke="currentColor"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" class="icon-line" stroke="currentColor"></path>
+            <polyline points="17 8 12 3 7 8" class="icon-line" stroke="currentColor"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" class="icon-line"
+                stroke="currentColor"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" class="icon-line" stroke="currentColor">
+            </path>
+        </symbol>
+        <symbol id="icon-list" viewBox="0 0 24 24">
+            <line x1="8" y1="6" x2="21" y2="6" class="icon-line" stroke="currentColor"></line>
+            <line x1="8" y1="12" x2="21" y2="12" class="icon-line" stroke="currentColor"></line>
+            <line x1="8" y1="18" x2="21" y2="18" class="icon-line" stroke="currentColor"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6" class="icon-line" stroke="currentColor"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12" class="icon-line" stroke="currentColor"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-cancelar" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18" class="icon-line" stroke="currentColor"></line>
+            <line x1="6" y1="6" x2="18" y2="18" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-undo" viewBox="0 0 24 24">
+            <path d="M3 7v6h6" class="icon-line" stroke="currentColor"></path>
+            <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-redo" viewBox="0 0 24 24">
+            <path d="M21 7v6h-6" class="icon-line" stroke="currentColor"></path>
+            <path d="M3 17a9 9 0 019-9 9 9 0 016 2.3L21 13" class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-calendar-simple" viewBox="0 0 24 24">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" class="icon-line" stroke="currentColor"></rect>
+            <line x1="16" y1="2" x2="16" y2="6" class="icon-line" stroke="currentColor"></line>
+            <line x1="8" y1="2" x2="8" y2="6" class="icon-line" stroke="currentColor"></line>
+            <line x1="3" y1="10" x2="21" y2="10" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-filter" viewBox="0 0 24 24">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" class="icon-line" stroke="currentColor">
+            </polygon>
+        </symbol>
+        <symbol id="icon-help" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" class="icon-line" stroke="currentColor"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" class="icon-line" stroke="currentColor"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17" class="icon-line" stroke-width="3" stroke="currentColor"></line>
+        </symbol>
+    </svg>
+
+    <div class="header">
+        <h1><svg class="icon">
+                <use href="#icon-clock" />
+            </svg> Horarios</h1>
+        <div class="header-buttons">
+            <button class="icon-btn" id="theme-toggle" onclick="UILogic.alternarTema()">
+                <svg class="icon">
+                    <use href="#icon-moon" />
+                </svg>
+            </button>
+            <button class="icon-btn" onclick="UILogic.mostrarConfig()">
+                <svg class="icon">
+                    <use href="#icon-settings" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <div class="container">
+
+        <div class="left-column">
+            <div class="card stats-card animated-card" id="stats-card" onclick="UILogic.alternarVista()"
+                style="animation-delay: 0s;">
+                <h2 id="stats-titulo">Hoy</h2>
+                <div class="stats-number" id="stats-semana">
+                    <div>0 horas 0 minutos</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
+                </div>
+                <div id="stats-mensaje">Faltan 0 horas 0 minutos</div>
+                <div id="stats-buffer" style="font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.2rem;"></div>
+                <span class="toggle-hint" id="toggle-hint">Toca para ver la Semana</span>
+            </div>
+            <div class="card animated-card" style="animation-delay: 0.1s;">
+                <h2><svg class="icon">
+                        <use href="#icon-edit" />
+                    </svg> Registrar Horas</h2>
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <input type="date" id="fecha" />
+                    <span class="input-error" id="error-fecha">Fecha inválida</span>
+                </div>
+                <div class="form-group">
+                    <label>Entrada</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                        <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')"><svg class="icon">
+                                <use href="#icon-clock" />
+                            </svg></button>
+                        <button class="time-btn" onclick="UILogic.limpiarCampo('entrada')"><svg class="icon">
+                                <use href="#icon-broom" />
+                            </svg></button>
+                    </div>
+                    <span class="input-error" id="error-entrada">Formato inválido (HH:MM)</span>
+                </div>
+                <div class="form-group">
+                    <label>Salida</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                        <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')"><svg class="icon">
+                                <use href="#icon-clock" />
+                            </svg></button>
+                        <button class="time-btn" onclick="UILogic.limpiarCampo('salida')"><svg class="icon">
+                                <use href="#icon-broom" />
+                            </svg></button>
+                    </div>
+                    <span class="input-error" id="error-salida">Formato inválido (HH:MM)</span>
+                </div>
+                <button onclick="DataManagement.agregarRegistro()" id="btn-agregar"><svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> Registrar</button>
+            </div>
+            <div class="card stats-card animated-card"
+                style="animation-delay: 0.3s; cursor: pointer; text-align: center;" onclick="UILogic.mostrarStats()">
+                <h2 style="margin: 0; justify-content: center">
+                    <svg class="icon">
+                        <use href="#icon-list" />
+                    </svg>
+                    Ver Estadísticas del Mes
+                </h2>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="card animated-card" style="animation-delay: 0.2s;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h2 style="margin-bottom: 0;">
+                        <svg class="icon">
+                            <use href="#icon-list" />
+                        </svg> Histórico
+                    </h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
+                            <svg class="icon">
+                                <use href="#icon-filter" />
+                            </svg>
+                        </button>
+                        <button class="time-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
+                            <svg class="icon">
+                                <use href="#icon-undo" />
+                            </svg>
+                        </button>
+                        <button class="time-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
+                            <svg class="icon">
+                                <use href="#icon-redo" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div id="lista-registros"></div>
+                <button id="btn-cargar-mas" class="btn-small btn-backup" style="margin-top: 1rem; display: none;"
+                    onclick="DataManagement.cargarMasRegistros()"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-config">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-settings" />
+                    </svg>
+                    Configuración
+                </span>
+                <span class="version-text">v5.77</span> <!-- Version -->
+            </h3>
+            <div class="form-group">
+                <label>Horas diarias</label>
+                <div class="input-number-group">
+                    <input type="number" id="config-horas-diarias" min="1" max="24" step="0.5" readonly />
+                    <button class="btn-increment" onclick="UILogic.incrementarHorasDiarias()">+</button>
+                    <button class="btn-increment" onclick="UILogic.decrementarHorasDiarias()">−</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Días hábiles por semana</label>
+                <div class="input-number-group">
+                    <input type="number" id="config-dias-habiles" min="1" max="7" step="1" readonly />
+                    <button class="btn-increment" onclick="UILogic.incrementarDiasHabiles()">+</button>
+                    <button class="btn-increment" onclick="UILogic.decrementarDiasHabiles()">−</button>
+                </div>
+                <div id="config-total-feedback" class="config-hint-text">(Total semanal: 35hs)</div>
+            </div>
+            <div class="config-actions">
+                <button class="btn-export" onclick="DataManagement.exportarJSON()"><svg class="icon">
+                        <use href="#icon-download" />
+                    </svg> Exportar</button>
+                <button class="btn-backup" onclick="UILogic.mostrarImportar()"><svg class="icon">
+                        <use href="#icon-upload" />
+                    </svg> Importar</button>
+                <button class="btn-delete" onclick="DataManagement.borrarTodoHistorial()"><svg class="icon">
+                        <use href="#icon-trash" />
+                    </svg>Borrar registros</button>
+                <button class="btn-group" onclick="UILogic.mostrarAyuda()"><svg class="icon">
+                        <use href="#icon-help" />
+                    </svg>Mostrar Ayuda
+                </button>
+            </div>
+            <div class="btn-group">
+                <button onclick="DataManagement.guardarConfig()"><svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> Guardar</button>
+                <button class="btn-cancel" onclick="UILogic.cerrarConfig()"><svg class="icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-editar">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-edit" />
+                    </svg>Editar Registro
+                </span>
+            </h3>
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" id="edit-fecha" />
+            </div>
+            <div class="form-group">
+                <label>Entrada</label>
+                <div class="input-with-btn">
+                    <input type="text" id="edit-entrada" inputmode="numeric" placeholder="hh:mm"" maxlength=" 5" />
+                    <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-entrada')"><svg class="icon">
+                            <use href="#icon-clock" />
+                        </svg></button>
+                    <button class="time-btn" onclick="UILogic.limpiarCampo('edit-entrada')"><svg class="icon">
+                            <use href="#icon-broom" />
+                        </svg></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Salida</label>
+                <div class="input-with-btn">
+                    <input type="text" id="edit-salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                    <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-salida')"><svg class="icon">
+                            <use href="#icon-clock" />
+                        </svg></button>
+                    <button class="time-btn" onclick="UILogic.limpiarCampo('edit-salida')"><svg class="icon">
+                            <use href="#icon-broom" />
+                        </svg></button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Tiempo Fuera (opcional)</label>
+                <div class="input-with-btn">
+                    <input type="text" id="edit-tiempo-fuera" inputmode="numeric" placeholder="Ej: 00:20"
+                        maxlength="5" />
+                    <button class="time-btn" onclick="UILogic.limpiarCampo('edit-tiempo-fuera')"><svg class="icon">
+                            <use href="#icon-broom" />
+                        </svg></button>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-edit" onclick="DataManagement.guardarEdicion()"><svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> Guardar</button>
+                <button class="btn-delete" onclick="DataManagement.eliminarRegistroActual()"><svg class="icon">
+                        <use href="#icon-trash" />
+                    </svg> Eliminar</button>
+            </div>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="UILogic.cerrarEdicion()"><svg class="icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-importar">
+        <div class="modal-content">
+            <h3><svg class="icon">
+                    <use href="#icon-upload" />
+                </svg> Importar Datos</h3>
+            <div class="form-group">
+                <label>Selecciona archivo (.json)</label>
+                <input type="file" id="file-import" accept=".json" />
+                <div class="config-hint-text" style="text-align: left; margin-top: 0.5rem;">
+                    Elige una opción:
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+                <button class="btn-backup" onclick="DataManagement.importarDatos('merge')">
+                    <svg class="icon">
+                        <use href="#icon-list" />
+                    </svg>
+                    Combinar (Agregar faltantes)
+                </button>
+
+                <button class="btn-delete" onclick="DataManagement.importarDatos('replace')">
+                    <svg class="icon">
+                        <use href="#icon-trash" />
+                    </svg>
+                    Reemplazar todo (Borrar actual)
+                </button>
+
+                <button class="btn-cancel" onclick="UILogic.cerrarImportar()">
+                    <svg class="icon">
+                        <use href="#icon-cancelar" />
+                    </svg>
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-filtros">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-filter" />
+                    </svg>
+                    Filtrar Histórico
+                </span>
+            </h3>
+            <div class="form-group">
+                <label>Desde</label>
+                <input type="date" id="filtro-fecha-desde" />
+            </div>
+            <div class="form-group">
+                <label>Hasta</label>
+                <input type="date" id="filtro-fecha-hasta" />
+            </div>
+            <div class="btn-group">
+                <button class="btn-edit" onclick="DataManagement.aplicarFiltros()">
+                    <svg class="icon">
+                        <use href="#icon-filter" />
+                    </svg> Aplicar
+                </button>
+                <button class="btn-clean" onclick="DataManagement.limpiarFiltros()">
+                    <svg class="icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Limpiar
+                </button>
+            </div>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="UILogic.cerrarFiltros()">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-ayuda">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-help" />
+                    </svg>
+                    Instrucciones
+                </span>
+            </h3>
+            <div
+                style="text-align: left; color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; max-height: 400px; overflow-y: auto;">
+                <p><strong><svg class="icon">
+                            <use href="#icon-save" />
+                        </svg> Registrar Horas:</strong> Podes ingresar una hora de entrada y registrar, y luego mas
+                    tarde
+                    podes registrar la salida, directamente desde el cuadro "registrar", o editando el registro en el
+                    historico.</p>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+                <p><strong>🥳 Feriados:</strong> Ingresa <code>00:00</code> en Entrada y Salida.</p>
+                <p><strong>✈️ Ausencias/Licencias:</strong> Ingresa <code>11:11</code> en Entrada y Salida (no cuentan
+                    para el promedio).</p>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+                <p><strong>☕ Tiempo Fuera:</strong> Para descontar tiempo del dia, si saliste por algun motivo,
+                    (por ejemplo, irse al medico).</p>
+                <p><strong><svg class="icon">
+                            <use href="#icon-clock" />
+                        </svg> Vistas:</strong> Toca la tarjeta de "Hoy" para ver el progreso de la "Semana".</p>
+                <p><strong><svg class="icon">
+                            <use href="#icon-save" />
+                        </svg> Datos:</strong>
+                    La configuracion y registro de la pagina usa localStorage, lo que guarda los
+                    datos de forma local en el navegador, Usa "Exportar" en Configuración para hacer
+                    copias de seguridad e importar para combinar o reemplazar los registros.</p>
+            </div>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="UILogic.cerrarAyuda()">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-stats">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-list" />
+                    </svg>
+                    Estadísticas del Mes
+                </span>
+            </h3>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Días trabajados</div>
+                    <div class="stat-value" id="stat-dias-trabajados">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Entrada promedio</div>
+                    <div class="stat-value" id="stat-entrada-promedio">--:--</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Salida promedio</div>
+                    <div class="stat-value" id="stat-salida-promedio">--:--</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Promedio diario</div>
+                    <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
+                </div>
+            </div>
+
+            <div class="btn-group" style="margin-top: 1.5rem;">
+                <button class="btn-cancel" onclick="UILogic.cerrarStats()">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            const $ = id => document.getElementById(id);
+
+            // ====================================================================
+            // I. SECURITY AND UTILS MODULE
+            // ====================================================================
+            const SecurityAndUtils = (function () {
+                const SECURITY_LIMITS = {
+                    MAX_REGISTROS: 1000,
+                    MAX_STRING_LENGTH: 100,
+                    MAX_JSON_SIZE: 4 * 1024 * 1024,
+                    SCHEMA_VERSION: 3,
+                    MAX_OPERATIONS_PER_MINUTE: 3
+                };
+
+                const REGEX_PATTERNS = {
+                    FECHA: /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
+                    HORA: /^([01]\d|2[0-3]):([0-5]\d)$/,
+                    ID: /^[a-zA-Z0-9-_]{10,100}$/
+                };
+
+                class RateLimiter {
+                    constructor(maxOps, windowMs) {
+                        this.maxOps = maxOps;
+                        this.windowMs = windowMs;
+                        this.operations = [];
+                    }
+                    canProceed() {
+                        const now = Date.now();
+                        this.operations = this.operations.filter(time => now - time < this.windowMs);
+                        if (this.operations.length >= this.maxOps) return false;
+                        this.operations.push(now);
+                        return true;
+                    }
+                }
+
+                const saveLimiter = new RateLimiter(SECURITY_LIMITS.MAX_OPERATIONS_PER_MINUTE, 60000);
+
+                function sanitizeString(str, maxLength = SECURITY_LIMITS.MAX_STRING_LENGTH) {
+                    if (typeof str !== 'string') return '';
+
+                    return str
+                        .replace(/[<>"'`]/g, '')
+                        .replace(/javascript:/gi, '')
+                        .replace(/data:/gi, '')
+                        .replace(/vbscript:/gi, '')
+                        .replace(/on\w+\s*=/gi, '')
+                        .replace(/[\x00-\x1F\x7F]/g, '')
+                        .replace(/&lt;/gi, '')
+                        .replace(/&gt;/gi, '')
+                        .replace(/&#/g, '')
+                        .trim()
+                        .substring(0, maxLength);
+                }
+
+                function validarFechaSegura(f) {
+                    if (!f || !REGEX_PATTERNS.FECHA.test(f)) return false;
+
+                    try {
+                        const [y, m, d] = f.split('-').map(Number);
+                        const fecha = new Date(y, m - 1, d);
+                        if (fecha.getFullYear() !== y ||
+                            fecha.getMonth() !== m - 1 ||
+                            fecha.getDate() !== d) {
+                            return false;
+                        }
+
+                        const ahora = new Date();
+                        const hace20Anos = new Date(ahora.getFullYear() - 20, 0, 1);
+                        const en2Anos = new Date(ahora.getFullYear() + 2, 11, 31);
+
+                        return fecha >= hace20Anos && fecha <= en2Anos && !isNaN(fecha.getTime());
+                    } catch (e) {
+                        return false;
+                    }
+                }
+
+                function validarHoraSegura(h) {
+                    return h && REGEX_PATTERNS.HORA.test(h);
+                }
+
+                function generarIDSeguro() {
+                    if (window.crypto && window.crypto.getRandomValues) {
+                        const array = new Uint32Array(4);
+                        crypto.getRandomValues(array);
+                        return Array.from(array, num => num.toString(36)).join('');
+                    }
+                    const timestamp = Date.now().toString(36);
+                    const random1 = Math.random().toString(36).substring(2, 11);
+                    const random2 = Math.random().toString(36).substring(2, 11);
+                    return `${timestamp}-${random1}${random2}`;
+                }
+
+                function calcularHashFNV1a(data) {
+                    const str = JSON.stringify(data);
+                    let hash = 0x811c9dc5;
+                    for (let i = 0; i < str.length; i++) {
+                        hash ^= str.charCodeAt(i);
+                        hash = Math.imul(hash, 0x01000193);
+                    }
+                    return (hash >>> 0).toString(16);
+                }
+
+                function validarRegistroSeguro(r) {
+                    if (!r || typeof r !== 'object') return false;
+                    if (Array.isArray(r) || r instanceof Date) return false;
+                    if (typeof r.id !== 'string' || !REGEX_PATTERNS.ID.test(r.id)) return false;
+                    if (typeof r.fecha !== 'string' || !REGEX_PATTERNS.FECHA.test(r.fecha)) return false;
+                    if (!validarFechaSegura(r.fecha)) return false;
+                    if (r.entrada !== null) {
+                        if (typeof r.entrada !== 'string' || !REGEX_PATTERNS.HORA.test(r.entrada)) return false;
+                    }
+                    if (r.salida !== null) {
+                        if (typeof r.salida !== 'string' || !REGEX_PATTERNS.HORA.test(r.salida)) return false;
+                    }
+
+                    if (r.tiempoFuera !== null && r.tiempoFuera !== '') {
+                        if (typeof r.tiempoFuera !== 'string' || !REGEX_PATTERNS.HORA.test(r.tiempoFuera)) return false;
+                    }
+
+                    if (!Number.isFinite(r.horas) || r.horas < 0 || r.horas > 24) return false;
+                    if (!Number.isFinite(r.minutos) || r.minutos < 0 || r.minutos > 59) return false;
+                    if (!Number.isFinite(r.total) || r.total < 0 || r.total > 24) return false;
+
+                    const propiedadesPermitidas = ['id', 'fecha', 'entrada', 'salida', 'tiempoFuera', 'horas', 'minutos', 'total'];
+                    const propiedadesActuales = Object.keys(r);
+                    const tienePropiedadesSospechosas = propiedadesActuales.some(prop => !propiedadesPermitidas.includes(prop));
+                    if (tienePropiedadesSospechosas) return false;
+
+                    return true;
+                }
+                return {
+                    SECURITY_LIMITS,
+                    REGEX_PATTERNS,
+                    saveLimiter,
+                    sanitizeString,
+                    validarFechaSegura,
+                    validarHoraSegura,
+                    generarIDSeguro,
+                    calcularHashFNV1a,
+                    validarRegistroSeguro
+                };
+            })();
+
+            // ====================================================================
+            // HISTORY MANAGER MODULE
+            // ====================================================================
+            const HistoryManager = (function () {
+                let history = [];
+                let currentIndex = -1;
+                const MAX_HISTORY = 50;
+
+                // Función auxiliar para copia profunda segura
+                function deepClone(obj) {
+                    // Manejo de errores y casos edge
+                    try {
+                        if (obj === null || obj === undefined) {
+                            return obj;
+                        }
+                        return JSON.parse(JSON.stringify(obj));
+                    } catch (e) {
+                        console.error('Error en deepClone:', e);
+                        // Retornar estructura vacía según tipo
+                        if (Array.isArray(obj)) return [];
+                        if (typeof obj === 'object') return {};
+                        return null;
+                    }
+                }
+
+                function saveState(registros) {
+                    // CRÍTICO: Hacer copia profunda INMEDIATAMENTE
+                    const copiaSegura = deepClone(registros);
+
+                    // Si estamos en medio del historial (después de un undo),
+                    // eliminar todos los estados "futuros"
+                    if (currentIndex < history.length - 1) {
+                        history.splice(currentIndex + 1);
+                    }
+
+                    // Guardar la copia profunda
+                    history.push(copiaSegura);
+
+                    // Limitar tamaño del historial
+                    if (history.length > MAX_HISTORY) {
+                        history.shift();
+                        currentIndex = MAX_HISTORY - 1;
+                    } else {
+                        currentIndex = history.length - 1;
+                    }
+
+                    updateButtons();
+
+                    //console.log('Estado guardado. Historial:', history.length, 'Index:', currentIndex);
+                }
+
+                function undo() {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        updateButtons();
+                        const estado = deepClone(history[currentIndex]);
+                        //console.log('Undo a index:', currentIndex);
+                        return estado;
+                    }
+                    return null;
+                }
+
+                function redo() {
+                    if (currentIndex < history.length - 1) {
+                        currentIndex++;
+                        updateButtons();
+                        const estado = deepClone(history[currentIndex]);
+                        // console.log('Redo a index:', currentIndex);
+                        return estado;
+                    }
+                    return null;
+                }
+
+                function canUndo() {
+                    return currentIndex > 0;
+                }
+
+                function canRedo() {
+                    return currentIndex < history.length - 1;
+                }
+
+                function updateButtons() {
+                    const undoBtn = document.getElementById('btn-undo');
+                    const redoBtn = document.getElementById('btn-redo');
+
+                    if (undoBtn) undoBtn.disabled = !canUndo();
+                    if (redoBtn) redoBtn.disabled = !canRedo();
+                }
+
+                function clear() {
+                    history = [];
+                    currentIndex = -1;
+                    updateButtons();
+                }
+
+                function getDebugInfo() {
+                    return {
+                        historyLength: history.length,
+                        currentIndex: currentIndex,
+                        canUndo: canUndo(),
+                        canRedo: canRedo()
+                    };
+                }
+
+                return {
+                    saveState,
+                    undo,
+                    redo,
+                    canUndo,
+                    canRedo,
+                    updateButtons,
+                    clear,
+                    getDebugInfo // ✅ Para debugging
+                };
+            })();
+
+            // ====================================================================
+            // II. DATA MANAGEMENT MODULE (CORREGIDO)
+            // ====================================================================
+            const DataManagement = (function (S) {
+                let registros = [], diasHabiles = 5, horasDiarias = 7, editandoId = null;
+                let vistaActual = 'diaria', registrosVisibles = 10;
+                let cacheSemana = { inicio: null, fin: null, calculado: null };
+                let filtroActivo = false;
+                let filtroDesde = null;
+                let filtroHasta = null;
+
+                function cargarConVerificacion() {
+                    try {
+                        const stored = localStorage.getItem('registros');
+                        if (!stored) return [];
+                        const data = JSON.parse(stored);
+                        if (data.hash) {
+                            const hashCalculado = S.calcularHashFNV1a(data.registros);
+                            if (hashCalculado !== data.hash) {
+                                console.warn('⚠️ Integridad comprometida');
+                                UILogic.mostrarToast('Advertencia de integridad', 'warning');
+                                const continuar = confirm('⚠️ Los datos pueden haber sido modificados.\n\n¿Deseas cargarlos de todos modos?');
+                                if (!continuar) {
+                                    localStorage.removeItem('registros');
+                                    return [];
+                                }
+                            }
+                        }
+                        return (data.registros || []).filter(S.validarRegistroSeguro);
+                    } catch (e) {
+                        console.error('Error cargando:', e);
+                        return [];
+                    }
+                }
+
+                function guardarConIntegridad(regs) {
+                    if (!S.saveLimiter.canProceed()) {
+                        UILogic.mostrarToast('Demasiadas operaciones, espera un momento', 'warning');
+                        return false;
+                    }
+                    try {
+                        const hash = S.calcularHashFNV1a(regs);
+                        const data = { registros: regs, hash, timestamp: Date.now(), version: S.SECURITY_LIMITS.SCHEMA_VERSION };
+                        const str = JSON.stringify(data);
+                        const size = new Blob([str]).size;
+                        if (size > S.SECURITY_LIMITS.MAX_JSON_SIZE) {
+                            UILogic.mostrarToast('Almacenamiento lleno', 'error');
+                            return false;
+                        }
+                        localStorage.setItem('registros', str);
+                        return true;
+                    } catch (e) {
+                        console.error('Error guardando:', e);
+                        if (e.name === 'QuotaExceededError') {
+                            UILogic.mostrarToast('Espacio lleno', 'error');
+                        }
+                        return false;
+                    }
+                }
+
+                function guardarYActualizar(actualizarRegistros = true) {
+                    let saveSuccessful = true;
+                    if (actualizarRegistros) {
+                        saveSuccessful = guardarConIntegridad(registros);
+                    }
+                    if (saveSuccessful) {
+                        UILogic.actualizarUI();
+                    }
+                    return saveSuccessful;
+                }
+
+                function cargarConfiguracion() {
+                    try {
+                        const d = parseFloat(localStorage.getItem('diasHabiles'));
+                        const hd = parseFloat(localStorage.getItem('horasDiarias'));
+
+                        let diasCalculados = 5;
+                        if (isNaN(d)) {
+                            const hsAntiguas = parseFloat(localStorage.getItem('horasSemanales'));
+                            if (!isNaN(hsAntiguas) && !isNaN(hd) && hd > 0) {
+                                diasCalculados = Math.round(hsAntiguas / hd);
+                                if (diasCalculados < 1) diasCalculados = 1;
+                                if (diasCalculados > 7) diasCalculados = 7;
+                            }
+                        }
+
+                        let t = localStorage.getItem('temaOscuro') === 'true';
+                        if (localStorage.getItem('temaOscuro') === null) {
+                            t = true;
+                        }
+
+                        const v = localStorage.getItem('vistaActual');
+
+                        // Validación estricta de tipos
+                        const diasFinal = (!isNaN(d) && Number.isFinite(d) && d >= 1 && d <= 7) ? d : diasCalculados;
+                        const horasFinal = (Number.isFinite(hd) && hd >= 1 && hd <= 24) ? hd : 7;
+
+                        return {
+                            diasHabiles: diasFinal,
+                            horasDiarias: horasFinal,
+                            temaOscuro: t,
+                            vistaActual: (v === 'semana' || v === 'diaria') ? v : 'diaria'
+                        };
+                    } catch (e) {
+                        console.error('Error cargando configuración:', e);
+                        return { diasHabiles: 5, horasDiarias: 7, temaOscuro: true, vistaActual: 'diaria' };
+                    }
+                }
+
+                function tiempoEnMinutos(h) {
+                    if (!h || !h.includes(':')) return 0;
+                    const [hr, mn] = h.split(':').map(Number);
+                    return (hr * 60) + mn;
+                }
+
+                function calcularHoras(e, s, tf = null) {
+                    const tfMinutos = tf ? tiempoEnMinutos(tf) : 0;
+                    if (e === '11:11' && s === '11:11') {
+                        const minDia = horasDiarias * 60;
+                        return { horas: 0, minutos: 0, total: horasDiarias, esAusencia: true };
+                    }
+
+                    if (e === '00:00' && s === '00:00') {
+                        const minFeriado = horasDiarias * 60;
+                        return { horas: Math.floor(minFeriado / 60), minutos: Math.round(minFeriado % 60), total: horasDiarias };
+                    }
+
+                    if (!e || !s || !e.includes(':') || !s.includes(':')) return null;
+
+                    const [hE, mE] = e.split(':').map(Number);
+                    const [hS, mS] = s.split(':').map(Number);
+
+                    // Validar overflow antes de cálculos
+                    if (!Number.isFinite(hE) || !Number.isFinite(mE) ||
+                        !Number.isFinite(hS) || !Number.isFinite(mS)) {
+                        return null;
+                    }
+
+                    const minutosEntrada = hE * 60 + mE;
+                    const minutosSalida = hS * 60 + mS;
+
+                    // Validar rangos (máximo 24 horas = 1440 minutos)
+                    if (minutosEntrada > 1440 || minutosSalida > 1440 ||
+                        minutosEntrada < 0 || minutosSalida < 0) {
+                        return null;
+                    }
+
+                    let minTotal = minutosSalida - minutosEntrada;
+
+                    if (minTotal < 0) minTotal += 24 * 60;
+
+                    let minNeto = minTotal - tfMinutos;
+                    if (minNeto < 0) minNeto = 0;
+
+                    return { horas: Math.floor(minNeto / 60), minutos: minNeto % 60, total: minNeto / 60 };
+                }
+
+                function calcularHorasFeriadoEnRango(inicio, fin) {
+                    const horasDiariasLocal = horasDiarias;
+                    let horasDescontar = 0;
+
+                    registros.forEach(r => {
+                        const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
+                        const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+
+                        if (r.fecha >= inicio && r.fecha <= fin && (esFeriado || esAusencia)) {
+                            horasDescontar += horasDiariasLocal;
+                        }
+                    });
+                    return horasDescontar;
+                }
+
+                function validarFormulario() {
+                    let valido = true;
+                    const fecha = $('fecha').value;
+                    const entrada = $('entrada').value.trim();
+                    const salida = $('salida').value.trim();
+
+                    UILogic.limpiarError('fecha', 'error-fecha');
+                    UILogic.limpiarError('entrada', 'error-entrada');
+                    UILogic.limpiarError('salida', 'error-salida');
+
+                    if (!fecha || !S.validarFechaSegura(fecha)) {
+                        UILogic.mostrarError('fecha', 'error-fecha');
+                        valido = false;
+                    }
+                    if (entrada && !S.validarHoraSegura(entrada)) {
+                        UILogic.mostrarError('entrada', 'error-entrada');
+                        valido = false;
+                    }
+                    if (salida && !S.validarHoraSegura(salida)) {
+                        UILogic.mostrarError('salida', 'error-salida');
+                        valido = false;
+                    }
+                    return valido;
+                }
+                function agregarRegistro() {
+                    if (!validarFormulario()) {
+                        UILogic.mostrarToast('Verifica los campos', 'error');
+                        return;
+                    }
+
+                    const btn = $('btn-agregar');
+                    btn.disabled = true;
+
+                    const f = S.sanitizeString($('fecha').value, 10);
+                    const e = S.sanitizeString($('entrada').value.trim(), 5);
+                    const s = S.sanitizeString($('salida').value.trim(), 5);
+
+                    if (!e && !s) {
+                        UILogic.resetearBoton(btn);
+                        UILogic.mostrarToast('Rellena algun campo', 'error');
+                        return;
+                    }
+
+                    const registroExistente = registros.find(r => r.fecha === f);
+
+                    if (!e && s) {
+                        if (!registroExistente || registroExistente.salida) {
+                            UILogic.resetearBoton(btn);
+                            UILogic.mostrarToast('Debes registrar una entrada primero', 'error');
+                            return;
+                        }
+                    }
+
+                    if (registroExistente && (!e || !s)) {
+                        if (!e && s && registroExistente.entrada && !registroExistente.salida) {
+                            UILogic.resetearBoton(btn);
+                            if (confirm(`Ya existe una entrada a las ${registroExistente.entrada}. ¿Agregar salida ${s}?`)) {
+                                registroExistente.salida = s;
+                                let t = calcularHoras(registroExistente.entrada, s, registroExistente.tiempoFuera || null);
+                                registroExistente.horas = t?.horas || 0;
+                                registroExistente.minutos = t?.minutos || 0;
+                                registroExistente.total = t?.total || 0;
+
+                                HistoryManager.saveState(registros);
+
+                                const saved = guardarYActualizar();
+                                if (saved) {
+                                    UILogic.mostrarToast('Salida agregada', 'success');
+                                    UILogic.resetearBoton(btn);
+                                    $('fecha').value = UILogic.obtenerFechaHoy();
+                                    $('salida').value = '';
+                                } else {
+                                    UILogic.resetearBoton(btn);
+                                }
+                                return;
+                            }
+                            return;
+                        } else {
+                            UILogic.resetearBoton(btn);
+                            UILogic.mostrarToast('Ya existe un registro para esta fecha', 'error');
+                            return;
+                        }
+                    }
+
+                    if (registroExistente) {
+                        UILogic.resetearBoton(btn);
+                        UILogic.mostrarToast('Ya existe un registro para esta fecha', 'error');
+                        return;
+                    }
+
+                    if (registros.length >= S.SECURITY_LIMITS.MAX_REGISTROS) {
+                        UILogic.resetearBoton(btn);
+                        UILogic.mostrarToast('Límite alcanzado', 'error');
+                        return;
+                    }
+
+                    const t = calcularHoras(e || null, s || null, null);
+                    registros.push({
+                        id: S.generarIDSeguro(),
+                        fecha: f,
+                        entrada: e || null,
+                        salida: s || null,
+                        tiempoFuera: null,
+                        horas: t?.horas || 0,
+                        minutos: t?.minutos || 0,
+                        total: t?.total || 0
+                    });
+                    registros.sort((a, b) => {
+                        if (a.fecha !== b.fecha) return new Date(b.fecha) - new Date(a.fecha);
+                        return (b.entrada || '').localeCompare(a.entrada || '');
+                    });
+
+                    HistoryManager.saveState(registros);
+
+                    const saved = guardarYActualizar();
+                    if (saved) {
+                        UILogic.mostrarToast('Registro agregado', 'success');
+                        UILogic.resetearBoton(btn);
+                        $('fecha').value = UILogic.obtenerFechaHoy();
+                        $('entrada').value = '';
+                        $('salida').value = '';
+                    } else {
+                        UILogic.resetearBoton(btn);
+                    }
+                }
+
+                function eliminarRegistroActual() {
+                    if (editandoId && confirm('¿Eliminar este registro?')) {
+                        const modal = $('modal-editar');
+                        const btnEliminar = modal.querySelector('.btn-delete');
+                        btnEliminar.disabled = true;
+
+                        registros = registros.filter(r => r.id !== editandoId);
+                        HistoryManager.saveState(registros);
+
+                        const saved = guardarYActualizar();
+                        btnEliminar.disabled = false;
+                        btnEliminar.innerHTML = '<svg class="icon"><use href="#icon-trash"/></svg> Eliminar';
+
+                        if (saved) {
+                            UILogic.mostrarToast('Registro eliminado', 'success');
+                            UILogic.cerrarEdicion();
+                        }
+                    }
+                }
+
+                function editarRegistro(id) {
+                    if (editandoId !== null) return;
+                    const r = registros.find(x => x.id === id);
+                    if (!r) return;
+                    editandoId = id;
+                    $('edit-fecha').value = r.fecha;
+                    $('edit-entrada').value = r.entrada || '';
+                    $('edit-salida').value = r.salida || '';
+                    $('edit-tiempo-fuera').value = r.tiempoFuera || '';
+                    $('modal-editar').classList.add('show');
+                }
+                function guardarEdicion() {
+                    const r = registros.find(x => x.id === editandoId);
+                    if (!r) return;
+
+                    const modal = $('modal-editar');
+                    const btnGuardar = modal.querySelector('.btn-edit');
+                    btnGuardar.disabled = true;
+
+                    const f = S.sanitizeString($('edit-fecha').value, 10);
+                    const e = S.sanitizeString($('edit-entrada').value.trim(), 5);
+                    const s = S.sanitizeString($('edit-salida').value.trim(), 5);
+                    let tf = S.sanitizeString($('edit-tiempo-fuera').value.trim(), 5);
+                    if (tf === '') tf = null;
+
+                    if (!S.validarFechaSegura(f) || (e && !S.validarHoraSegura(e)) || (s && !S.validarHoraSegura(s)) || (tf && !S.validarHoraSegura(tf))) {
+                        UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                        UILogic.mostrarToast('Verifica los campos', 'error');
+                        return;
+                    }
+
+                    if (!e && s) {
+                        UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                        UILogic.mostrarToast('Debes registrar una entrada primero', 'error');
+                        return;
+                    }
+
+                    const existeFecha = registros.some(reg => reg.fecha === f && reg.id !== editandoId);
+                    if (existeFecha) {
+                        UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                        UILogic.mostrarToast('Ya existe otro registro', 'error');
+                        return;
+                    }
+
+                    r.fecha = f;
+                    r.entrada = e || null;
+                    r.salida = s || null;
+                    r.tiempoFuera = tf;
+                    const t = calcularHoras(r.entrada, r.salida, r.tiempoFuera);
+                    r.horas = t?.horas || 0;
+                    r.minutos = t?.minutos || 0;
+                    r.total = t?.total || 0;
+                    registros.sort((a, b) => {
+                        if (a.fecha !== b.fecha) return new Date(b.fecha) - new Date(a.fecha);
+                        return (b.entrada || '').localeCompare(a.entrada || '');
+                    });
+
+                    HistoryManager.saveState(registros);
+
+                    const saved = guardarYActualizar();
+
+                    if (saved) {
+                        UILogic.mostrarToast('Registro actualizado', 'success');
+                        UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                        UILogic.cerrarEdicion();
+                    } else {
+                        UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                    }
+                }
+
+                function guardarConfig() {
+                    const d = parseFloat($('config-dias-habiles').value);
+                    const vd = parseFloat($('config-horas-diarias').value);
+
+                    if (isNaN(d) || d < 1 || d > 7) {
+                        UILogic.mostrarToast('Días hábiles inválidos', 'error');
+                        return;
+                    }
+                    if (isNaN(vd) || vd < 1 || vd > 24) {
+                        UILogic.mostrarToast('Horas diarias inválidas', 'error');
+                        return;
+                    }
+
+                    diasHabiles = d;
+                    horasDiarias = vd;
+
+                    registros.forEach(r => {
+                        if (r.entrada === '00:00' && r.salida === '00:00') {
+                            const t = calcularHoras('00:00', '00:00', r.tiempoFuera || null);
+                            r.horas = t?.horas || 0;
+                            r.minutos = t?.minutos || 0;
+                            r.total = t?.total || 0;
+                        }
+                    });
+
+                    try {
+                        localStorage.setItem('diasHabiles', diasHabiles);
+                        localStorage.setItem('horasDiarias', horasDiarias);
+                        localStorage.removeItem('horasSemanales');
+                    } catch (e) {
+                        UILogic.mostrarToast('Error al guardar', 'error');
+                        return;
+                    }
+                    guardarYActualizar(true);
+                    UILogic.mostrarToast('Configuración guardada', 'success');
+                    UILogic.cerrarConfig();
+                }
+
+                function borrarTodoHistorial() {
+                    const totalRegistros = registros.length;
+                    if (totalRegistros === 0) {
+                        UILogic.mostrarToast('No hay registros para borrar', 'info');
+                        return;
+                    }
+
+                    // --- CONFIRMACIÓN SIMPLE ---
+                    const confirmar = confirm(`⚠️ ¿ESTÁS SEGURO?\n\nEsto eliminará TODOS los ${totalRegistros} registros \n\Esta accion se puede DESHACER antes de cerrar la pagina.`);
+
+                    if (!confirmar) return;
+                    // --- FIN CONFIRMACIÓN SIMPLE ---
+
+                    registros = [];
+                    registrosVisibles = 10;
+
+                    HistoryManager.saveState(registros);
+
+                    if (guardarConIntegridad(registros)) {
+                        UILogic.actualizarUI();
+                        UILogic.mostrarToast(`${totalRegistros} registros eliminados`, 'success');
+                        UILogic.cerrarConfig();
+                    }
+                }
+
+                function cargarMasRegistros() {
+                    const totalRestantes = registros.length - registrosVisibles;
+                    if (totalRestantes > 0) {
+                        registrosVisibles += 10;
+                        if (registrosVisibles > registros.length) {
+                            registrosVisibles = registros.length;
+                        }
+                        UILogic.actualizarUI();
+                        $('btn-cargar-mas').scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                }
+
+                function exportarJSON() {
+                    const data = { registros, diasHabiles, horasDiarias, fecha: new Date().toISOString(), version: S.SECURITY_LIMITS.SCHEMA_VERSION };
+                    try {
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `horarios_v3.7_${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        UILogic.mostrarToast('Datos exportados', 'success');
+                    } catch (e) {
+                        UILogic.mostrarToast('Error al exportar', 'error');
+                    }
+                }
+
+                function importarDatos(modo = 'replace') {
+                    const fileInput = $('file-import');
+                    const file = fileInput.files[0];
+
+                    if (!file) {
+                        UILogic.mostrarToast('Selecciona un archivo primero', 'error');
+                        return;
+                    }
+                    if (file.size > S.SECURITY_LIMITS.MAX_JSON_SIZE) {
+                        UILogic.mostrarToast('Archivo muy grande', 'error');
+                        return;
+                    }
+
+                    // Validación estricta de MIME
+                    if (!file.type || file.type !== 'application/json') {
+                        UILogic.mostrarToast('Solo se permiten archivos JSON', 'error');
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            // Validar que el contenido no esté vacío
+                            const contenido = e.target.result;
+                            if (!contenido || contenido.trim().length === 0) {
+                                UILogic.mostrarToast('Archivo vacío', 'error');
+                                return;
+                            }
+
+                            // Validar tamaño del contenido antes de parsear
+                            if (contenido.length > S.SECURITY_LIMITS.MAX_JSON_SIZE) {
+                                UILogic.mostrarToast('Contenido del archivo demasiado grande', 'error');
+                                return;
+                            }
+
+                            // Parse seguro con protección contra Prototype Pollution
+                            const data = JSON.parse(contenido, (key, value) => {
+                                // Bloquear propiedades peligrosas
+                                if (['__proto__', 'constructor', 'prototype'].includes(key)) {
+                                    console.warn('⚠️ Intento de prototype pollution bloqueado');
+                                    return undefined;
+                                }
+                                return value;
+                            });
+
+                            // claves permitidas
+                            const allowedRootKeys = ['registros', 'diasHabiles', 'horasDiarias', 'fecha', 'version', 'hash', 'timestamp'];
+                            const dataKeys = Object.keys(data);
+                            const hasInvalidKeys = dataKeys.some(k => !allowedRootKeys.includes(k));
+
+                            if (hasInvalidKeys) {
+                                UILogic.mostrarToast('Archivo con estructura sospechosa', 'error');
+                                return;
+                            }
+
+                            //Validación estricta de estructura
+                            if (!data || typeof data !== 'object' || Array.isArray(data)) {
+                                UILogic.mostrarToast('Estructura de archivo inválida', 'error');
+                                return;
+                            }
+
+                            if (!data.registros || !Array.isArray(data.registros)) {
+                                UILogic.mostrarToast('Archivo inválido o corrupto', 'error');
+                                return;
+                            }
+
+                            //Validar límite de registros antes de procesar
+                            if (data.registros.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
+                                UILogic.mostrarToast(`Máximo ${S.SECURITY_LIMITS.MAX_REGISTROS} registros permitidos`, 'error');
+                                return;
+                            }
+
+                            //Filtrar y normalizar datos
+                            const registrosImportados = data.registros.filter(r => {
+                                // Asegurar que tiempoFuera exista y sea null o string
+                                if (!r.hasOwnProperty('tiempoFuera')) r.tiempoFuera = null;
+                                if (r.tiempoFuera === '') r.tiempoFuera = null;
+
+                                //Normalizar tipos numéricos
+                                if (typeof r.horas === 'string') r.horas = parseFloat(r.horas);
+                                if (typeof r.minutos === 'string') r.minutos = parseFloat(r.minutos);
+                                if (typeof r.total === 'string') r.total = parseFloat(r.total);
+
+                                return S.validarRegistroSeguro(r);
+                            });
+
+                            if (registrosImportados.length === 0) {
+                                UILogic.mostrarToast('No se encontraron registros válidos', 'warning');
+                                return;
+                            }
+
+                            // Recalcular horas para asegurar consistencia
+                            registrosImportados.forEach(r => {
+                                const t = calcularHoras(r.entrada, r.salida, r.tiempoFuera || null);
+                                r.horas = t?.horas || 0;
+                                r.minutos = t?.minutos || 0;
+                                r.total = t?.total || 0;
+                            });
+
+                            // --- MODO REEMPLAZAR ---
+                            if (modo === 'replace') {
+                                const confirmMsg = `⚠️ ATENCIÓN\n\nSe borrarán tus datos actuales y se reemplazarán por ${registrosImportados.length} registros del archivo.\n\n¿Estás seguro?`;
+                                if (!confirm(confirmMsg)) return;
+
+                                registros = registrosImportados;
+
+                                //Validación estricta de tipos de configuración
+                                if (data.diasHabiles !== undefined) {
+                                    const diasParsed = typeof data.diasHabiles === 'string' ? parseFloat(data.diasHabiles) : data.diasHabiles;
+                                    if (Number.isFinite(diasParsed) && diasParsed >= 1 && diasParsed <= 7) {
+                                        diasHabiles = diasParsed;
+                                    }
+                                }
+
+                                if (data.horasDiarias !== undefined) {
+                                    const horasParsed = typeof data.horasDiarias === 'string' ? parseFloat(data.horasDiarias) : data.horasDiarias;
+                                    if (Number.isFinite(horasParsed) && horasParsed >= 1 && horasParsed <= 24) {
+                                        horasDiarias = horasParsed;
+                                    }
+                                }
+
+                                finalizarImportacionAndSave(`Se reemplazaron los datos por ${registrosImportados.length} registros.`);
+                            }
+
+                            // --- MODO COMBINAR ---
+                            else if (modo === 'merge') {
+                                const fechasExistentes = new Set(registros.map(r => r.fecha));
+                                const nuevos = registrosImportados.filter(imp => !fechasExistentes.has(imp.fecha));
+
+                                if (nuevos.length === 0) {
+                                    UILogic.mostrarToast('No hay días nuevos para agregar', 'info');
+                                    return;
+                                }
+
+                                //Validar que no se exceda el límite total
+                                if (registros.length + nuevos.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
+                                    UILogic.mostrarToast(`Límite alcanzado. Solo se pueden agregar ${S.SECURITY_LIMITS.MAX_REGISTROS - registros.length} registros más`, 'error');
+                                    return;
+                                }
+
+                                registros = registros.concat(nuevos);
+                                finalizarImportacionAndSave(`Se combinaron datos. ${nuevos.length} días nuevos agregados.`);
+                            }
+
+                        } catch (err) {
+                            console.error('Error en importación:', err);
+                            // Mensaje más específico
+                            if (err instanceof SyntaxError) {
+                                UILogic.mostrarToast('Archivo JSON mal formado', 'error');
+                            } else {
+                                UILogic.mostrarToast('Error al procesar el archivo', 'error');
+                            }
+                        }
+                    };
+
+                    // Manejar errores de lectura
+                    reader.onerror = () => {
+                        UILogic.mostrarToast('Error al leer el archivo', 'error');
+                    };
+
+                    reader.readAsText(file);
+                }
+
+                function finalizarImportacionAndSave(mensajeExito) {
+                    registros.sort((a, b) => {
+                        if (a.fecha !== b.fecha) return new Date(b.fecha) - new Date(a.fecha);
+                        return (b.entrada || '').localeCompare(a.entrada || '');
+                    });
+
+                    HistoryManager.saveState(registros);
+
+                    if (guardarYActualizar()) {
+                        try {
+                            localStorage.setItem('diasHabiles', diasHabiles);
+                            localStorage.setItem('horasDiarias', horasDiarias);
+                        } catch (ex) {
+                            // Manejo explícito de errores
+                            console.error('Error guardando configuración:', ex);
+                            UILogic.mostrarToast('Datos importados pero configuración no guardada', 'warning');
+                        }
+
+                        UILogic.mostrarToast(mensajeExito, 'success');
+                        UILogic.cerrarImportar();
+                        $('file-import').value = '';
+                    }
+                }
+
+                function calcularBufferSemanal(inicioSemana, fechaHoy) {
+                    const horasDiariasLocal = horasDiarias;
+                    let buffer = 0;
+
+                    // Filtrar registros relevantes una sola vez
+                    const registrosRango = registros.filter(r =>
+                        r.fecha >= inicioSemana && r.fecha <= fechaHoy
+                    );
+
+                    // Crear Map para búsqueda O(1)
+                    const registrosMap = new Map(
+                        registrosRango.map(r => [r.fecha, r])
+                    );
+
+                    let fechaIteracion = new Date(inicioSemana.replace(/-/g, '/') + ' 00:00:00');
+                    let fechaLimite = new Date(fechaHoy.replace(/-/g, '/') + ' 00:00:00');
+
+                    while (fechaIteracion <= fechaLimite) {
+                        const y = fechaIteracion.getFullYear();
+                        const m = String(fechaIteracion.getMonth() + 1).padStart(2, '0');
+                        const d = String(fechaIteracion.getDate()).padStart(2, '0');
+                        const isoDate = `${y}-${m}-${d}`;
+
+                        const numDia = fechaIteracion.getDay();
+                        let esDiaLaboralConfigurado = false;
+
+                        if (numDia === 0) {
+                            esDiaLaboralConfigurado = (diasHabiles === 7);
+                        } else {
+                            esDiaLaboralConfigurado = (numDia <= diasHabiles);
+                        }
+
+                        // Búsqueda O(1) en lugar de O(n)
+                        const r = registrosMap.get(isoDate);
+                        let horasObjetivoDia = 0;
+                        let horasHechasDia = 0;
+
+                        const esFeriado = r && r.entrada === '00:00' && r.salida === '00:00';
+                        const esAusencia = r && r.entrada === '11:11' && r.salida === '11:11';
+
+                        const tieneSalida = r && r.salida && !esFeriado && !esAusencia;
+                        const esDiaPasado = isoDate < fechaHoy;
+
+                        if (esDiaLaboralConfigurado && !esFeriado && !esAusencia && (esDiaPasado || (isoDate === fechaHoy && tieneSalida))) {
+                            horasObjetivoDia = horasDiariasLocal;
+                        }
+
+                        if (r && !esFeriado && !esAusencia) {
+                            if (r.salida) {
+                                horasHechasDia = r.total;
+                            }
+                        }
+
+                        buffer += (horasHechasDia - horasObjetivoDia);
+                        fechaIteracion.setDate(fechaIteracion.getDate() + 1);
+                    }
+                    return buffer;
+                }
+
+                function aplicarFiltros() {
+                    const desde = $('filtro-fecha-desde').value;
+                    const hasta = $('filtro-fecha-hasta').value;
+
+                    if (!desde && !hasta) {
+                        UILogic.mostrarToast('Selecciona al menos una fecha', 'warning');
+                        return;
+                    }
+
+                    filtroActivo = true;
+                    filtroDesde = desde || null;
+                    filtroHasta = hasta || null;
+
+                    guardarYActualizar(false);
+                    UILogic.cerrarFiltros();
+                    UILogic.mostrarToast('Filtro aplicado', 'success');
+                    document.getElementById('btn-filtro').classList.add('filtro-activo');
+                }
+
+                function limpiarFiltros() {
+                    filtroActivo = false;
+                    filtroDesde = null;
+                    filtroHasta = null;
+                    $('filtro-fecha-desde').value = '';
+                    $('filtro-fecha-hasta').value = '';
+
+                    guardarYActualizar(false);
+                    UILogic.cerrarFiltros();
+                    UILogic.mostrarToast('Filtro eliminado', 'info');
+                    document.getElementById('btn-filtro').classList.remove('filtro-activo');
+                }
+
+                function obtenerRegistrosFiltrados() {
+                    if (!filtroActivo) return registros;
+
+                    return registros.filter(r => {
+                        if (filtroDesde && r.fecha < filtroDesde) return false;
+                        if (filtroHasta && r.fecha > filtroHasta) return false;
+                        return true;
+                    });
+                }
+
+                return {
+                    registros: () => registros,
+                    horasSemanales: () => (horasDiarias * diasHabiles),
+                    diasHabiles: () => diasHabiles,
+                    horasDiarias: () => horasDiarias,
+                    setDiasHabiles: (v) => diasHabiles = v,
+                    setHorasDiarias: (v) => horasDiarias = v,
+                    editandoId: () => editandoId,
+                    setEditandoId: (id) => editandoId = id,
+                    vistaActual: () => vistaActual,
+                    setVistaActual: (v) => vistaActual = v,
+                    registrosVisibles: () => registrosVisibles,
+                    setRegistrosVisibles: (v) => registrosVisibles = v,
+                    cacheSemana: () => cacheSemana,
+                    setCacheSemana: (c) => cacheSemana = c,
+                    cargarConVerificacion,
+                    cargarConfiguracion,
+                    calcularHoras,
+                    calcularHorasFeriadoEnRango,
+                    guardarYActualizar,
+                    agregarRegistro,
+                    eliminarRegistroActual,
+                    editarRegistro,
+                    guardarEdicion,
+                    guardarConfig,
+                    borrarTodoHistorial,
+                    cargarMasRegistros,
+                    exportarJSON,
+                    importarDatos,
+                    calcularBufferSemanal,
+                    aplicarFiltros,
+                    limpiarFiltros,
+                    obtenerRegistrosFiltrados,
+                    undoAction: function () {
+                        const prevState = HistoryManager.undo();
+                        if (prevState) {
+                            registros.splice(0, registros.length, ...prevState);
+                            guardarYActualizar();
+                            UILogic.mostrarToast('Deshecho', 'info');
+                        }
+                    },
+                    redoAction: function () {
+                        const nextState = HistoryManager.redo();
+                        if (nextState) {
+                            registros.splice(0, registros.length, ...nextState);
+                            guardarYActualizar();
+                            UILogic.mostrarToast('Rehecho', 'info');
+                        }
+                    }
+
+                };
+
+            })(SecurityAndUtils);
+            // ====================================================================
+            // III. UI LOGIC MODULE
+            // ====================================================================
+            const UILogic = (function (S, D) {
+
+                function mostrarError(inputId, errorId) {
+                    const input = $(inputId);
+                    const error = $(errorId);
+                    if (input) input.classList.add('error');
+                    if (error) error.style.display = 'block';
+                }
+
+                function limpiarError(inputId, errorId) {
+                    const input = $(inputId);
+                    const error = $(errorId);
+                    if (input) input.classList.remove('error');
+                    if (error) error.style.display = 'none';
+                }
+
+                function mostrarToast(mensaje, tipo = 'info') {
+                    const toast = $('toast');
+                    const textoLimpio = S.sanitizeString(mensaje, 200);
+                    toast.textContent = textoLimpio;
+                    toast.className = `toast ${tipo}`;
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    setTimeout(() => {
+                        toast.classList.remove('show');
+                    }, 3000);
+                }
+
+                function resetearBoton(btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<svg class="icon"><use href="#icon-save"/></svg> Registrar';
+                }
+
+                function restaurarBotonGuardarEdicion(btnGuardar) {
+                    btnGuardar.disabled = false;
+                    btnGuardar.innerHTML = '<svg class="icon"><use href="#icon-save"/></svg> Guardar';
+                }
+
+                function obtenerFechaHoy() {
+                    const now = new Date();
+                    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                }
+
+                function obtenerNombreDia(f) {
+                    if (!f) return '';
+                    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                    try {
+                        const [y, m, d] = f.split('-').map(Number);
+                        const date = new Date(y, m - 1, d);
+                        if (isNaN(date.getTime())) return '';
+                        return dias[date.getDay()];
+                    } catch (e) { return ''; }
+                }
+
+                function obtenerSemanaActual() {
+                    const cache = D.cacheSemana();
+                    const hoy = new Date().toDateString();
+                    if (cache.calculado === hoy) return { inicio: cache.inicio, fin: cache.fin };
+                    const now = new Date();
+                    const dia = now.getDay();
+                    const offset = dia === 0 ? -6 : 1 - dia;
+                    const lun = new Date(now);
+                    lun.setDate(now.getDate() + offset);
+                    lun.setHours(0, 0, 0, 0);
+                    const vie = new Date(lun);
+                    vie.setDate(lun.getDate() + 4);
+                    vie.setHours(23, 59, 59, 999);
+                    const inicio = lun.toISOString().split('T')[0];
+                    const fin = vie.toISOString().split('T')[0];
+                    D.setCacheSemana({ inicio, fin, calculado: hoy });
+                    return { inicio, fin };
+                }
+
+                function horasATexto(t) {
+                    const totalHoras = Math.max(0, t);
+
+                    const h = Math.floor(totalHoras);
+                    const m = Math.round((totalHoras - h) * 60);
+
+                    let partes = [];
+
+                    if (h > 0) {
+                        partes.push(`${h} ${h === 1 ? 'hora' : 'horas'}`);
+                    }
+
+                    if (m > 0) {
+                        partes.push(`${m} ${m === 1 ? 'minuto' : 'minutos'}`);
+                    } else if (h === 0 && m === 0) {
+                        partes.push('0 minutos');
+                    }
+
+                    return partes.join(' ');
+                }
+
+                function formatoDiferencia(tiempoTotalHoras) {
+                    const horasDiarias = D.horasDiarias();
+                    const objetivoMinutos = horasDiarias * 60;
+                    const actualMinutos = Math.round(tiempoTotalHoras * 60);
+                    let diferenciaMinutos = actualMinutos - objetivoMinutos;
+                    if (diferenciaMinutos === 0) return '';
+                    const signo = diferenciaMinutos > 0 ? '+' : '-';
+                    const absMinutos = Math.abs(diferenciaMinutos);
+                    const h = Math.floor(absMinutos / 60);
+                    const m = absMinutos % 60;
+                    let diferenciaTexto = '';
+                    if (h > 0) diferenciaTexto += `${h}h`;
+                    if (m > 0 || h === 0) {
+                        if (h > 0) diferenciaTexto += ' ';
+                        diferenciaTexto += `${m}m`;
+                    }
+                    if (diferenciaTexto === '') return '';
+                    return `${signo}${diferenciaTexto}`;
+                }
+
+                function formatoTituloMes(claveMes) {
+                    const [año, mes] = claveMes.split('-');
+                    const fecha = new Date(año, mes - 1, 1);
+                    const opciones = { month: 'long', year: 'numeric' };
+                    let nombre = fecha.toLocaleDateString('es-ES', opciones);
+                    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+                }
+
+                function agruparRegistrosPorMes(registros) {
+                    // Validar entrada
+                    if (!Array.isArray(registros)) {
+                        console.warn('agruparRegistrosPorMes: entrada inválida');
+                        return new Map();
+                    }
+
+                    const grupos = new Map();
+                    registros.forEach(r => {
+                        // Validar cada registro
+                        if (!r || typeof r !== 'object' || !r.fecha || typeof r.fecha !== 'string') {
+                            return;
+                        }
+
+                        // Validar longitud mínima
+                        if (r.fecha.length < 7) {
+                            return;
+                        }
+
+                        const claveMes = r.fecha.substring(0, 7);
+                        if (!grupos.has(claveMes)) {
+                            grupos.set(claveMes, []);
+                        }
+                        grupos.get(claveMes).push(r);
+                    });
+                    return grupos;
+                }
+
+                function setProgressBarColor(progressEl, status) {
+                    if (!progressEl) return;
+                    progressEl.className = 'progress-fill';
+                    progressEl.classList.add(status);
+                }
+                function actualizarListaRegistros(registros) {
+                    const lista = $('lista-registros');
+                    const btnCargarMas = $('btn-cargar-mas');
+                    lista.innerHTML = '';
+                    const horasDiarias = D.horasDiarias();
+
+                    // Usar registros filtrados si hay filtro activo
+                    const registrosAMostrar = D.obtenerRegistrosFiltrados().slice(0, D.registrosVisibles());
+
+                    if (registrosAMostrar.length === 0) {
+                        lista.innerHTML = '<div class="empty-state">No hay registros</div>';
+                        btnCargarMas.style.display = 'none';
+                        return;
+                    }
+
+                    const registrosTotales = D.obtenerRegistrosFiltrados().length;
+                    if (registrosTotales > D.registrosVisibles()) {
+                        const restantes = registrosTotales - D.registrosVisibles();
+                        const aCargar = Math.min(10, restantes);
+                        btnCargarMas.textContent = `Cargar más (${aCargar} restantes)`;
+                        btnCargarMas.style.display = 'block';
+                    } else {
+                        btnCargarMas.style.display = 'none';
+                    }
+
+                    const gruposPorMes = agruparRegistrosPorMes(registrosAMostrar);
+                    const fragmento = document.createDocumentFragment();
+
+                    gruposPorMes.forEach((registrosDelMes, claveMes) => {
+                        const tituloGrupo = document.createElement('h3');
+                        tituloGrupo.className = 'registro-grupo-titulo';
+                        tituloGrupo.textContent = formatoTituloMes(claveMes);
+                        fragmento.appendChild(tituloGrupo);
+
+                        registrosDelMes.forEach(r => {
+                            const item = document.createElement('div');
+                            const hoy = obtenerFechaHoy();
+                            item.className = r.fecha === hoy ? 'registro-item hoy' : 'registro-item';
+                            item.onclick = () => D.editarRegistro(r.id);
+
+                            const info = document.createElement('div');
+                            info.className = 'registro-info';
+
+                            // --- AQUI ESTA LA LOGICA NUEVA DE AUSENCIA ---
+                            const isFeriadoContabilizado = r.entrada === '00:00' && r.salida === '00:00';
+                            const isAusencia = r.entrada === '11:11' && r.salida === '11:11';
+
+                            const fechaEl = document.createElement('div');
+                            fechaEl.className = 'registro-fecha';
+
+                            // Definir etiqueta segun el tipo
+                            let etiqueta = '';
+                            if (isFeriadoContabilizado) etiqueta = ' 🥳 (Feriado)';
+                            else if (isAusencia) etiqueta = ' ✈️ (Ausencia)';
+
+                            fechaEl.textContent = `${obtenerNombreDia(r.fecha)} ${r.fecha.substring(8)}${etiqueta}`;
+
+                            const tfText = r.tiempoFuera && r.tiempoFuera !== '' ? ` (${r.tiempoFuera} Fuera)` : '';
+
+                            const horasEl = document.createElement('div');
+                            horasEl.className = 'registro-horas';
+
+                            // Definir texto de horas segun tipo
+                            if (isFeriadoContabilizado) {
+                                horasEl.textContent = 'Día no laboral';
+                            } else if (isAusencia) {
+                                horasEl.textContent = 'Licencia / Ausencia';
+                            } else {
+                                horasEl.textContent = `${r.entrada || '-'} → ${r.salida || '-'}${tfText}`;
+                            }
+
+                            const totalEl = document.createElement('div');
+                            totalEl.className = 'registro-total';
+                            let totalText = 'Incompleto';
+                            totalEl.classList.remove('green-text', 'red-text', 'purple-text'); // Limpiamos clases
+
+                            if (isFeriadoContabilizado) {
+                                totalText = 'Horas descontadas';
+                                totalEl.classList.add('purple-text');
+                            } else if (isAusencia) {
+                                // LOGICA VISUAL DE AUSENCIA
+                                totalText = 'Justificado';
+                                totalEl.classList.add('purple-text');
+                            } else if (r.entrada && r.salida) {
+                                totalText = `${r.horas}h ${r.minutos}m`;
+                                const diffText = formatoDiferencia(r.total);
+                                if (r.total >= horasDiarias) {
+                                    totalEl.classList.add('green-text');
+                                } else {
+                                    totalEl.classList.add('red-text');
+                                }
+                                if (diffText) totalText += ` (${diffText})`;
+                            }
+
+                            totalEl.textContent = totalText;
+                            info.appendChild(fechaEl);
+                            info.appendChild(horasEl);
+                            info.appendChild(totalEl);
+                            item.appendChild(info);
+                            fragmento.appendChild(item);
+                        });
+                    });
+                    lista.appendChild(fragmento);
+                }
+
+                function calcularEstadisticasMes() {
+                    const hoy = new Date();
+                    const mesActual = hoy.getMonth();
+                    const añoActual = hoy.getFullYear();
+
+                    const registrosMes = D.registros().filter(r => {
+                        const [año, mes] = r.fecha.split('-').map(Number);
+                        return año === añoActual && mes === mesActual + 1;
+                    });
+
+                    // Filtrar solo registros válidos (excluir feriados y ausencias)
+                    const registrosValidos = registrosMes.filter(r =>
+                        r.entrada && r.salida &&
+                        r.entrada !== '00:00' && r.entrada !== '11:11'
+                    );
+
+                    if (registrosValidos.length === 0) {
+                        return {
+                            entradaPromedio: '--:--',
+                            salidaPromedio: '--:--',
+                            diasTrabajados: 0,
+                            promedioDiario: '0h 0m'
+                        };
+                    }
+
+                    // Calcular entrada promedio
+                    let sumaMinutosEntrada = 0;
+                    registrosValidos.forEach(r => {
+                        const [h, m] = r.entrada.split(':').map(Number);
+                        sumaMinutosEntrada += h * 60 + m;
+                    });
+                    const promedioEntrada = Math.round(sumaMinutosEntrada / registrosValidos.length);
+                    const hEntrada = Math.floor(promedioEntrada / 60);
+                    const mEntrada = promedioEntrada % 60;
+
+                    // Calcular salida promedio
+                    let sumaMinutosSalida = 0;
+                    registrosValidos.forEach(r => {
+                        const [h, m] = r.salida.split(':').map(Number);
+                        sumaMinutosSalida += h * 60 + m;
+                    });
+                    const promedioSalida = Math.round(sumaMinutosSalida / registrosValidos.length);
+                    const hSalida = Math.floor(promedioSalida / 60);
+                    const mSalida = promedioSalida % 60;
+
+                    // Calcular promedio de horas diarias
+                    const totalHoras = registrosValidos.reduce((sum, r) => sum + r.total, 0);
+                    const promedioDiario = totalHoras / registrosValidos.length;
+                    const hPromedio = Math.floor(promedioDiario);
+                    const mPromedio = Math.round((promedioDiario - hPromedio) * 60);
+
+                    return {
+                        entradaPromedio: `${String(hEntrada).padStart(2, '0')}:${String(mEntrada).padStart(2, '0')}`,
+                        salidaPromedio: `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`,
+                        diasTrabajados: registrosValidos.length,
+                        promedioDiario: `${hPromedio}h ${mPromedio}m`
+                    };
+                }
+
+                function actualizarEstadisticas() {
+                    const stats = calcularEstadisticasMes();
+
+                    const elEntrada = $('stat-entrada-promedio');
+                    const elSalida = $('stat-salida-promedio');
+                    const elDias = $('stat-dias-trabajados');
+                    const elPromedio = $('stat-promedio-diario');
+
+                    if (elEntrada) elEntrada.textContent = stats.entradaPromedio;
+                    if (elSalida) elSalida.textContent = stats.salidaPromedio;
+                    if (elDias) elDias.textContent = stats.diasTrabajados;
+                    if (elPromedio) elPromedio.textContent = stats.promedioDiario;
+                }
+
+                function esFinDeSemana() {
+                    const d = new Date().getDay();
+                    return d === 0 || d === 6;
+                }
+
+                function actualizarUI() {
+                    const registros = D.registros();
+                    const horasSemanales = D.horasSemanales();
+                    const horasDiarias = D.horasDiarias();
+                    const diasHabilesConfig = D.diasHabiles();
+                    const vistaActual = D.vistaActual();
+
+                    actualizarListaRegistros(registros);
+
+                    const { inicio: ini, fin: fn } = obtenerSemanaActual();
+                    const hoy = obtenerFechaHoy();
+
+                    // 2. CALCULAR BUFFER
+                    const bufferSemanal = D.calcularBufferSemanal(ini, hoy);
+
+                    const statsEl = $('stats-semana');
+                    const progressEl = $('progress-bar');
+                    const mensajeEl = $('stats-mensaje');
+                    const tituloEl = $('stats-titulo');
+                    const hintEl = $('toggle-hint');
+                    const bufferEl = $('stats-buffer');
+
+                    // 3. RENDERIZAR BUFFER
+                    if (bufferEl) {
+                        bufferEl.innerHTML = '';
+                        if (bufferSemanal !== 0) {
+                            if (Math.abs(bufferSemanal) > 0.01) {
+                                const esPositivo = bufferSemanal > 0;
+                                const bufferIcono = esPositivo ? '✅' : '⚠️';
+                                const bufferColor = esPositivo ? '#60ac94' : '#c05d76';
+                                const bufferTextoHoras = horasATexto(Math.abs(bufferSemanal));
+                                const bufferLabel = esPositivo ? 'extras' : 'faltantes';
+
+                                bufferEl.textContent = '';
+                                const span = document.createElement('span');
+                                span.style.color = bufferColor;
+                                span.style.fontWeight = '500';
+                                span.textContent = `${bufferIcono} ${bufferTextoHoras} ${bufferLabel} esta semana`;
+                                bufferEl.appendChild(span);
+                            }
+                        }
+                    }
+
+                    // 4. LÓGICA ESPECÍFICA DE VISTA
+                    if (vistaActual === 'semana') {
+                        tituloEl.innerHTML = `<svg class="icon"><use href="#icon-calendar-simple" /></svg> Esta Semana`;
+
+                        const tot = registros.filter(r =>
+                            r.fecha >= ini &&
+                            r.fecha <= fn &&
+                            !(r.entrada === '00:00' && r.salida === '00:00') && // Ignorar Feriados
+                            !(r.entrada === '11:11' && r.salida === '11:11')    // Ignorar Ausencias (NUEVO)
+                        ).reduce((s, r) => s + r.total, 0);
+
+                        const horasDescontar = D.calcularHorasFeriadoEnRango(ini, fn);
+                        const objetivoAjustado = Math.max(0, horasSemanales - horasDescontar);
+                        const prog = objetivoAjustado > 0 ? Math.min((tot / objetivoAjustado) * 100, 100) : 100;
+
+                        if (statsEl) statsEl.innerHTML = `<div>${horasATexto(tot)}</div>`;
+                        if (progressEl) {
+                            progressEl.style.width = prog + '%';
+                            setProgressBarColor(progressEl, tot >= objetivoAjustado ? 'green' : 'blue');
+                        }
+
+                        if (mensajeEl) {
+                            const diaSemanaHoy = new Date().getDay(); // 0=Dom, 1=Lun...
+                            let esDiaDeDescanso = false;
+
+                            if (diaSemanaHoy === 0) {
+                                esDiaDeDescanso = (diasHabilesConfig < 7);
+                            } else {
+                                esDiaDeDescanso = (diaSemanaHoy > diasHabilesConfig);
+                            }
+
+                            if (objetivoAjustado === 0) {
+                                mensajeEl.textContent = `Semana sin objetivo. Total: ${horasATexto(tot)}`;
+                            } else if (esDiaDeDescanso) {
+                                // Mensaje de resumen (fin de jornada laboral semanal)
+                                mensajeEl.textContent = tot >= objetivoAjustado ?
+                                    `Hiciste ${horasATexto(tot - objetivoAjustado)} demás` :
+                                    `Faltaron ${horasATexto(objetivoAjustado - tot)}`;
+                            } else {
+                                // Mensaje activo (aún en jornada laboral)
+                                mensajeEl.textContent = tot >= objetivoAjustado ?
+                                    `¡Bien! ${horasATexto(tot - objetivoAjustado)} extras` :
+                                    `Faltan ${horasATexto(objetivoAjustado - tot)}`;
+                            }
+                        }
+                        if (hintEl) hintEl.textContent = 'Toca para ver Hoy';
+
+                    } else {
+                        // VISTA DIARIA
+                        tituloEl.innerHTML = `<svg class="icon"><use href="#icon-clock" /></svg> Hoy`;
+                        const regHoy = registros.find(r => r.fecha === hoy);
+                        let tiempoTranscurrido = 0;
+                        let objetivoDiario = horasDiarias;
+
+                        if (regHoy && regHoy.entrada) {
+                            const isFeriadoHoy = regHoy.entrada === '00:00' && regHoy.salida === '00:00';
+                            // 1. Detectamos si es Ausencia
+                            const isAusenciaHoy = regHoy.entrada === '11:11' && regHoy.salida === '11:11';
+
+                            if (isFeriadoHoy) {
+                                if (statsEl) statsEl.innerHTML = `<div>🥳 Feriado</div>`;
+                                if (progressEl) {
+                                    progressEl.style.width = '100%';
+                                    setProgressBarColor(progressEl, 'purple');
+                                }
+                                if (mensajeEl) mensajeEl.textContent = `¡Día no laboral!`;
+
+                            } else if (isAusenciaHoy) {
+                                if (statsEl) statsEl.innerHTML = `<div>✈️ Ausencia</div>`;
+                                if (progressEl) {
+                                    progressEl.style.width = '100%';
+                                    setProgressBarColor(progressEl, 'purple'); // color de barra por ausencia
+                                }
+                                if (mensajeEl) mensajeEl.textContent = `¡Día justificado!`;
+
+                            } else {
+                                // Lógica normal de trabajo (horas reales)
+                                if (regHoy.salida) {
+                                    tiempoTranscurrido = regHoy.total;
+                                } else {
+                                    const ahora = new Date();
+                                    const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
+                                    const t = D.calcularHoras(regHoy.entrada, horaActual, regHoy.tiempoFuera || null);
+                                    tiempoTranscurrido = t ? t.total : 0;
+                                }
+
+                                const prog = objetivoDiario > 0 ? Math.min((tiempoTranscurrido / objetivoDiario) * 100, 100) : 100;
+
+                                if (statsEl) statsEl.innerHTML = `<div>${horasATexto(tiempoTranscurrido)}</div>`;
+                                if (progressEl) {
+                                    progressEl.style.width = prog + '%';
+                                    progressEl.style.backgroundColor = '';
+                                }
+
+                                if (regHoy.salida) {
+                                    setProgressBarColor(progressEl, tiempoTranscurrido >= objetivoDiario ? 'green' : 'red');
+                                    const dif = tiempoTranscurrido - objetivoDiario;
+                                    if (mensajeEl) mensajeEl.textContent = dif >= 0 ? `${horasATexto(dif)} extras` : `Faltaron ${horasATexto(Math.abs(dif))}`;
+                                } else {
+                                    setProgressBarColor(progressEl, 'blue');
+                                    const faltante = Math.max(0, objetivoDiario - tiempoTranscurrido);
+                                    if (mensajeEl) mensajeEl.textContent = tiempoTranscurrido >= objetivoDiario ? `¡Cumplido! (+${horasATexto(tiempoTranscurrido - objetivoDiario)})` : `Faltan ${horasATexto(faltante)}`;
+                                }
+                            }
+                        } else {
+                            if (progressEl) {
+                                progressEl.style.width = '0%';
+                                setProgressBarColor(progressEl, 'blue');
+                            }
+                            if (statsEl) statsEl.innerHTML = `<div style="font-size: 1.8rem;">😴 Sin actividad</div>`;
+                            if (mensajeEl) mensajeEl.textContent = '...';
+                        }
+                        if (hintEl) hintEl.textContent = 'Toca para ver la Semana';
+                    }
+                    actualizarEstadisticas()
+                }
+
+                function alternarTema() {
+                    let temaOscuro = !D.cargarConfiguracion().temaOscuro;
+                    document.body.classList.toggle('dark-mode');
+                    try { localStorage.setItem('temaOscuro', temaOscuro); } catch (e) { }
+
+                    const toggleBtn = $('theme-toggle').querySelector('use');
+                    if (temaOscuro) {
+                        toggleBtn.setAttribute('href', '#icon-sun');
+                    } else {
+                        toggleBtn.setAttribute('href', '#icon-moon');
+                    }
+                }
+
+                function alternarVista() {
+                    let vistaActual = D.vistaActual() === 'semana' ? 'diaria' : 'semana';
+                    D.setVistaActual(vistaActual);
+                    try {
+                        localStorage.setItem('vistaActual', vistaActual);
+                    } catch (e) { }
+                    actualizarUI();
+                }
+
+                function pegarHoraActual(id) {
+                    const now = new Date();
+                    const h = String(now.getHours()).padStart(2, '0');
+                    const m = String(now.getMinutes()).padStart(2, '0');
+                    const c = $(id);
+                    if (c) c.value = `${h}:${m}`;
+                }
+
+                function limpiarCampo(id) {
+                    const c = document.getElementById(id);
+                    if (c) c.value = '';
+                }
+
+                function formatearInput(e) {
+                    let v = e.target.value.replace(/[^0-9]/g, '');
+                    if (v.length >= 3) v = v.slice(0, 2) + ':' + v.slice(2, 4);
+                    e.target.value = v;
+                }
+
+                function actualizarFeedbackConfig() {
+                    const dias = parseFloat($('config-dias-habiles').value) || 5;
+                    const horas = parseFloat($('config-horas-diarias').value) || 7;
+                    const total = dias * horas;
+                    $('config-total-feedback').textContent = `(Total semanal: ${total}hs)`;
+                }
+
+                function incrementarHorasDiarias() {
+                    let valorActual = parseFloat($('config-horas-diarias').value);
+                    if (isNaN(valorActual)) valorActual = D.horasDiarias();
+                    let nuevoValor = valorActual + 0.5;
+                    if (nuevoValor > 24) nuevoValor = 24;
+                    $('config-horas-diarias').value = nuevoValor;
+                    actualizarFeedbackConfig();
+                }
+
+                function decrementarHorasDiarias() {
+                    let valorActual = parseFloat($('config-horas-diarias').value);
+                    if (isNaN(valorActual)) valorActual = D.horasDiarias();
+                    let nuevoValor = valorActual - 0.5;
+                    if (nuevoValor < 1) nuevoValor = 1;
+                    $('config-horas-diarias').value = nuevoValor;
+                    actualizarFeedbackConfig();
+                }
+
+                function incrementarDiasHabiles() {
+                    let valorActual = parseFloat($('config-dias-habiles').value);
+                    if (isNaN(valorActual)) valorActual = D.diasHabiles();
+                    let nuevoValor = valorActual + 1;
+                    if (nuevoValor > 7) nuevoValor = 7;
+                    $('config-dias-habiles').value = nuevoValor;
+                    actualizarFeedbackConfig();
+                }
+
+                function decrementarDiasHabiles() {
+                    let valorActual = parseFloat($('config-dias-habiles').value);
+                    if (isNaN(valorActual)) valorActual = D.diasHabiles();
+                    let nuevoValor = valorActual - 1;
+                    if (nuevoValor < 1) nuevoValor = 1;
+                    $('config-dias-habiles').value = nuevoValor;
+                    actualizarFeedbackConfig();
+                }
+
+                function mostrarConfig() {
+                    $('config-dias-habiles').value = D.diasHabiles();
+                    $('config-horas-diarias').value = D.horasDiarias();
+                    actualizarFeedbackConfig();
+                    $('modal-config').classList.add('show');
+                }
+
+                function cerrarConfig() {
+                    $('modal-config').classList.remove('show');
+                }
+
+                function cerrarEdicion() {
+                    $('modal-editar').classList.remove('show');
+                    D.setEditandoId(null);
+                }
+
+                function mostrarImportar() {
+                    $('file-import').value = '';
+                    $('modal-importar').classList.add('show');
+                }
+
+                function cerrarImportar() {
+                    $('modal-importar').classList.remove('show');
+                }
+
+                function mostrarStats() {
+                    // Nos aseguramos que los datos estén frescos al abrir
+                    actualizarEstadisticas();
+                    $('modal-stats').classList.add('show');
+                }
+
+                function cerrarStats() {
+                    $('modal-stats').classList.remove('show');
+                }
+
+                function init() {
+                    if (typeof (Storage) === "undefined") {
+                        alert("Tu navegador no soporta localStorage.");
+                        return;
+                    }
+
+                    const config = D.cargarConfiguracion();
+                    const temaOscuro = config.temaOscuro;
+                    D.setVistaActual(config.vistaActual);
+
+                    D.setDiasHabiles(config.diasHabiles);
+                    D.setHorasDiarias(config.horasDiarias);
+
+                    D.registros().splice(0, D.registros().length, ...D.cargarConVerificacion());
+                    HistoryManager.saveState(D.registros());
+                    HistoryManager.updateButtons();
+
+
+
+                    if (localStorage.getItem('horasDiarias') === null) {
+                        localStorage.setItem('horasDiarias', config.horasDiarias);
+                    }
+                    if (localStorage.getItem('diasHabiles') === null) {
+                        localStorage.setItem('diasHabiles', config.diasHabiles);
+                    }
+
+                    const toggleBtn = $('theme-toggle').querySelector('use');
+                    if (temaOscuro) {
+                        document.body.classList.add('dark-mode');
+                        toggleBtn.setAttribute('href', '#icon-sun');
+                    } else {
+                        toggleBtn.setAttribute('href', '#icon-moon');
+                    }
+
+                    $('fecha').value = obtenerFechaHoy();
+                    ['entrada', 'salida', 'edit-entrada', 'edit-salida', 'edit-tiempo-fuera'].forEach(id => {
+                        const el = $(id);
+                        if (el) el.addEventListener('input', formatearInput);
+                    });
+
+                    // 1. Configurar navegación con ENTER en Entrada -> Salida
+                    const inputEntrada = $('entrada');
+                    const inputSalida = $('salida');
+                    const btnAgregar = $('btn-agregar');
+
+                    if (inputEntrada && inputSalida) {
+                        inputEntrada.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault(); // Evita que el formulario se envíe o haga cosas raras
+                                inputSalida.focus(); // Mueve el cursor al siguiente campo
+                            }
+                        });
+                    }
+
+                    // 2. Configurar acción con ENTER en Salida -> Registrar
+                    if (inputSalida && btnAgregar) {
+                        inputSalida.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                btnAgregar.click(); // Simula un clic en el botón Registrar
+                            }
+                        });
+                    }
+
+                    window.UILogic = {
+                        alternarTema, mostrarConfig, cerrarConfig, pegarHoraActual, alternarVista,
+                        cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
+                        mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
+                        incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
+                        incrementarDiasHabiles, decrementarDiasHabiles, obtenerFechaHoy, mostrarFiltros,
+                        cerrarFiltros, mostrarAyuda, cerrarAyuda, mostrarStats, cerrarStats,
+                    };
+                    window.DataManagement = {
+                        agregarRegistro: D.agregarRegistro, guardarConfig: D.guardarConfig, exportarJSON: D.exportarJSON,
+                        mostrarImportar: mostrarImportar, importarDatos: D.importarDatos, borrarTodoHistorial: D.borrarTodoHistorial,
+                        guardarEdicion: D.guardarEdicion, eliminarRegistroActual: D.eliminarRegistroActual, cargarMasRegistros: D.cargarMasRegistros,
+                        undoAction: D.undoAction, redoAction: D.redoAction, aplicarFiltros: D.aplicarFiltros,
+                        limpiarFiltros: D.limpiarFiltros,
+                    };
+                    window.HistoryManager = {
+                        undo: D.undoAction,
+                        redo: D.redoAction
+                    };
+
+                    actualizarUI();
+                    setInterval(actualizarUI, 60000);
+                    console.log('Sistema iniciado correctamente Luigibosca');
+                }
+
+                function mostrarFiltros() {
+                    $('modal-filtros').classList.add('show');
+                }
+
+                function cerrarFiltros() {
+                    $('modal-filtros').classList.remove('show');
+                }
+
+                function mostrarAyuda() {
+                    $('modal-ayuda').classList.add('show');
+                }
+
+                function cerrarAyuda() {
+                    $('modal-ayuda').classList.remove('show');
+                }
+
+                return {
+                    init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, mostrarConfig, cerrarConfig,
+                    cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError,
+                    limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
+                    incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
+                    incrementarDiasHabiles, decrementarDiasHabiles, mostrarFiltros, cerrarFiltros, mostrarAyuda,
+                    cerrarAyuda
+                };
+
+            })(SecurityAndUtils, DataManagement);
+
+            UILogic.init();
+        })();
+    </script>
+    <script>
+        // Registro del Service Worker para PWA despues del script principal //
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./sw.js') //RUTA DEL SERVICE WORKER
+                    .then(function (registration) {
+                        //console.log('ServiceWorker registrado con éxito: ', registration.scope);
+                    }, function (err) {
+                        console.log('ServiceWorker falló: ', err);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>
+
+<!--// ====================================================================
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.77
+    // ====================================================================
+    1) Modificaciones en la tarjeta estadisticas
+    -->
