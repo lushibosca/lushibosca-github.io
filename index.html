@@ -146,25 +146,32 @@
                 overflow-y: auto;
                 padding: 0.5rem;
             }
+        }
 
-            /* Scrollbar Personalizado */
-            #lista-registros::-webkit-scrollbar {
-                width: 8px;
-            }
+        /* --- Scrollbar Reutilizable (Clase Utilitaria) --- */
+        .custom-scroll {
+            overflow-y: auto;
+            overflow-x: hidden;
+            /* Activa el scroll si el contenido es muy largo */
+        }
 
-            #lista-registros::-webkit-scrollbar-track {
-                background: var(--bg-body);
-                border-radius: 4px;
-            }
+        /* Diseño de la barra */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
 
-            #lista-registros::-webkit-scrollbar-thumb {
-                background: var(--border);
-                border-radius: 4px;
-            }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: var(--bg-body);
+            border-radius: 4px;
+        }
 
-            #lista-registros::-webkit-scrollbar-thumb:hover {
-                background: var(--text-muted);
-            }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
         }
 
         /* --- Iconos --- */
@@ -416,7 +423,7 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 1rem;
-            margin-bottom: 0.5rem;
+            margin: 0.5rem;
             display: flex;
             justify-content: space-between;
             align-items: start;
@@ -514,7 +521,7 @@
 
         .toast {
             position: fixed;
-            bottom: 2rem;
+            top: 5rem;
             right: 2rem;
             background: #1f2937;
             color: white;
@@ -522,12 +529,13 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
             opacity: 0;
-            transform: translateY(100px);
+            transform: translateX(100px);
             transition: all 0.3s;
             z-index: 1000;
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            white-space: pre-line;
         }
 
         .toast.show {
@@ -589,7 +597,6 @@
             margin-top: 1rem;
         }
 
-        /* Contenedor con scroll para estadísticas */
         #modal-stats .modal-content {
             max-height: 80vh;
             display: flex;
@@ -600,25 +607,6 @@
             max-height: 500px;
             overflow-y: auto;
             padding-right: 0.5rem;
-        }
-
-        /* Scrollbar personalizado para estadísticas */
-        #modal-stats .stats-grid::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        #modal-stats .stats-grid::-webkit-scrollbar-track {
-            background: var(--bg-body);
-            border-radius: 4px;
-        }
-
-        #modal-stats .stats-grid::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-        }
-
-        #modal-stats .stats-grid::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
         }
 
         @media (max-width: 640px) {
@@ -734,6 +722,16 @@
             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" class="icon-line" stroke="currentColor"></path>
             <line x1="12" y1="17" x2="12.01" y2="17" class="icon-line" stroke-width="3" stroke="currentColor"></line>
         </symbol>
+        <symbol id="icon-install" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" class="icon-line" stroke="currentColor"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" class="icon-line" stroke="currentColor"></path>
+            <line x1="12" y1="16" x2="12" y2="16.01" class="icon-line" stroke-width="3" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-stats" viewBox="0 0 24 24">
+            <line x1="18" y1="20" x2="18" y2="10" class="icon-line" stroke="currentColor"></line>
+            <line x1="12" y1="20" x2="12" y2="4" class="icon-line" stroke="currentColor"></line>
+            <line x1="6" y1="20" x2="6" y2="14" class="icon-line" stroke="currentColor"></line>
+        </symbol>
     </svg>
 
     <div class="header">
@@ -741,6 +739,12 @@
                 <use href="#icon-clock" />
             </svg> Horarios</h1>
         <div class="header-buttons">
+            <button class="icon-btn" id="btn-install" style="display: none;" onclick="PWAInstaller.instalarApp()"
+                title="Instalar aplicación">
+                <svg class="icon">
+                    <use href="#icon-install" />
+                </svg>
+            </button>
             <button class="icon-btn" id="theme-toggle" onclick="UILogic.alternarTema()">
                 <svg class="icon">
                     <use href="#icon-moon" />
@@ -815,9 +819,9 @@
                 style="animation-delay: 0.3s; cursor: pointer; text-align: center;" onclick="UILogic.mostrarStats()">
                 <h2 style="margin: 0; justify-content: center">
                     <svg class="icon">
-                        <use href="#icon-list" />
+                        <use href="#icon-stats" />
                     </svg>
-                    Ver Estadísticas del Mes
+                    Estadísticas
                 </h2>
             </div>
         </div>
@@ -825,7 +829,7 @@
         <div class="right-column">
             <div class="card animated-card" style="animation-delay: 0.2s;">
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                     <h2 style="margin-bottom: 0;">
                         <svg class="icon">
                             <use href="#icon-list" />
@@ -849,7 +853,7 @@
                         </button>
                     </div>
                 </div>
-                <div id="lista-registros"></div>
+                <div id="lista-registros" class="custom-scroll"></div>
                 <button id="btn-cargar-mas" class="btn-small btn-backup" style="margin-top: 1rem; display: none;"
                     onclick="DataManagement.cargarMasRegistros()"></button>
             </div>
@@ -865,7 +869,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v5.80</span> <!-- Version -->
+                <span class="version-text">v5.85</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -991,14 +995,14 @@
                     <svg class="icon">
                         <use href="#icon-list" />
                     </svg>
-                    Combinar (Agregar faltantes)
+                    Combinar
                 </button>
 
                 <button class="btn-delete" onclick="DataManagement.importarDatos('replace')">
                     <svg class="icon">
                         <use href="#icon-trash" />
                     </svg>
-                    Reemplazar todo (Borrar actual)
+                    Reemplazar
                 </button>
 
                 <button class="btn-cancel" onclick="UILogic.cerrarImportar()">
@@ -1094,13 +1098,20 @@
             <h3>
                 <span class="modal-title-block">
                     <svg class="icon">
-                        <use href="#icon-list" />
+                        <use href="#icon-stats" />
                     </svg>
-                    Estadísticas del Mes
+                    Estadísticas
                 </span>
             </h3>
 
-            <div class="stats-grid">
+            <div class="form-group">
+                <label>Período</label>
+                <select id="select-mes-stats" onchange="UILogic.cambiarMesStats()"
+                    style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--input-bg); color: var(--text-main);">
+                </select>
+            </div>
+
+            <div class="stats-grid custom-scroll">
                 <div class="stat-item">
                     <div class="stat-label">Días trabajados</div>
                     <div class="stat-value" id="stat-dias-trabajados">0</div>
@@ -1128,6 +1139,12 @@
             </div>
 
             <div class="btn-group" style="margin-top: 1.5rem;">
+                <button class="btn-backup" onclick="UILogic.generarReporte()">
+                    <svg class="icon">
+                        <use href="#icon-download" />
+                    </svg>
+                    Reporte
+                </button>
                 <button class="btn-cancel" onclick="UILogic.cerrarStats()">
                     Cerrar
                 </button>
@@ -1140,6 +1157,75 @@
             'use strict';
 
             const $ = id => document.getElementById(id);
+
+            // ====================================================================
+            // PWA INSTALLER MODULE
+            // ====================================================================
+            const PWAInstaller = (function () {
+                let deferredPrompt = null;
+                const btnInstall = document.getElementById('btn-install');
+
+                function init() {
+                    // Detectar si ya está instalada
+                    if (window.matchMedia('(display-mode: standalone)').matches ||
+                        window.navigator.standalone === true) {
+                        // Ya está instalada, no mostrar botón
+                        if (btnInstall) btnInstall.style.display = 'none';
+                        return;
+                    }
+
+                    // Capturar el evento beforeinstallprompt
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        // Prevenir el prompt automático
+                        e.preventDefault();
+                        // Guardar el evento para usarlo después
+                        deferredPrompt = e;
+                        // Mostrar el botón de instalación
+                        if (btnInstall) {
+                            btnInstall.style.display = 'flex';
+                        }
+                    });
+
+                    // Detectar cuando se instala la app
+                    window.addEventListener('appinstalled', () => {
+                        // Ocultar el botón
+                        if (btnInstall) btnInstall.style.display = 'none';
+                        deferredPrompt = null;
+
+                        // Mostrar notificación de éxito
+                        if (window.UILogic) {
+                            UILogic.mostrarToast('¡App instalada con éxito!', 'success');
+                        }
+                    });
+                }
+
+                async function instalarApp() {
+                    if (!deferredPrompt) {
+                        console.log('No hay prompt de instalación disponible');
+                        return;
+                    }
+
+                    // Mostrar el prompt de instalación
+                    deferredPrompt.prompt();
+
+                    // Esperar a que el usuario responda
+                    const { outcome } = await deferredPrompt.userChoice;
+
+                    if (outcome === 'accepted') {
+                        console.log('Usuario aceptó la instalación');
+                    } else {
+                        console.log('Usuario rechazó la instalación');
+                    }
+
+                    // Limpiar el prompt
+                    deferredPrompt = null;
+                }
+
+                return {
+                    init,
+                    instalarApp
+                };
+            })();
 
             // ====================================================================
             // I. SECURITY AND UTILS MODULE
@@ -1290,20 +1376,15 @@
                 let currentIndex = -1;
                 const MAX_HISTORY = 50;
 
-                // Función auxiliar para copia profunda segura
                 function deepClone(obj) {
-                    // Manejo de errores y casos edge
+                    if (obj === null || obj === undefined) return obj;
+
                     try {
-                        if (obj === null || obj === undefined) {
-                            return obj;
-                        }
-                        return JSON.parse(JSON.stringify(obj));
+                        return structuredClone(obj);
+
                     } catch (e) {
-                        console.error('Error en deepClone:', e);
-                        // Retornar estructura vacía según tipo
-                        if (Array.isArray(obj)) return [];
-                        if (typeof obj === 'object') return {};
-                        return null;
+                        console.warn('Fallo en structuredClone. Usando fallback JSON.stringify.', e);
+                        return JSON.parse(JSON.stringify(obj));
                     }
                 }
 
@@ -1621,45 +1702,53 @@
 
                     const registroExistente = registros.find(r => r.fecha === f);
 
+                    // Detectar si solo quiere agregar salida
                     if (!e && s) {
-                        if (!registroExistente || registroExistente.salida) {
+                        if (!registroExistente) {
+                            // No existe ningún registro para esa fecha
+                            UILogic.resetearBoton(btn);
+                            UILogic.mostrarToast('Debes registrar una entrada primero', 'error');
+                            return;
+                        }
+
+                        if (registroExistente.salida) {
+                            // Ya existe un registro completo (entrada + salida)
+                            UILogic.resetearBoton(btn);
+                            UILogic.mostrarToast('Ya existe un registro completo para esta fecha', 'error');
+                            return;
+                        }
+
+                        if (!registroExistente.entrada) {
+                            // Existe registro pero sin entrada (caso raro, pero por seguridad)
                             UILogic.resetearBoton(btn);
                             UILogic.mostrarToast('Debes registrar una entrada primero', 'error');
                             return;
                         }
                     }
 
-                    if (registroExistente && (!e || !s)) {
-                        if (!e && s && registroExistente.entrada && !registroExistente.salida) {
+                    // ✅ AGREGAR SALIDA DIRECTAMENTE si existe entrada sin salida
+                    if (registroExistente && !e && s && registroExistente.entrada && !registroExistente.salida) {
+                        registroExistente.salida = s;
+                        let t = calcularHoras(registroExistente.entrada, s, registroExistente.tiempoFuera || null);
+                        registroExistente.horas = t?.horas || 0;
+                        registroExistente.minutos = t?.minutos || 0;
+                        registroExistente.total = t?.total || 0;
+
+                        HistoryManager.saveState(registros);
+
+                        const saved = guardarYActualizar();
+                        if (saved) {
+                            UILogic.mostrarToast(`✅ Salida ${s} agregada \n(entrada: ${registroExistente.entrada})`, 'success');
                             UILogic.resetearBoton(btn);
-                            if (confirm(`Ya existe una entrada a las ${registroExistente.entrada}. ¿Agregar salida ${s}?`)) {
-                                registroExistente.salida = s;
-                                let t = calcularHoras(registroExistente.entrada, s, registroExistente.tiempoFuera || null);
-                                registroExistente.horas = t?.horas || 0;
-                                registroExistente.minutos = t?.minutos || 0;
-                                registroExistente.total = t?.total || 0;
-
-                                HistoryManager.saveState(registros);
-
-                                const saved = guardarYActualizar();
-                                if (saved) {
-                                    UILogic.mostrarToast('Salida agregada', 'success');
-                                    UILogic.resetearBoton(btn);
-                                    $('fecha').value = UILogic.obtenerFechaHoy();
-                                    $('salida').value = '';
-                                } else {
-                                    UILogic.resetearBoton(btn);
-                                }
-                                return;
-                            }
-                            return;
+                            $('fecha').value = UILogic.obtenerFechaHoy();
+                            $('salida').value = '';
                         } else {
                             UILogic.resetearBoton(btn);
-                            UILogic.mostrarToast('Ya existe un registro para esta fecha', 'error');
-                            return;
                         }
+                        return;
                     }
 
+                    // Validación para registros con ambos campos o solo entrada
                     if (registroExistente) {
                         UILogic.resetearBoton(btn);
                         UILogic.mostrarToast('Ya existe un registro para esta fecha', 'error');
@@ -2503,10 +2592,19 @@
                     lista.appendChild(fragmento);
                 }
 
-                function calcularEstadisticasMes() {
-                    const hoy = new Date();
-                    const mesActual = hoy.getMonth();
-                    const añoActual = hoy.getFullYear();
+                function calcularEstadisticasMes(mesAnio = null) {
+                    // Si no se especifica mes, usar el actual
+                    let mesActual, añoActual;
+
+                    if (mesAnio) {
+                        const [año, mes] = mesAnio.split('-').map(Number);
+                        añoActual = año;
+                        mesActual = mes - 1; // JavaScript usa 0-11 para meses
+                    } else {
+                        const hoy = new Date();
+                        mesActual = hoy.getMonth();
+                        añoActual = hoy.getFullYear();
+                    }
 
                     const registrosMes = D.registros().filter(r => {
                         const [año, mes] = r.fecha.split('-').map(Number);
@@ -2575,8 +2673,8 @@
                     };
                 }
 
-                function actualizarEstadisticas() {
-                    const stats = calcularEstadisticasMes();
+                function actualizarEstadisticas(mesAnio = null) {
+                    const stats = calcularEstadisticasMes(mesAnio);
 
                     const elEntrada = $('stat-entrada-promedio');
                     const elSalida = $('stat-salida-promedio');
@@ -2751,7 +2849,7 @@
                                 } else {
                                     setProgressBarColor(progressEl, 'blue');
                                     const faltante = Math.max(0, objetivoDiario - tiempoTranscurrido);
-                                    if (mensajeEl) mensajeEl.textContent = tiempoTranscurrido >= objetivoDiario ? `¡Te podes ir! (+${horasATexto(tiempoTranscurrido - objetivoDiario)})` : `Faltan ${horasATexto(faltante)}`;
+                                    if (mensajeEl) mensajeEl.textContent = tiempoTranscurrido >= objetivoDiario ? `Te podes ir! (+${horasATexto(tiempoTranscurrido - objetivoDiario)})` : `Faltan ${horasATexto(faltante)}`;
                                 }
                             }
                         } else {
@@ -2877,9 +2975,258 @@
                 }
 
                 function mostrarStats() {
-                    // Nos aseguramos que los datos estén frescos al abrir
-                    actualizarEstadisticas();
+                    // Llenar el selector con los meses disponibles
+                    poblarSelectorMeses();
+
+                    // Actualizar estadísticas con el mes seleccionado (por defecto el actual)
+                    const selectMes = $('select-mes-stats');
+                    if (selectMes && selectMes.value) {
+                        actualizarEstadisticas(selectMes.value);
+                    } else {
+                        actualizarEstadisticas();
+                    }
+
                     $('modal-stats').classList.add('show');
+                }
+
+                function poblarSelectorMeses() {
+                    const selectMes = $('select-mes-stats');
+                    if (!selectMes) return;
+
+                    // Obtener todos los meses únicos de los registros
+                    const mesesUnicos = new Set();
+                    D.registros().forEach(r => {
+                        const mesAnio = r.fecha.substring(0, 7); // "2025-01"
+                        mesesUnicos.add(mesAnio);
+                    });
+
+                    // Convertir a array y ordenar (más reciente primero)
+                    const mesesOrdenados = Array.from(mesesUnicos).sort().reverse();
+
+                    // Limpiar opciones previas
+                    selectMes.innerHTML = '';
+
+                    // Si no hay registros
+                    if (mesesOrdenados.length === 0) {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'Sin registros';
+                        selectMes.appendChild(option);
+                        return;
+                    }
+
+                    // Agregar mes actual por defecto si tiene registros
+                    const hoy = new Date();
+                    const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+
+                    // Crear opciones
+                    mesesOrdenados.forEach(mesAnio => {
+                        const option = document.createElement('option');
+                        option.value = mesAnio;
+
+                        // Formatear texto del mes
+                        const [año, mes] = mesAnio.split('-');
+                        const fecha = new Date(año, mes - 1, 1);
+                        const nombreMes = fecha.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+                        option.textContent = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+
+                        // Seleccionar el mes actual por defecto
+                        if (mesAnio === mesActual) {
+                            option.selected = true;
+                        }
+
+                        selectMes.appendChild(option);
+                    });
+                }
+
+                function cambiarMesStats() {
+                    const selectMes = $('select-mes-stats');
+                    if (!selectMes) return;
+
+                    const mesSeleccionado = selectMes.value;
+                    actualizarEstadisticas(mesSeleccionado);
+                }
+
+                function generarReporte() {
+                    const selectMes = $('select-mes-stats');
+                    const mesSeleccionado = selectMes ? selectMes.value : null;
+
+                    if (!mesSeleccionado) {
+                        mostrarToast('No hay mes seleccionado', 'error');
+                        return;
+                    }
+
+                    const stats = calcularEstadisticasMes(mesSeleccionado);
+                    const nombreMes = selectMes.options[selectMes.selectedIndex].text;
+
+                    // Obtener registros del mes
+                    const [año, mes] = mesSeleccionado.split('-').map(Number);
+                    const registrosMes = D.registros().filter(r => {
+                        const [aReg, mReg] = r.fecha.split('-').map(Number);
+                        return aReg === año && mReg === mes;
+                    });
+
+                    // ============================================
+                    // ESTRUCTURA MODULAR DEL REPORTE
+                    // ============================================
+
+                    const reporte = {
+                        // --- ENCABEZADO ---
+                        header: () => `
+╔════════════════════════════════════════════════════════════╗
+║              REPORTE DE HORAS TRABAJADAS                   ║
+╚════════════════════════════════════════════════════════════╝
+
+📅 Período: ${nombreMes}
+📊 Generado: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES')}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+
+                        // --- RESUMEN GENERAL ---
+                        resumenGeneral: () => `
+
+📈 RESUMEN GENERAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   • Días trabajados:        ${stats.diasTrabajados}
+   • Feriados:               ${stats.feriados}
+   • Ausencias:              ${stats.ausencias}
+   
+   • Entrada promedio:       ${stats.entradaPromedio}
+   • Salida promedio:        ${stats.salidaPromedio}
+   • Promedio diario:        ${stats.promedioDiario}`,
+
+                        // --- DETALLE DIARIO ---
+                        detalleDiario: () => {
+                            let seccion = `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 DETALLE DIARIO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+
+                            // Ordenar registros por fecha ascendente
+                            const registrosOrdenados = [...registrosMes].sort((a, b) =>
+                                new Date(a.fecha) - new Date(b.fecha)
+                            );
+
+                            registrosOrdenados.forEach(r => {
+                                const dia = obtenerNombreDia(r.fecha);
+                                const fecha = r.fecha.split('-').reverse().join('/');
+
+                                const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
+                                const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+
+                                let linea = `${dia.padEnd(10)} ${fecha}  `;
+
+                                if (esFeriado) {
+                                    linea += `🥳 FERIADO`;
+                                } else if (esAusencia) {
+                                    linea += `✈️ AUSENCIA`;
+                                } else {
+                                    const entrada = r.entrada || '--:--';
+                                    const salida = r.salida || '--:--';
+                                    const total = r.salida ? `${r.horas}h ${r.minutos}m` : 'Incompleto';
+                                    const tiempoFuera = r.tiempoFuera ? ` (${r.tiempoFuera} fuera)` : '';
+                                    linea += `${entrada} → ${salida}  [${total}]${tiempoFuera}`;
+                                }
+
+                                seccion += linea + '\n';
+                            });
+
+                            return seccion;
+                        },
+
+                        // --- TOTALES DEL MES ---
+                        totalesMes: () => {
+                            const totalHoras = registrosMes
+                                .filter(r => r.entrada !== '00:00' && r.entrada !== '11:11')
+                                .reduce((sum, r) => sum + r.total, 0);
+
+                            const horasTotales = Math.floor(totalHoras);
+                            const minutosTotales = Math.round((totalHoras - horasTotales) * 60);
+
+                            // Calcular total semanal (si el mes incluye la semana actual)
+                            const { inicio: ini, fin: fn } = obtenerSemanaActual();
+                            const registrosSemanaActual = registrosMes.filter(r =>
+                                r.fecha >= ini &&
+                                r.fecha <= fn &&
+                                r.entrada !== '00:00' &&
+                                r.entrada !== '11:11'
+                            );
+
+                            const totalSemanal = registrosSemanaActual.reduce((sum, r) => sum + r.total, 0);
+                            const horasSemanales = Math.floor(totalSemanal);
+                            const minutosSemanales = Math.round((totalSemanal - horasSemanales) * 60);
+
+                            let seccionSemanal = '';
+                            if (registrosSemanaActual.length > 0) {
+                                seccionSemanal = `\n   • Total semana actual:     ${horasSemanales}h ${minutosSemanales}m (${totalSemanal.toFixed(2)}h)`;
+                            }
+
+                            return `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💼 TOTALES DEL MES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   • Total horas trabajadas:  ${horasTotales}h ${minutosTotales}m (${totalHoras.toFixed(2)}h)${seccionSemanal}`;
+                        },
+
+                        // --- CONFIGURACIÓN ---
+                        configuracion: () => `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚙️ CONFIGURACIÓN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   • Horas diarias:          ${D.horasDiarias()}
+   • Días hábiles/semana:    ${D.diasHabiles()}
+   • Horas semanales:        ${D.horasSemanales()}`,
+
+                        // --- FOOTER ---
+                        footer: () => `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Generado por Sistema de Horarios version v5.84
+`
+                    };
+
+                    // ============================================
+                    // GENERAR CONTENIDO COMPLETO
+                    // ============================================
+                    // secciones
+                    const contenido =
+                        reporte.header() +
+                        reporte.resumenGeneral() +
+                        reporte.detalleDiario() +
+                        reporte.totalesMes() +
+                        reporte.configuracion() +
+                        reporte.footer();
+
+                    // ============================================
+                    // DESCARGAR ARCHIVO
+                    // ============================================
+                    try {
+                        const blob = new Blob([contenido], { type: 'text/plain;charset=utf-8' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `reporte_${mesSeleccionado}.txt`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+
+                        mostrarToast('✅ Reporte generado', 'success');
+                    } catch (e) {
+                        console.error('Error generando reporte:', e);
+                        mostrarToast('Error al generar reporte', 'error');
+                    }
                 }
 
                 function cerrarStats() {
@@ -2926,30 +3273,6 @@
                         if (el) el.addEventListener('input', formatearInput);
                     });
 
-                    // 1. Configurar navegación con ENTER en Entrada -> Salida
-                    const inputEntrada = $('entrada');
-                    const inputSalida = $('salida');
-                    const btnAgregar = $('btn-agregar');
-
-                    if (inputEntrada && inputSalida) {
-                        inputEntrada.addEventListener('keydown', function (e) {
-                            if (e.key === 'Enter') {
-                                e.preventDefault(); // Evita que el formulario se envíe o haga cosas raras
-                                inputSalida.focus(); // Mueve el cursor al siguiente campo
-                            }
-                        });
-                    }
-
-                    // 2. Configurar acción con ENTER en Salida -> Registrar
-                    if (inputSalida && btnAgregar) {
-                        inputSalida.addEventListener('keydown', function (e) {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                btnAgregar.click(); // Simula un clic en el botón Registrar
-                            }
-                        });
-                    }
-
                     window.UILogic = {
                         alternarTema, mostrarConfig, cerrarConfig, pegarHoraActual, alternarVista,
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
@@ -2957,6 +3280,7 @@
                         incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                         incrementarDiasHabiles, decrementarDiasHabiles, obtenerFechaHoy, mostrarFiltros,
                         cerrarFiltros, mostrarAyuda, cerrarAyuda, mostrarStats, cerrarStats,
+                        cambiarMesStats, generarReporte
                     };
                     window.DataManagement = {
                         agregarRegistro: D.agregarRegistro, guardarConfig: D.guardarConfig, exportarJSON: D.exportarJSON,
@@ -2969,6 +3293,12 @@
                         undo: D.undoAction,
                         redo: D.redoAction
                     };
+                    window.PWAInstaller = {
+                        instalarApp: PWAInstaller.instalarApp
+                    };
+
+                    // Inicializar PWA Installer
+                    PWAInstaller.init();
 
                     actualizarUI();
                     setInterval(actualizarUI, 60000);
@@ -2997,7 +3327,7 @@
                     limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                     incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                     incrementarDiasHabiles, decrementarDiasHabiles, mostrarFiltros, cerrarFiltros, mostrarAyuda,
-                    cerrarAyuda
+                    cerrarAyuda, mostrarStats, cerrarStats, cambiarMesStats, generarReporte
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -3023,8 +3353,9 @@
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.80
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.85
     // ====================================================================
-    1) Agregado estadisticas de feriados y ausencias
-    2) Se agrega barra de desplazamiento en las estadisticas
-    -->
+    1) optimizacion history manager
+    2) cambios de presentacion menores
+    3) cambios en algunos iconos svg
+    4) agregado salto de linea en toast
