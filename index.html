@@ -869,7 +869,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v5.85</span> <!-- Version -->
+                <span class="version-text">v5.87</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -1963,7 +1963,7 @@
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
                         a.href = url;
-                        a.download = `horarios_v3.7_${new Date().toISOString().split('T')[0]}.json`;
+                        a.download = `horarios_${new Date().toISOString().split('T')[0]}.json`; //nombre del archivo json al exportar
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
@@ -3073,20 +3073,20 @@
                     const reporte = {
                         // --- ENCABEZADO ---
                         header: () => `
-╔════════════════════════════════════════════════════════════╗
+╔═══════════════════════════════════════════════════════════╗
 ║              REPORTE DE HORAS TRABAJADAS                   ║
-╚════════════════════════════════════════════════════════════╝
+╚═══════════════════════════════════════════════════════════╝
 
 📅 Período: ${nombreMes}
 📊 Generado: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES')}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+────────────────────────────────────────────────────────────`,
 
                         // --- RESUMEN GENERAL ---
                         resumenGeneral: () => `
 
 📈 RESUMEN GENERAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
    • Días trabajados:        ${stats.diasTrabajados}
    • Feriados:               ${stats.feriados}
@@ -3100,10 +3100,10 @@
                         detalleDiario: () => {
                             let seccion = `
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
 📋 DETALLE DIARIO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
 `;
 
@@ -3112,6 +3112,8 @@
                                 new Date(a.fecha) - new Date(b.fecha)
                             );
 
+                            const horasDiariasObjetivo = D.horasDiarias();
+
                             registrosOrdenados.forEach(r => {
                                 const dia = obtenerNombreDia(r.fecha);
                                 const fecha = r.fecha.split('-').reverse().join('/');
@@ -3119,21 +3121,122 @@
                                 const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
                                 const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
 
-                                let linea = `${dia.padEnd(10)} ${fecha}  `;
+                                let linea = '';
 
                                 if (esFeriado) {
-                                    linea += `🥳 FERIADO`;
+                                    linea = `${dia.padEnd(10)} ${fecha}  FERIADO 🥳`;
                                 } else if (esAusencia) {
-                                    linea += `✈️ AUSENCIA`;
+                                    linea = `${dia.padEnd(10)} ${fecha}  AUSENCIA ✈️`;
                                 } else {
                                     const entrada = r.entrada || '--:--';
                                     const salida = r.salida || '--:--';
                                     const total = r.salida ? `${r.horas}h ${r.minutos}m` : 'Incompleto';
                                     const tiempoFuera = r.tiempoFuera ? ` (${r.tiempoFuera} fuera)` : '';
-                                    linea += `${entrada} → ${salida}  [${total}]${tiempoFuera}`;
+
+                                    // Determinar si cumplió objetivo
+                                    let indicador = '  ';
+                                    if (r.salida) {
+                                        if (r.total >= horasDiariasObjetivo) {
+                                            indicador = '✓ ';
+                                        } else {
+                                            indicador = '✗ ';
+                                        }
+                                    }
+
+                                    linea = `${dia.padEnd(10)} ${fecha}  ${entrada} → ${salida}  [${total}]${tiempoFuera} ${indicador}`;
                                 }
 
                                 seccion += linea + '\n';
+                            });
+
+                            return seccion;
+                        },
+
+                        // --- TOTALES POR SEMANA ---
+                        totalesPorSemana: () => {
+                            // Función auxiliar para obtener el lunes de una fecha
+                            function obtenerLunesSemana(fecha) {
+                                const date = new Date(fecha.replace(/-/g, '/') + ' 00:00:00');
+                                const dia = date.getDay();
+                                const offset = dia === 0 ? -6 : 1 - dia;
+                                const lunes = new Date(date);
+                                lunes.setDate(date.getDate() + offset);
+                                return lunes.toISOString().split('T')[0];
+                            }
+
+                            // Agrupar TODOS los registros por semana (incluyendo feriados y ausencias)
+                            const semanas = new Map();
+
+                            registrosMes.forEach(r => {
+                                const lunes = obtenerLunesSemana(r.fecha);
+                                if (!semanas.has(lunes)) {
+                                    semanas.set(lunes, {
+                                        trabajados: [],
+                                        feriados: [],
+                                        ausencias: []
+                                    });
+                                }
+
+                                const semana = semanas.get(lunes);
+
+                                if (r.entrada === '00:00' && r.salida === '00:00') {
+                                    semana.feriados.push(r);
+                                } else if (r.entrada === '11:11' && r.salida === '11:11') {
+                                    semana.ausencias.push(r);
+                                } else {
+                                    semana.trabajados.push(r);
+                                }
+                            });
+
+                            // Ordenar semanas por fecha
+                            const semanasOrdenadas = Array.from(semanas.entries()).sort((a, b) =>
+                                new Date(a[0]) - new Date(b[0])
+                            );
+
+                            if (semanasOrdenadas.length === 0) {
+                                return '';
+                            }
+
+                            let seccion = `
+
+────────────────────────────────────────────────────────────
+
+📅 TOTALES POR SEMANA
+────────────────────────────────────────────────────────────
+
+`;
+
+                            semanasOrdenadas.forEach(([lunes, datos], index) => {
+                                const totalSemanal = datos.trabajados.reduce((sum, r) => sum + r.total, 0);
+                                const horasSem = Math.floor(totalSemanal);
+                                const minutosSem = Math.round((totalSemanal - horasSem) * 60);
+
+                                // Calcular viernes de la semana
+                                const fechaLunes = new Date(lunes.replace(/-/g, '/') + ' 00:00:00');
+                                const fechaViernes = new Date(fechaLunes);
+                                fechaViernes.setDate(fechaLunes.getDate() + 4);
+                                const viernes = fechaViernes.toISOString().split('T')[0];
+
+                                const lunesFormato = lunes.split('-').reverse().join('/');
+                                const viernesFormato = viernes.split('-').reverse().join('/');
+
+                                seccion += `   Semana ${index + 1} (${lunesFormato} - ${viernesFormato}):\n`;
+                                seccion += `      └─ ${horasSem}h ${minutosSem}m (${totalSemanal.toFixed(2)}h)`;
+
+                                // Agregar información de feriados y ausencias
+                                const notasExtras = [];
+                                if (datos.feriados.length > 0) {
+                                    notasExtras.push(`${datos.feriados.length} feriado${datos.feriados.length > 1 ? 's' : ''}`);
+                                }
+                                if (datos.ausencias.length > 0) {
+                                    notasExtras.push(`${datos.ausencias.length} ausencia${datos.ausencias.length > 1 ? 's' : ''}`);
+                                }
+
+                                if (notasExtras.length > 0) {
+                                    seccion += ` [${notasExtras.join(', ')}]`;
+                                }
+
+                                seccion += '\n\n';
                             });
 
                             return seccion;
@@ -3148,40 +3251,22 @@
                             const horasTotales = Math.floor(totalHoras);
                             const minutosTotales = Math.round((totalHoras - horasTotales) * 60);
 
-                            // Calcular total semanal (si el mes incluye la semana actual)
-                            const { inicio: ini, fin: fn } = obtenerSemanaActual();
-                            const registrosSemanaActual = registrosMes.filter(r =>
-                                r.fecha >= ini &&
-                                r.fecha <= fn &&
-                                r.entrada !== '00:00' &&
-                                r.entrada !== '11:11'
-                            );
-
-                            const totalSemanal = registrosSemanaActual.reduce((sum, r) => sum + r.total, 0);
-                            const horasSemanales = Math.floor(totalSemanal);
-                            const minutosSemanales = Math.round((totalSemanal - horasSemanales) * 60);
-
-                            let seccionSemanal = '';
-                            if (registrosSemanaActual.length > 0) {
-                                seccionSemanal = `\n   • Total semana actual:     ${horasSemanales}h ${minutosSemanales}m (${totalSemanal.toFixed(2)}h)`;
-                            }
-
                             return `
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
-💼 TOTALES DEL MES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💼 TOTAL DEL MES
+────────────────────────────────────────────────────────────
 
-   • Total horas trabajadas:  ${horasTotales}h ${minutosTotales}m (${totalHoras.toFixed(2)}h)${seccionSemanal}`;
+   • Total horas trabajadas:  ${horasTotales}h ${minutosTotales}m (${totalHoras.toFixed(2)}h)`;
                         },
 
                         // --- CONFIGURACIÓN ---
                         configuracion: () => `
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
 ⚙️ CONFIGURACIÓN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
    • Horas diarias:          ${D.horasDiarias()}
    • Días hábiles/semana:    ${D.diasHabiles()}
@@ -3190,20 +3275,20 @@
                         // --- FOOTER ---
                         footer: () => `
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+────────────────────────────────────────────────────────────
 
-Generado por Sistema de Horarios version v5.84
+Generado por Sistema de Horarios version v5.87
 `
                     };
 
                     // ============================================
                     // GENERAR CONTENIDO COMPLETO
                     // ============================================
-                    // secciones
                     const contenido =
                         reporte.header() +
                         reporte.resumenGeneral() +
                         reporte.detalleDiario() +
+                        reporte.totalesPorSemana() +
                         reporte.totalesMes() +
                         reporte.configuracion() +
                         reporte.footer();
@@ -3353,9 +3438,6 @@ Generado por Sistema de Horarios version v5.84
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.85
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.87
     // ====================================================================
-    1) optimizacion history manager
-    2) cambios de presentacion menores
-    3) cambios en algunos iconos svg
-    4) agregado salto de linea en toast
+    1) 
