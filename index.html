@@ -324,7 +324,7 @@
         .btn-increment {
             background: var(--border);
             border: none;
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             width: 50px;
             height: auto;
         }
@@ -732,6 +732,14 @@
             <line x1="12" y1="20" x2="12" y2="4" class="icon-line" stroke="currentColor"></line>
             <line x1="6" y1="20" x2="6" y2="14" class="icon-line" stroke="currentColor"></line>
         </symbol>
+        <symbol id="icon-merge" viewBox="0 0 24 24">
+            <line x1="6" y1="6" x2="12" y2="12" class="icon-line" stroke="currentColor"></line>
+            <line x1="18" y1="6" x2="12" y2="12" class="icon-line" stroke="currentColor"></line>
+            <line x1="12" y1="12" x2="12" y2="18" class="icon-line" stroke="currentColor"></line>
+            <circle cx="6" cy="6" r="2" fill="currentColor"></circle>
+            <circle cx="18" cy="6" r="2" fill="currentColor"></circle>
+            <circle cx="12" cy="18" r="2" fill="currentColor"></circle>
+        </symbol>
     </svg>
 
     <div class="header">
@@ -782,7 +790,15 @@
                     </svg> Registrar Horas</h2>
                 <div class="form-group">
                     <label>Fecha</label>
-                    <input type="date" id="fecha" />
+                    <div class="input-with-btn">
+                        <input type="date" id="fecha" />
+                        <button class="time-btn" onclick="UILogic.mostrarVacaciones()" title="Registrar lote"
+                            style="flex-shrink: 0;">
+                            <svg class="icon">
+                                <use href="#icon-calendar-simple" />
+                            </svg>
+                        </button>
+                    </div>
                     <span class="input-error" id="error-fecha">Fecha inválida</span>
                 </div>
                 <div class="form-group">
@@ -811,9 +827,11 @@
                     </div>
                     <span class="input-error" id="error-salida">Formato inválido (HH:MM)</span>
                 </div>
-                <button onclick="DataManagement.agregarRegistro()" id="btn-agregar"><svg class="icon">
+                <button onclick="DataManagement.agregarRegistro()" id="btn-agregar">
+                    <svg class="icon">
                         <use href="#icon-save" />
-                    </svg> Registrar</button>
+                    </svg> Registrar
+                </button>
             </div>
             <div class="card stats-card animated-card"
                 style="animation-delay: 0.3s; cursor: pointer; text-align: center;" onclick="UILogic.mostrarStats()">
@@ -869,7 +887,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v5.88</span> <!-- Version -->
+                <span class="version-text">v5.92</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -900,7 +918,7 @@
                     </svg>Borrar registros</button>
                 <button class="btn-group" onclick="UILogic.mostrarAyuda()"><svg class="icon">
                         <use href="#icon-help" />
-                    </svg>Mostrar Ayuda
+                    </svg>Información
                 </button>
             </div>
             <div class="btn-group">
@@ -1058,7 +1076,7 @@
                     <svg class="icon">
                         <use href="#icon-help" />
                     </svg>
-                    Instrucciones
+                    Información
                 </span>
             </h3>
             <div
@@ -1071,9 +1089,9 @@
                     historico.</p>
                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
                 <p><strong>🥳 Feriados:</strong> Ingresa <code>00:00</code> en Entrada y Salida.</p>
-                <p><strong>✈️ Ausencias/Licencias:</strong> Ingresa <code>11:11</code> en Entrada y Salida (no cuentan
-                    para el promedio).</p>
-                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+                <p><strong>✈️ Ausencias/Licencias:</strong> Ingresa <code>11:11</code> en Entrada y Salida.</p>
+                <p><strong>🏖️ Vacaciones:</strong> Ingresa <code>22:22</code> en Entrada y Salida, o usa el botón de
+                    "Registrar Período".</p>
                 <p><strong>☕ Tiempo Fuera:</strong> Para descontar tiempo del dia, si saliste por algun motivo,
                     (por ejemplo, irse al medico).</p>
                 <p><strong><svg class="icon">
@@ -1125,6 +1143,10 @@
                     <div class="stat-value" id="stat-ausencias">0</div>
                 </div>
                 <div class="stat-item">
+                    <div class="stat-label">Vacaciones</div>
+                    <div class="stat-value" id="stat-vacaciones">0</div>
+                </div>
+                <div class="stat-item">
                     <div class="stat-label">Entrada promedio</div>
                     <div class="stat-value" id="stat-entrada-promedio">--:--</div>
                 </div>
@@ -1147,6 +1169,56 @@
                 </button>
                 <button class="btn-cancel" onclick="UILogic.cerrarStats()">
                     Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="modal" id="modal-vacaciones">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-calendar-simple" />
+                    </svg>
+                    Registrar por lote
+                </span>
+            </h3>
+            <div class="contenedor-fechas">
+                <div class="form-group">
+                    <label>Desde</label>
+                    <input type="date" id="vacaciones-fecha-desde" />
+                </div>
+                <div class="form-group">
+                    <label>Hasta</label>
+                    <input type="date" id="vacaciones-fecha-hasta" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Tipo de registro</label>
+                <select id="vacaciones-tipo"
+                    style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--input-bg); color: var(--text-main);">
+                    <option value="vacaciones">🏖️ Vacaciones (22:22)</option>
+                    <option value="ausencia">✈️ Ausencia/Licencia (11:11)</option>
+                    <option value="feriado">🥳 Feriados (00:00)</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button class="btn-backup" onclick="DataManagement.registrarVacaciones()">
+                    <svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> Registrar
+                </button>
+                <button class="btn-delete" onclick="DataManagement.borrarPeriodo()">
+                    <svg class="icon">
+                        <use href="#icon-trash" />
+                    </svg> Borrar
+                </button>
+            </div>
+            <div class="btn-group" style="margin-top: 0.5rem;">
+                <button class="btn-cancel" onclick="UILogic.cerrarVacaciones()">
+                    <svg class="icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cerrar
                 </button>
             </div>
         </div>
@@ -1514,6 +1586,179 @@
                     }
                 }
 
+                // Agregar esta función completa en DataManagement
+                function registrarVacaciones() {
+                    const desde = S.sanitizeString($('vacaciones-fecha-desde').value, 10);
+                    const hasta = S.sanitizeString($('vacaciones-fecha-hasta').value, 10);
+                    const tipo = $('vacaciones-tipo').value;
+
+                    if (!S.validarFechaSegura(desde) || !S.validarFechaSegura(hasta)) {
+                        UILogic.mostrarToast('Fechas inválidas', 'error');
+                        return;
+                    }
+
+                    if (desde > hasta) {
+                        UILogic.mostrarToast('La fecha "Desde" debe ser anterior a "Hasta"', 'error');
+                        return;
+                    }
+
+                    // Determinar valores según tipo
+                    let entrada, salida;
+                    switch (tipo) {
+                        case 'vacaciones':
+                            entrada = '22:22';
+                            salida = '22:22';
+                            break;
+                        case 'ausencia':
+                            entrada = '11:11';
+                            salida = '11:11';
+                            break;
+                        case 'feriado':
+                            entrada = '00:00';
+                            salida = '00:00';
+                            break;
+                        default:
+                            entrada = '11:11';
+                            salida = '11:11';
+                    }
+
+                    // Generar rango de fechas
+                    let fechaActual = new Date(desde.replace(/-/g, '/') + ' 00:00:00');
+                    const fechaFin = new Date(hasta.replace(/-/g, '/') + ' 00:00:00');
+                    const fechasARegistrar = [];
+
+                    while (fechaActual <= fechaFin) {
+                        const y = fechaActual.getFullYear();
+                        const m = String(fechaActual.getMonth() + 1).padStart(2, '0');
+                        const d = String(fechaActual.getDate()).padStart(2, '0');
+                        fechasARegistrar.push(`${y}-${m}-${d}`);
+                        fechaActual.setDate(fechaActual.getDate() + 1);
+                    }
+
+                    // Verificar límites
+                    const nuevosRegistros = fechasARegistrar.filter(f => !registros.some(r => r.fecha === f));
+
+                    if (registros.length + nuevosRegistros.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
+                        UILogic.mostrarToast(`Límite alcanzado. Solo se pueden agregar ${S.SECURITY_LIMITS.MAX_REGISTROS - registros.length} registros más`, 'error');
+                        return;
+                    }
+
+                    if (nuevosRegistros.length === 0) {
+                        UILogic.mostrarToast('Todas las fechas ya están registradas', 'warning');
+                        return;
+                    }
+
+                    // Crear registros
+                    nuevosRegistros.forEach(fecha => {
+                        const t = calcularHoras(entrada, salida, null);
+                        registros.push({
+                            id: S.generarIDSeguro(),
+                            fecha: fecha,
+                            entrada: entrada,
+                            salida: salida,
+                            tiempoFuera: null,
+                            horas: t?.horas || 0,
+                            minutos: t?.minutos || 0,
+                            total: t?.total || 0
+                        });
+                    });
+
+                    registros.sort((a, b) => {
+                        if (a.fecha !== b.fecha) return new Date(b.fecha) - new Date(a.fecha);
+                        return (b.entrada || '').localeCompare(a.entrada || '');
+                    });
+
+                    const saved = guardarYActualizar();
+
+                    if (saved) {
+                        HistoryManager.saveState(registros);
+                    }
+                    if (saved) {
+                        const tipoTexto = tipo === 'vacaciones' ? 'Vacaciones' : tipo === 'ausencia' ? 'Ausencias' : 'Feriados';
+                        UILogic.mostrarToast(`✅ ${nuevosRegistros.length} días registrados como ${tipoTexto}`, 'success');
+                        UILogic.cerrarVacaciones();
+                        $('vacaciones-fecha-desde').value = '';
+                        $('vacaciones-fecha-hasta').value = '';
+                    }
+                }
+
+                function borrarPeriodo() {
+                    const desde = S.sanitizeString($('vacaciones-fecha-desde').value, 10);
+                    const hasta = S.sanitizeString($('vacaciones-fecha-hasta').value, 10);
+                    const tipo = $('vacaciones-tipo').value;
+
+                    if (!S.validarFechaSegura(desde) || !S.validarFechaSegura(hasta)) {
+                        UILogic.mostrarToast('Fechas inválidas', 'error');
+                        return;
+                    }
+
+                    if (desde > hasta) {
+                        UILogic.mostrarToast('La fecha "Desde" debe ser anterior a "Hasta"', 'error');
+                        return;
+                    }
+
+                    // Determinar valores según tipo
+                    let entrada, salida, tipoTexto;
+                    switch (tipo) {
+                        case 'vacaciones':
+                            entrada = '22:22';
+                            salida = '22:22';
+                            tipoTexto = 'Vacaciones';
+                            break;
+                        case 'ausencia':
+                            entrada = '11:11';
+                            salida = '11:11';
+                            tipoTexto = 'Ausencias';
+                            break;
+                        case 'feriado':
+                            entrada = '00:00';
+                            salida = '00:00';
+                            tipoTexto = 'Feriados';
+                            break;
+                        default:
+                            UILogic.mostrarToast('Tipo inválido', 'error');
+                            return;
+                    }
+
+                    // Filtrar registros que coincidan con el tipo y rango
+                    const registrosAEliminar = registros.filter(r => {
+                        return r.fecha >= desde &&
+                            r.fecha <= hasta &&
+                            r.entrada === entrada &&
+                            r.salida === salida;
+                    });
+
+                    if (registrosAEliminar.length === 0) {
+                        UILogic.mostrarToast(`No hay registros de ${tipoTexto} en ese período`, 'info');
+                        return;
+                    }
+
+                    // Confirmación
+                    const confirmar = confirm(
+                        `⚠️ ¿Eliminar ${registrosAEliminar.length} registro(s) de ${tipoTexto}?\n\n` +
+                        `Período: ${desde} a ${hasta}\n\n` +
+                        `Esta acción se puede DESHACER antes de cerrar la página.`
+                    );
+
+                    if (!confirmar) return;
+
+                    // Eliminar registros
+                    // Eliminar registros
+                    registros = registros.filter(r => !registrosAEliminar.includes(r));
+
+                    const saved = guardarYActualizar();
+
+                    if (saved) {
+                        HistoryManager.saveState(registros);
+                    }
+                    if (saved) {
+                        UILogic.mostrarToast(`✅ ${registrosAEliminar.length} registro(s) de ${tipoTexto} eliminados`, 'success');
+                        UILogic.cerrarVacaciones();
+                        $('vacaciones-fecha-desde').value = '';
+                        $('vacaciones-fecha-hasta').value = '';
+                    }
+                }
+
                 function guardarConIntegridad(regs) {
                     if (!S.saveLimiter.canProceed()) {
                         UILogic.mostrarToast('Demasiadas operaciones, espera un momento', 'warning');
@@ -1596,11 +1841,18 @@
 
                 function calcularHoras(e, s, tf = null) {
                     const tfMinutos = tf ? tiempoEnMinutos(tf) : 0;
+
+                    // Ausencia/Licencia
                     if (e === '11:11' && s === '11:11') {
-                        const minDia = horasDiarias * 60;
                         return { horas: 0, minutos: 0, total: horasDiarias, esAusencia: true };
                     }
 
+                    // Vacaciones (NUEVO)
+                    if (e === '22:22' && s === '22:22') {
+                        return { horas: 0, minutos: 0, total: horasDiarias, esVacaciones: true };
+                    }
+
+                    // Feriado
                     if (e === '00:00' && s === '00:00') {
                         const minFeriado = horasDiarias * 60;
                         return { horas: Math.floor(minFeriado / 60), minutos: Math.round(minFeriado % 60), total: horasDiarias };
@@ -1611,7 +1863,6 @@
                     const [hE, mE] = e.split(':').map(Number);
                     const [hS, mS] = s.split(':').map(Number);
 
-                    // Validar overflow antes de cálculos
                     if (!Number.isFinite(hE) || !Number.isFinite(mE) ||
                         !Number.isFinite(hS) || !Number.isFinite(mS)) {
                         return null;
@@ -1620,7 +1871,6 @@
                     const minutosEntrada = hE * 60 + mE;
                     const minutosSalida = hS * 60 + mS;
 
-                    // Validar rangos (máximo 24 horas = 1440 minutos)
                     if (minutosEntrada > 1440 || minutosSalida > 1440 ||
                         minutosEntrada < 0 || minutosSalida < 0) {
                         return null;
@@ -1629,7 +1879,7 @@
                     let minTotal = minutosSalida - minutosEntrada;
 
                     if (minTotal < 0) {
-                        if (minutosSalida < 360) { // 6:00 AM = 360 minutos
+                        if (minutosSalida < 360) {
                             minTotal += 24 * 60;
                         } else {
                             return { horas: 0, minutos: 0, total: 0 };
@@ -1649,8 +1899,9 @@
                     registros.forEach(r => {
                         const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
                         const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                        const esVacaciones = r.entrada === '22:22' && r.salida === '22:22'; // NUEVO
 
-                        if (r.fecha >= inicio && r.fecha <= fin && (esFeriado || esAusencia)) {
+                        if (r.fecha >= inicio && r.fecha <= fin && (esFeriado || esAusencia || esVacaciones)) {
                             horasDescontar += horasDiariasLocal;
                         }
                     });
@@ -2200,15 +2451,16 @@
 
                         const esFeriado = r && r.entrada === '00:00' && r.salida === '00:00';
                         const esAusencia = r && r.entrada === '11:11' && r.salida === '11:11';
+                        const esVacaciones = r && r.entrada === '22:22' && r.salida === '22:22'; // ⬅️ NUEVO
 
-                        const tieneSalida = r && r.salida && !esFeriado && !esAusencia;
+                        const tieneSalida = r && r.salida && !esFeriado && !esAusencia && !esVacaciones; // ⬅️ AGREGAR esVacaciones
                         const esDiaPasado = isoDate < fechaHoy;
 
-                        if (esDiaLaboralConfigurado && !esFeriado && !esAusencia && (esDiaPasado || (isoDate === fechaHoy && tieneSalida))) {
+                        if (esDiaLaboralConfigurado && !esFeriado && !esAusencia && !esVacaciones && (esDiaPasado || (isoDate === fechaHoy && tieneSalida))) {
                             horasObjetivoDia = horasDiariasLocal;
                         }
 
-                        if (r && !esFeriado && !esAusencia) {
+                        if (r && !esFeriado && !esAusencia && !esVacaciones) { // ⬅️ AGREGAR !esVacaciones
                             if (r.salida) {
                                 horasHechasDia = r.total;
                             }
@@ -2295,6 +2547,8 @@
                     aplicarFiltros,
                     limpiarFiltros,
                     obtenerRegistrosFiltrados,
+                    registrarVacaciones,
+                    borrarPeriodo,
                     undoAction: function () {
                         const prevState = HistoryManager.undo();
                         if (prevState) {
@@ -2518,14 +2772,15 @@
                             // --- AQUI ESTA LA LOGICA NUEVA DE AUSENCIA ---
                             const isFeriadoContabilizado = r.entrada === '00:00' && r.salida === '00:00';
                             const isAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                            const isVacaciones = r.entrada === '22:22' && r.salida === '22:22'; // NUEVO
 
                             const fechaEl = document.createElement('div');
                             fechaEl.className = 'registro-fecha';
 
-                            // Definir etiqueta segun el tipo
                             let etiqueta = '';
                             if (isFeriadoContabilizado) etiqueta = ' 🥳 (Feriado)';
                             else if (isAusencia) etiqueta = ' ✈️ (Ausencia)';
+                            else if (isVacaciones) etiqueta = ' 🏖️ (Vacaciones)'; // NUEVO
 
                             fechaEl.textContent = `${obtenerNombreDia(r.fecha)} ${r.fecha.substring(8)}${etiqueta}`;
 
@@ -2534,11 +2789,12 @@
                             const horasEl = document.createElement('div');
                             horasEl.className = 'registro-horas';
 
-                            // Definir texto de horas segun tipo
                             if (isFeriadoContabilizado) {
                                 horasEl.textContent = 'Día no laboral';
                             } else if (isAusencia) {
                                 horasEl.textContent = 'Licencia / Ausencia';
+                            } else if (isVacaciones) { // NUEVO
+                                horasEl.textContent = 'Vacaciones';
                             } else {
                                 horasEl.textContent = `${r.entrada || '-'} → ${r.salida || '-'}${tfText}`;
                             }
@@ -2552,6 +2808,9 @@
                                 totalText = 'Horas descontadas';
                                 totalEl.classList.add('purple-text');
                             } else if (isAusencia) {
+                                totalText = 'Justificado';
+                                totalEl.classList.add('purple-text');
+                            } else if (isVacaciones) { // NUEVO
                                 totalText = 'Justificado';
                                 totalEl.classList.add('purple-text');
                             } else if (r.entrada && r.salida) {
@@ -2620,10 +2879,14 @@
                         r.entrada === '11:11' && r.salida === '11:11'
                     ).length;
 
+                    const vacaciones = registrosMes.filter(r => // NUEVO
+                        r.entrada === '22:22' && r.salida === '22:22'
+                    ).length;
+
                     // Filtrar solo registros válidos (excluir feriados y ausencias)
                     const registrosValidos = registrosMes.filter(r =>
                         r.entrada && r.salida &&
-                        r.entrada !== '00:00' && r.entrada !== '11:11'
+                        r.entrada !== '00:00' && r.entrada !== '11:11' && r.entrada !== '22:22' // AGREGAR 22:22
                     );
 
                     if (registrosValidos.length === 0) {
@@ -2633,7 +2896,8 @@
                             diasTrabajados: 0,
                             promedioDiario: '0h 0m',
                             feriados: feriados,
-                            ausencias: ausencias
+                            ausencias: ausencias,
+                            vacaciones: vacaciones
                         };
                     }
 
@@ -2669,7 +2933,8 @@
                         diasTrabajados: registrosValidos.length,
                         promedioDiario: `${hPromedio}h ${mPromedio}m`,
                         feriados: feriados,
-                        ausencias: ausencias
+                        ausencias: ausencias,
+                        vacaciones: vacaciones
                     };
                 }
 
@@ -2682,6 +2947,7 @@
                     const elPromedio = $('stat-promedio-diario');
                     const elFeriados = $('stat-feriados');
                     const elAusencias = $('stat-ausencias');
+                    const elVacaciones = $('stat-vacaciones')
 
                     if (elEntrada) elEntrada.textContent = stats.entradaPromedio;
                     if (elSalida) elSalida.textContent = stats.salidaPromedio;
@@ -2689,6 +2955,7 @@
                     if (elPromedio) elPromedio.textContent = stats.promedioDiario;
                     if (elFeriados) elFeriados.textContent = stats.feriados;
                     if (elAusencias) elAusencias.textContent = stats.ausencias;
+                    if (elVacaciones) elVacaciones.textContent = stats.vacaciones;
                 }
 
                 function esFinDeSemana() {
@@ -2747,7 +3014,8 @@
                             r.fecha >= ini &&
                             r.fecha <= fn &&
                             !(r.entrada === '00:00' && r.salida === '00:00') && // Ignorar Feriados
-                            !(r.entrada === '11:11' && r.salida === '11:11')    // Ignorar Ausencias (NUEVO)
+                            !(r.entrada === '11:11' && r.salida === '11:11') && // Ignorar Ausencias
+                            !(r.entrada === '22:22' && r.salida === '22:22')    // Ignorar Vacaciones ⬅️ AGREGAR ESTA LÍNEA
                         ).reduce((s, r) => s + r.total, 0);
 
                         const horasDescontar = D.calcularHorasFeriadoEnRango(ini, fn);
@@ -2797,6 +3065,7 @@
                             const isFeriadoHoy = regHoy.entrada === '00:00' && regHoy.salida === '00:00';
                             // 1. Detectamos si es Ausencia
                             const isAusenciaHoy = regHoy.entrada === '11:11' && regHoy.salida === '11:11';
+                            const isVacacionesHoy = regHoy.entrada === '22:22' && regHoy.salida === '22:22';
 
                             if (isFeriadoHoy) {
                                 if (statsEl) statsEl.innerHTML = `<div>🥳 Feriado</div>`;
@@ -2813,6 +3082,14 @@
                                     setProgressBarColor(progressEl, 'purple'); // color de barra por ausencia
                                 }
                                 if (mensajeEl) mensajeEl.textContent = `¡Día justificado!`;
+
+                            } else if (isVacacionesHoy) {
+                                if (statsEl) statsEl.innerHTML = `<div>🏖️ Vacaciones</div>`;
+                                if (progressEl) {
+                                    progressEl.style.width = '100%';
+                                    setProgressBarColor(progressEl, 'purple');
+                                }
+                                if (mensajeEl) mensajeEl.textContent = `¡Día de vacaciones!`;
 
                             } else {
                                 // Lógica normal de trabajo (horas reales)
@@ -3073,9 +3350,9 @@
                     const reporte = {
                         // --- ENCABEZADO ---
                         header: () => `
-╔═══════════════════════════════════════════════════════════╗
-║              REPORTE DE HORAS TRABAJADAS                   ║
-╚═══════════════════════════════════════════════════════════╝
+================================================================
+REPORTE DE HORAS TRABAJADAS                   
+================================================================
 
 📅 Período: ${nombreMes}
 📊 Generado: ${new Date().toLocaleDateString('es-ES')} ${new Date().toLocaleTimeString('es-ES')}
@@ -3091,6 +3368,7 @@
    • Días trabajados:        ${stats.diasTrabajados}
    • Feriados:               ${stats.feriados}
    • Ausencias:              ${stats.ausencias}
+   • Vacaciones:             ${stats.vacaciones}
    
    • Entrada promedio:       ${stats.entradaPromedio}
    • Salida promedio:        ${stats.salidaPromedio}
@@ -3120,6 +3398,7 @@
 
                                 const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
                                 const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                                const esVacaciones = r.entrada === '22:22' && r.salida === '22:22';
 
                                 let linea = '';
 
@@ -3127,6 +3406,8 @@
                                     linea = `${dia.padEnd(10)} ${fecha}  FERIADO`;
                                 } else if (esAusencia) {
                                     linea = `${dia.padEnd(10)} ${fecha}  AUSENCIA`;
+                                } else if (esVacaciones) {
+                                    linea = `${dia.padEnd(10)} ${fecha}  VACACIONES`;
                                 } else {
                                     const entrada = r.entrada || '--:--';
                                     const salida = r.salida || '--:--';
@@ -3173,7 +3454,8 @@
                                     semanas.set(lunes, {
                                         trabajados: [],
                                         feriados: [],
-                                        ausencias: []
+                                        ausencias: [],
+                                        vacaciones: []
                                     });
                                 }
 
@@ -3183,6 +3465,8 @@
                                     semana.feriados.push(r);
                                 } else if (r.entrada === '11:11' && r.salida === '11:11') {
                                     semana.ausencias.push(r);
+                                } else if (r.entrada === '22:22' && r.salida === '22:22') {
+                                    semana.vacaciones.push(r);
                                 } else {
                                     semana.trabajados.push(r);
                                 }
@@ -3231,6 +3515,9 @@
                                 if (datos.ausencias.length > 0) {
                                     notasExtras.push(`${datos.ausencias.length} ausencia${datos.ausencias.length > 1 ? 's' : ''}`);
                                 }
+                                if (datos.vacaciones.length > 0) {
+                                    notasExtras.push(`${datos.vacaciones.length} vacación${datos.vacaciones.length > 1 ? 'es' : ''}`);
+                                }
 
                                 if (notasExtras.length > 0) {
                                     seccion += ` [${notasExtras.join(', ')}]`;
@@ -3245,7 +3532,7 @@
                         // --- TOTALES DEL MES ---
                         totalesMes: () => {
                             const totalHoras = registrosMes
-                                .filter(r => r.entrada !== '00:00' && r.entrada !== '11:11')
+                                .filter(r => r.entrada !== '00:00' && r.entrada !== '11:11' && r.entrada !== '22:22')
                                 .reduce((sum, r) => sum + r.total, 0);
 
                             const horasTotales = Math.floor(totalHoras);
@@ -3277,7 +3564,7 @@
 
 ────────────────────────────────────────────────────────────
 
-Generado por Sistema de Horarios version v5.88
+Generado por Sistema de Horarios version v5.92
 `
                     };
 
@@ -3358,6 +3645,16 @@ Generado por Sistema de Horarios version v5.88
                         if (el) el.addEventListener('input', formatearInput);
                     });
 
+                    function mostrarVacaciones() {
+                        $('vacaciones-fecha-desde').value = '';
+                        $('vacaciones-fecha-hasta').value = '';
+                        $('modal-vacaciones').classList.add('show');
+                    }
+
+                    function cerrarVacaciones() {
+                        $('modal-vacaciones').classList.remove('show');
+                    }
+
                     window.UILogic = {
                         alternarTema, mostrarConfig, cerrarConfig, pegarHoraActual, alternarVista,
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
@@ -3365,14 +3662,14 @@ Generado por Sistema de Horarios version v5.88
                         incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                         incrementarDiasHabiles, decrementarDiasHabiles, obtenerFechaHoy, mostrarFiltros,
                         cerrarFiltros, mostrarAyuda, cerrarAyuda, mostrarStats, cerrarStats,
-                        cambiarMesStats, generarReporte
+                        cambiarMesStats, generarReporte, mostrarVacaciones, cerrarVacaciones
                     };
                     window.DataManagement = {
                         agregarRegistro: D.agregarRegistro, guardarConfig: D.guardarConfig, exportarJSON: D.exportarJSON,
                         mostrarImportar: mostrarImportar, importarDatos: D.importarDatos, borrarTodoHistorial: D.borrarTodoHistorial,
                         guardarEdicion: D.guardarEdicion, eliminarRegistroActual: D.eliminarRegistroActual, cargarMasRegistros: D.cargarMasRegistros,
                         undoAction: D.undoAction, redoAction: D.redoAction, aplicarFiltros: D.aplicarFiltros,
-                        limpiarFiltros: D.limpiarFiltros,
+                        limpiarFiltros: D.limpiarFiltros, registrarVacaciones: D.registrarVacaciones, borrarPeriodo: D.borrarPeriodo
                     };
                     window.HistoryManager = {
                         undo: D.undoAction,
@@ -3438,6 +3735,8 @@ Generado por Sistema de Horarios version v5.88
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.88
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 5.92
     // ====================================================================
-    1) 
+    1) Agregado registro y borrado por lotes para dias especiales 
+    (feriado, ausencia, vacaciones)
+    2) agregado dia especial "vacaciones" con 22:22 en todos los modulos
