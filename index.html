@@ -2119,8 +2119,8 @@
                         const saved = await guardarYActualizar();
                         if (saved) {
                             const mensaje = usaHoraActual ?
-                                `Salida registrada con hora actual\n(entrada: ${registroExistente.entrada})` :
-                                `Salida ${s} agregada\n(entrada: ${registroExistente.entrada})`;
+                                `Salida registrada con hora actual \n(entrada: ${registroExistente.entrada})` :
+                                `Salida ${s} agregada \n(entrada: ${registroExistente.entrada})`;
                             UILogic.mostrarToast(mensaje, 'success');
                             UILogic.resetearBoton(btn);
                             $('fecha').value = UILogic.obtenerFechaHoy();
