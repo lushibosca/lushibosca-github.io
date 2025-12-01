@@ -45,6 +45,7 @@
             --c-gray-light: #cbd5e1;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             --radius: 12px;
+            --bg-progress-bar: rgba(224, 224, 224, 0.3);
         }
 
         body.dark-mode {
@@ -59,6 +60,7 @@
             --input-focus: #4b5563;
             --c-gray-btn: #4b5563;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --bg-progress-bar: rgba(255, 255, 255, 0.2);
         }
 
         * {
@@ -120,6 +122,10 @@
             align-items: center;
             gap: 0.5rem;
             color: var(--text-main);
+        }
+
+        .card h2.no-margin {
+            margin-bottom: 0;
         }
 
         @media (min-width: 1024px) {
@@ -200,7 +206,8 @@
             margin-bottom: 0.25rem;
         }
 
-        input {
+        input,
+        select {
             width: 100%;
             padding: 0.75rem;
             border: 2px solid var(--border);
@@ -208,9 +215,11 @@
             font-size: 1rem;
             background: var(--input-bg);
             color: var(--text-main);
+            transition: border-color 0.2s;
         }
 
-        input:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--input-focus);
         }
@@ -291,7 +300,8 @@
         }
 
         .btn-backup,
-        .btn-edit {
+        .btn-edit,
+        .toast.info {
             background: var(--c-blue);
         }
 
@@ -301,14 +311,20 @@
 
         #btn-cargar-mas {
             margin: 1rem auto 0 auto;
-            width: 50px;
-            height: 50px;
-            background: var(--c-gray-btn);
-            border-radius: 50%;
+            display: none;
         }
 
-        #btn-cargar-mas[style*="visibility: hidden"] {
-            display: none !important;
+        .btn-action-trigger {
+            width: 50%;
+            padding: 17px;
+            margin: -17px;
+            background: transparent;
+            color: var(--text-main);
+        }
+
+        .btn-action-trigger .icon {
+            animation: llamarAtencion 5s ease-in-out 1.2s 2;
+            transform-origin: bottom;
         }
 
         .icon-btn,
@@ -325,7 +341,9 @@
         }
 
         .icon-btn:hover,
-        .time-btn:hover {
+        .time-btn:hover,
+        .btn-increment:hover,
+        .filter-btn:hover {
             transform: scale(1.05);
         }
 
@@ -333,9 +351,6 @@
         .btn-increment {
             background: var(--border);
             border: none;
-            font-size: 1.5rem;
-            width: 50px;
-            height: auto;
         }
 
         .filter-btn {
@@ -346,6 +361,7 @@
 
         .filter-btn.filtro-activo {
             color: var(--c-red);
+            border-color: var(--c-red);
         }
 
         .header-buttons {
@@ -353,10 +369,7 @@
             gap: 0.5rem;
         }
 
-        .btn-group,
-        .actions-row,
-        .export-import-stack {
-            /* --- este ultimo en desuso --- */
+        .btn-group {
             display: flex;
             gap: 0.5rem;
             margin-top: 0.5rem;
@@ -388,14 +401,10 @@
         .progress-bar {
             width: 100%;
             height: 24px;
-            background: rgba(224, 224, 224, 0.3);
+            background: var(--bg-progress-bar);
             border-radius: 12px;
             overflow: hidden;
             margin: 0.5rem 0;
-        }
-
-        body.dark-mode .progress-bar {
-            background: rgba(255, 255, 255, 0.2);
         }
 
         .progress-fill {
@@ -425,7 +434,6 @@
             margin: 1rem;
             color: var(--text-muted);
             font-size: 18px;
-            text-align: center;
         }
 
         .registro-item {
@@ -563,10 +571,6 @@
             background: var(--c-red);
         }
 
-        .toast.info {
-            background: var(--c-blue);
-        }
-
         /* --- Animaciones y Textos --- */
         @keyframes zoomIn {
             from {
@@ -577,6 +581,50 @@
             to {
                 opacity: 1;
                 transform: scale(1);
+            }
+        }
+
+        @keyframes llamarAtencion {
+            0% {
+                transform: scale(1, 1);
+            }
+
+            5% {
+                transform: scale(1.25, 0.75);
+            }
+
+            /* Se aplasta */
+            10% {
+                transform: scale(0.75, 1.25);
+            }
+
+            /* Se estira */
+            15% {
+                transform: scale(1.15, 0.85);
+            }
+
+            /* Rebote suave */
+            20% {
+                transform: scale(1, 1);
+            }
+
+            /* Normal */
+
+            100% {
+                transform: scale(1, 1);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+                overflow: hidden;
+            }
+
+            to {
+                opacity: 1;
+                max-height: 1000px;
             }
         }
 
@@ -608,18 +656,6 @@
             margin-top: 1rem;
         }
 
-        #modal-stats .modal-content {
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #modal-stats .stats-grid {
-            max-height: 500px;
-            overflow-y: auto;
-            padding-right: 0.5rem;
-        }
-
         @media (max-width: 640px) {
             .stats-grid {
                 grid-template-columns: 1fr;
@@ -628,25 +664,12 @@
 
         /* --- Grupos de Registros Expandibles --- */
         .registro-grupo-container {
-            margin: none;
+            margin: 0;
         }
 
         .registro-grupo-detalle {
             margin-top: 0.5rem;
             animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                max-height: 0;
-                overflow: hidden;
-            }
-
-            to {
-                opacity: 1;
-                max-height: 1000px;
-            }
         }
 
         .registro-grupo-detalle .registro-item {
@@ -655,25 +678,34 @@
         }
 
         /* --- Select personalizado --- */
-        select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            background: var(--input-bg);
-            color: var(--text-main);
-            cursor: pointer;
-            transition: border-color 0.2s;
-        }
-
-        select:focus {
-            outline: none;
-            border-color: var(--input-focus);
-        }
 
         select:hover {
             border-color: var(--text-muted);
+        }
+
+        /* --- Colapso de formulario --- */
+        .form-collapsible {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+
+        .form-collapsible.expanded {
+            max-height: 1000px;
+            opacity: 1;
+        }
+
+        .collapse-toggle {
+            cursor: pointer;
+            transition: transform 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .collapse-toggle.rotated {
+            transform: rotate(180deg);
         }
     </style>
 </head>
@@ -806,7 +838,6 @@
             <line x1="5" y1="12" x2="19" y2="12" class="icon-line" stroke="currentColor"></line>
         </symbol>
     </svg>
-
     <div class="header">
         <h1><svg class="icon">
                 <use href="#icon-clock" />
@@ -850,104 +881,162 @@
                 <span class="toggle-hint" id="toggle-hint">Toca para ver la Semana</span>
             </div>
             <div class="card animated-card" style="animation-delay: 0.1s;">
-                <h2><svg class="icon">
-                        <use href="#icon-edit" />
-                    </svg> Registro</h2>
-                <div class="form-group">
-                    <label>Fecha</label>
-                    <div class="input-with-btn">
-                        <input type="date" id="fecha" />
-                        <button class="time-btn" onclick="UILogic.mostrarVacaciones()" title="Registrar lote"
-                            style="flex-shrink: 0;">
-                            <svg class="icon">
-                                <use href="#icon-calendar-simple" />
-                            </svg>
-                        </button>
+                <h2 class="no-margin"
+                    style="display: flex; justify-content: center; align-items: center; position: relative;">
+                    <button onclick="DataManagement.agregarRegistro()" id="btn-agregar" class="btn-action-trigger">
+                        <svg class="icon">
+                            <use href="#icon-save" />
+                        </svg> Registrar
+                    </button>
+                    <button class="icon-btn collapse-toggle" id="btn-toggle-form" onclick="UILogic.toggleFormulario()"
+                        style="background: transparent; border: 1px solid var(--border); padding: 0.5rem; position: absolute; right: 0;">
+                        <svg class="icon" style="width: 1.2em; height: 1.2em;">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
+                </h2>
+
+                <div class="form-collapsible" id="form-registro">
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <div class="input-with-btn">
+                            <input type="date" id="fecha" />
+                            <button class="time-btn" onclick="UILogic.mostrarVacaciones()" title="Registrar lote"
+                                style="flex-shrink: 0;">
+                                <svg class="icon">
+                                    <use href="#icon-calendar-simple" />
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="input-error" id="error-fecha">Fecha inválida</span>
                     </div>
-                    <span class="input-error" id="error-fecha">Fecha inválida</span>
-                </div>
-                <div class="form-group">
-                    <label>Entrada</label>
-                    <div class="input-with-btn">
-                        <input type="text" id="entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
-                        <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')"><svg class="icon">
-                                <use href="#icon-clock" />
-                            </svg></button>
-                        <button class="time-btn" onclick="UILogic.limpiarCampo('entrada')"><svg class="icon">
-                                <use href="#icon-broom" />
-                            </svg></button>
+                    <div class="form-group">
+                        <label>Entrada</label>
+                        <div class="input-with-btn">
+                            <input type="text" id="entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                            <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')"><svg class="icon">
+                                    <use href="#icon-clock" />
+                                </svg></button>
+                        </div>
+                        <span class="input-error" id="error-entrada">Formato inválido (HH:MM)</span>
                     </div>
-                    <span class="input-error" id="error-entrada">Formato inválido (HH:MM)</span>
-                </div>
-                <div class="form-group">
-                    <label>Salida</label>
-                    <div class="input-with-btn">
-                        <input type="text" id="salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
-                        <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')"><svg class="icon">
-                                <use href="#icon-clock" />
-                            </svg></button>
-                        <button class="time-btn" onclick="UILogic.limpiarCampo('salida')"><svg class="icon">
-                                <use href="#icon-broom" />
-                            </svg></button>
+                    <div class="form-group">
+                        <label>Salida</label>
+                        <div class="input-with-btn">
+                            <input type="text" id="salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                            <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')"><svg class="icon">
+                                    <use href="#icon-clock" />
+                                </svg></button>
+                        </div>
+                        <span class="input-error" id="error-salida">Formato inválido (HH:MM)</span>
                     </div>
-                    <span class="input-error" id="error-salida">Formato inválido (HH:MM)</span>
                 </div>
-                <button onclick="DataManagement.agregarRegistro()" id="btn-agregar">
-                    <svg class="icon">
-                        <use href="#icon-save" />
-                    </svg> Registrar
-                </button>
             </div>
-            <div class="card stats-card animated-card"
-                style="animation-delay: 0.3s; cursor: pointer; text-align: center;" onclick="UILogic.mostrarStats()">
-                <h2 style="margin: 0; justify-content: center">
+            <div class="card animated-card" style="animation-delay: 0.2s;">
+                <h2
+                    style="margin-bottom: 0; display: flex; justify-content: center; align-items: center; position: relative;">
                     <svg class="icon">
                         <use href="#icon-stats" />
-                    </svg>
-                    Estadísticas
+                    </svg> Estadísticas
+                    <button class="icon-btn collapse-toggle" id="btn-toggle-stats" onclick="UILogic.toggleStats()"
+                        style="background: transparent; border: 1px solid var(--border); padding: 0.5rem; position: absolute; right: 0; width: 44px; height: 44px;">
+                        <svg class="icon" style="width: 1.2em; height: 1.2em;">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
                 </h2>
-            </div>
-        </div>
+                <div class="form-collapsible" id="form-stats">
+                    <div style="padding-top: 1rem;">
+                        <div class="form-group">
+                            <label>Período</label>
+                            <select id="select-mes-stats" onchange="UILogic.cambiarMesStats()"></select>
+                        </div>
+                        <div class="stats-grid" style="padding-right: 0.5rem;">
+                            <div class="stat-item">
+                                <div class="stat-label">Días trabajados</div>
+                                <div class="stat-value" id="stat-dias-trabajados">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Feriados</div>
+                                <div class="stat-value" id="stat-feriados">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Ausencias</div>
+                                <div class="stat-value" id="stat-ausencias">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Vacaciones</div>
+                                <div class="stat-value" id="stat-vacaciones">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Entrada promedio</div>
+                                <div class="stat-value" id="stat-entrada-promedio">--:--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Salida promedio</div>
+                                <div class="stat-value" id="stat-salida-promedio">--:--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Promedio diario</div>
+                                <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
+                            </div>
+                        </div>
 
-        <div class="right-column">
-            <div class="card animated-card" style="animation-delay: 0.2s;">
-                <div
-                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                    <h2 style="margin-bottom: 0;">
-                        <svg class="icon">
-                            <use href="#icon-list" />
-                        </svg> Histórico
-                    </h2>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
-                            <svg class="icon">
-                                <use href="#icon-filter" />
-                            </svg>
-                        </button>
-                        <button class="time-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
-                            <svg class="icon">
-                                <use href="#icon-undo" />
-                            </svg>
-                        </button>
-                        <button class="time-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
-                            <svg class="icon">
-                                <use href="#icon-redo" />
-                            </svg>
-                        </button>
+                        <div class="btn-group" style="margin-top: 1rem;">
+                            <button class="btn-agregar" onclick="UILogic.generarReporte()">
+                                <svg class="icon">
+                                    <use href="#icon-download" />
+                                </svg>
+                                Reporte
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div id="lista-registros" class="custom-scroll"></div>
-                <button id="btn-cargar-mas"
-                    style="margin-top: 1rem; visibility: hidden; display: flex; justify-content: center; align-items: center;"
-                    onclick="DataManagement.cargarMasRegistros()" title="Cargar más registros">
-                    <svg class="icon" style="width: 1.5em; height: 1.5em;">
+            </div>
+        </div>
+        <div class="card animated-card" style="animation-delay: 0.3s;">
+            <h2
+                style="margin-bottom: 0; display: flex; justify-content: center; align-items: center; position: relative;">
+                <svg class="icon">
+                    <use href="#icon-list" />
+                </svg> Histórico
+                <button class="icon-btn collapse-toggle" id="btn-toggle-historico"
+                    onclick="UILogic.toggleBotonesHistorico()"
+                    style="background: transparent; border: 1px solid var(--border); padding: 0.5rem; position: absolute; right: 0; width: 44px; height: 44px;">
+                    <svg class="icon" style="width: 1.2em; height: 1.2em;">
                         <use href="#icon-plus" />
                     </svg>
                 </button>
+            </h2>
+            <div class="form-collapsible" id="botones-historico" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+                <div
+                    style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-right: 0.5rem; margin-top: 1.5rem">
+                    <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
+                        <svg class="icon">
+                            <use href="#icon-filter" />
+                        </svg>
+                    </button>
+                    <button class="time-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
+                        <svg class="icon">
+                            <use href="#icon-undo" />
+                        </svg>
+                    </button>
+                    <button class="time-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
+                        <svg class="icon">
+                            <use href="#icon-redo" />
+                        </svg>
+                    </button>
+                </div>
             </div>
+            <div id="lista-registros" class="custom-scroll"></div>
+            <button class="icon-btn" id="btn-cargar-mas" onclick="DataManagement.cargarMasRegistros()"
+                title="Cargar más registros">
+                <svg class="icon">
+                    <use href="#icon-plus" />
+                </svg>
+            </button>
         </div>
     </div>
-
     <div class="modal" id="modal-config">
         <div class="modal-content">
             <h3>
@@ -957,7 +1046,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.00</span> <!-- Version -->
+                <span class="version-text">v6.10</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -1022,9 +1111,6 @@
                     <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-entrada')"><svg class="icon">
                             <use href="#icon-clock" />
                         </svg></button>
-                    <button class="time-btn" onclick="UILogic.limpiarCampo('edit-entrada')"><svg class="icon">
-                            <use href="#icon-broom" />
-                        </svg></button>
                 </div>
             </div>
             <div class="form-group">
@@ -1033,9 +1119,6 @@
                     <input type="text" id="edit-salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
                     <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-salida')"><svg class="icon">
                             <use href="#icon-clock" />
-                        </svg></button>
-                    <button class="time-btn" onclick="UILogic.limpiarCampo('edit-salida')"><svg class="icon">
-                            <use href="#icon-broom" />
                         </svg></button>
                 </div>
             </div>
@@ -1155,18 +1238,21 @@
                             <use href="#icon-save" />
                         </svg> Registrar:</strong> Podes ingresar una hora de entrada y registrar, y luego mas
                     tarde
-                    podes registrar la salida, directamente desde el cuadro "registrar", o editando el registro en el
+                    podes registrar la salida, directamente desde el cuadro "registrar", o editando el registro
+                    en el
                     historico.</p>
                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
                 <p><strong>🥳 Feriados:</strong> Ingresa <code>00:00</code> en Entrada y Salida.</p>
                 <p><strong>✈️ Ausencias/Licencias:</strong> Ingresa <code>11:11</code> en Entrada y Salida.</p>
-                <p><strong>🏖️ Vacaciones:</strong> Ingresa <code>22:22</code> en Entrada y Salida, o usa el botón de
+                <p><strong>🏖️ Vacaciones:</strong> Ingresa <code>22:22</code> en Entrada y Salida, o usa el
+                    botón de
                     "Registrar Período".</p>
                 <p><strong>☕ Tiempo Fuera:</strong> Para descontar tiempo del dia, si saliste por algun motivo,
                     (por ejemplo, irse al medico).</p>
                 <p><strong><svg class="icon">
                             <use href="#icon-clock" />
-                        </svg> Vistas:</strong> Toca la tarjeta de "Hoy" para ver el progreso de la "Semana".</p>
+                        </svg> Vistas:</strong> Toca la tarjeta de "Hoy" para ver el progreso de la "Semana".
+                </p>
                 <p><strong><svg class="icon">
                             <use href="#icon-save" />
                         </svg> Datos:</strong>
@@ -1176,68 +1262,6 @@
             </div>
             <div class="btn-group">
                 <button class="btn-cancel" onclick="UILogic.cerrarAyuda()">
-                    Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
-    <div class="modal" id="modal-stats">
-        <div class="modal-content">
-            <h3>
-                <span class="modal-title-block">
-                    <svg class="icon">
-                        <use href="#icon-stats" />
-                    </svg>
-                    Estadísticas
-                </span>
-            </h3>
-
-            <div class="form-group">
-                <label>Período</label>
-                <select id="select-mes-stats" onchange="UILogic.cambiarMesStats()"
-                    style="width: 100%; padding: 0.75rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--input-bg); color: var(--text-main);">
-                </select>
-            </div>
-
-            <div class="stats-grid custom-scroll">
-                <div class="stat-item">
-                    <div class="stat-label">Días trabajados</div>
-                    <div class="stat-value" id="stat-dias-trabajados">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Feriados</div>
-                    <div class="stat-value" id="stat-feriados">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Ausencias</div>
-                    <div class="stat-value" id="stat-ausencias">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Vacaciones</div>
-                    <div class="stat-value" id="stat-vacaciones">0</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Entrada promedio</div>
-                    <div class="stat-value" id="stat-entrada-promedio">--:--</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Salida promedio</div>
-                    <div class="stat-value" id="stat-salida-promedio">--:--</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Promedio diario</div>
-                    <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
-                </div>
-            </div>
-
-            <div class="btn-group" style="margin-top: 1.5rem;">
-                <button class="btn-backup" onclick="UILogic.generarReporte()">
-                    <svg class="icon">
-                        <use href="#icon-download" />
-                    </svg>
-                    Reporte
-                </button>
-                <button class="btn-cancel" onclick="UILogic.cerrarStats()">
                     Cerrar
                 </button>
             </div>
@@ -1690,10 +1714,10 @@
                         const stored = localStorage.getItem('registros');
                         if (!stored) return [];
                         const data = JSON.parse(stored);
-
+ 
                         if (data.hash) {
                             const hashCalculado = await S.calcularHashSHA256(data.registros);
-
+ 
                             // ✅ Usar comparación segura contra timing attacks
                             if (!S.constantTimeCompare(hashCalculado, data.hash)) {
                                 console.warn('⚠️ Integridad comprometida');
@@ -3171,12 +3195,10 @@
                     if (limiteVisibles < totalItems) {
                         const restantes = totalItems - limiteVisibles;
                         const aCargar = Math.min(10, restantes);
-                        btnCargarMas.style.visibility = 'visible';
-                        btnCargarMas.style.pointerEvents = 'auto';
+                        btnCargarMas.style.display = 'flex';
                         btnCargarMas.title = `Cargar ${aCargar} más (${restantes} restantes)`;
                     } else {
-                        btnCargarMas.style.visibility = 'hidden';
-                        btnCargarMas.style.pointerEvents = 'none';
+                        btnCargarMas.style.display = 'none';
                     }
                 }
 
@@ -3564,11 +3586,20 @@
                 }
 
                 function pegarHoraActual(id) {
+                    const c = $(id);
+                    if (!c) return;
+
+                    // Si el campo tiene contenido, limpiarlo
+                    if (c.value.trim() !== '') {
+                        c.value = '';
+                        return;
+                    }
+
+                    // Si está vacío, pegar hora actual
                     const now = new Date();
                     const h = String(now.getHours()).padStart(2, '0');
                     const m = String(now.getMinutes()).padStart(2, '0');
-                    const c = $(id);
-                    if (c) c.value = `${h}:${m}`;
+                    c.value = `${h}:${m}`;
                 }
 
                 function limpiarCampo(id) {
@@ -3648,21 +3679,6 @@
 
                 function cerrarImportar() {
                     $('modal-importar').classList.remove('show');
-                }
-
-                function mostrarStats() {
-                    // Llenar el selector con los meses disponibles
-                    poblarSelectorMeses();
-
-                    // Actualizar estadísticas con el mes seleccionado (por defecto el actual)
-                    const selectMes = $('select-mes-stats');
-                    if (selectMes && selectMes.value) {
-                        actualizarEstadisticas(selectMes.value);
-                    } else {
-                        actualizarEstadisticas();
-                    }
-
-                    $('modal-stats').classList.add('show');
                 }
 
                 function poblarSelectorMeses() {
@@ -3954,7 +3970,7 @@ REPORTE DE HORAS TRABAJADAS
 
 ────────────────────────────────────────────────────────────────
 
-Generado por Sistema de Horarios version v6.00
+Generado por Sistema de Horarios version v6.10
 `
                     };
 
@@ -3988,10 +4004,6 @@ Generado por Sistema de Horarios version v6.00
                         console.error('Error generando reporte:', e);
                         mostrarToast('Error al generar reporte', 'error');
                     }
-                }
-
-                function cerrarStats() {
-                    $('modal-stats').classList.remove('show');
                 }
 
                 async function init() {
@@ -4030,6 +4042,25 @@ Generado por Sistema de Horarios version v6.00
                     }
 
                     $('fecha').value = obtenerFechaHoy();
+                    try {
+                        const formExpandido = localStorage.getItem('formularioExpandido') === 'true';
+                        if (formExpandido) {
+                            toggleFormulario();
+                        }
+                    } catch (e) { }
+
+                    try {
+                        const statsExpandido = localStorage.getItem('statsExpandido') === 'true';
+                        if (statsExpandido) { toggleStats(); }
+                    } catch (e) { }
+
+                    try {
+                        const botonesExpandido = localStorage.getItem('botonesHistoricoExpandido') === 'true';
+                        if (botonesExpandido) {
+                            toggleBotonesHistorico();
+                        }
+                    } catch (e) { }
+
                     ['entrada', 'salida', 'edit-entrada', 'edit-salida', 'edit-tiempo-fuera'].forEach(id => {
                         const el = $(id);
                         if (el) el.addEventListener('input', formatearInput);
@@ -4051,8 +4082,8 @@ Generado por Sistema de Horarios version v6.00
                         mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                         incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                         incrementarDiasHabiles, decrementarDiasHabiles, obtenerFechaHoy, mostrarFiltros,
-                        cerrarFiltros, mostrarAyuda, cerrarAyuda, mostrarStats, cerrarStats,
-                        cambiarMesStats, generarReporte, mostrarVacaciones, cerrarVacaciones
+                        cerrarFiltros, mostrarAyuda, cerrarAyuda, cambiarMesStats, generarReporte, mostrarVacaciones, cerrarVacaciones, toggleFormulario,
+                        toggleBotonesHistorico, toggleStats
                     };
                     window.DataManagement = {
                         agregarRegistro: D.agregarRegistro, guardarConfig: D.guardarConfig, exportarJSON: D.exportarJSON,
@@ -4078,6 +4109,13 @@ Generado por Sistema de Horarios version v6.00
                 }
 
                 function mostrarFiltros() {
+                    // Si hay filtro activo, limpiarlo directamente
+                    if (D.obtenerRegistrosFiltrados().length !== D.registros().length) {
+                        D.limpiarFiltros();
+                        return;
+                    }
+
+                    // Si no hay filtro, mostrar modal
                     $('modal-filtros').classList.add('show');
                 }
 
@@ -4093,13 +4131,83 @@ Generado por Sistema de Horarios version v6.00
                     $('modal-ayuda').classList.remove('show');
                 }
 
+                function toggleFormulario() {
+                    const form = $('form-registro');
+                    const toggleBtn = $('btn-toggle-form');
+                    const icon = toggleBtn.querySelector('use');
+
+                    form.classList.toggle('expanded');
+                    toggleBtn.classList.toggle('rotated');
+
+                    // Cambiar icono entre + y -
+                    if (form.classList.contains('expanded')) {
+                        icon.setAttribute('href', '#icon-cancelar');
+                    } else {
+                        icon.setAttribute('href', '#icon-plus');
+                    }
+
+                    // Guardar estado en localStorage
+                    try {
+                        localStorage.setItem('formularioExpandido', form.classList.contains('expanded'));
+                    } catch (e) { }
+                }
+
+                function toggleBotonesHistorico() {
+                    const botones = $('botones-historico');
+                    const toggleBtn = $('btn-toggle-historico');
+                    const icon = toggleBtn.querySelector('use');
+
+                    botones.classList.toggle('expanded');
+                    toggleBtn.classList.toggle('rotated');
+
+                    // Cambiar icono entre + y -
+                    if (botones.classList.contains('expanded')) {
+                        icon.setAttribute('href', '#icon-cancelar');
+                    } else {
+                        icon.setAttribute('href', '#icon-plus');
+                    }
+
+                    // Guardar estado en localStorage
+                    try {
+                        localStorage.setItem('botonesHistoricoExpandido', botones.classList.contains('expanded'));
+                    } catch (e) { }
+                }
+
+                function toggleStats() {
+                    const form = $('form-stats');
+                    const toggleBtn = $('btn-toggle-stats');
+                    const icon = toggleBtn.querySelector('use');
+
+                    form.classList.toggle('expanded');
+                    toggleBtn.classList.toggle('rotated');
+
+                    if (form.classList.contains('expanded')) {
+                        icon.setAttribute('href', '#icon-cancelar');
+                        // Aseguramos que los datos estén actualizados al abrir
+                        poblarSelectorMeses();
+                        const selectMes = $('select-mes-stats');
+                        if (selectMes && selectMes.value) {
+                            actualizarEstadisticas(selectMes.value);
+                        } else {
+                            actualizarEstadisticas();
+                        }
+                    } else {
+                        icon.setAttribute('href', '#icon-plus');
+                    }
+
+                    // Guardar estado en localStorage
+                    try {
+                        localStorage.setItem('statsExpandido', form.classList.contains('expanded'));
+                    } catch (e) { }
+                }
+
                 return {
                     init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, mostrarConfig, cerrarConfig,
                     cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError,
                     limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                     incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                     incrementarDiasHabiles, decrementarDiasHabiles, mostrarFiltros, cerrarFiltros, mostrarAyuda,
-                    cerrarAyuda, mostrarStats, cerrarStats, cambiarMesStats, generarReporte
+                    cerrarAyuda, cambiarMesStats, generarReporte, toggleBotonesHistorico, toggleStats
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -4189,13 +4297,13 @@ Generado por Sistema de Horarios version v6.00
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.00
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.10
     // ====================================================================
     <<< Se crea una funcion de compatibilidad para "async function cargarConVerificacion"
     la cual debe ser removida dentro de una semana de hosteada, y descomentar la nueva.
     Esto debido a que se cambió de hash utilizado a SHA256 y al momento de cargar los datos
     antiguos, da error de integridad >>>>>
 
-    1) fix service worker, varios arreglos menores
-    2) fix toast show
+    1) optimizacion de codigo css y html
+    
     -->
