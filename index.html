@@ -274,10 +274,6 @@
             background: var(--c-gray-btn);
         }
 
-        button:hover {
-            transform: scale(1.02);
-        }
-
         button:active {
             transform: scale(1);
         }
@@ -391,8 +387,10 @@
             transition: transform 0.3s;
         }
 
-        .stats-card:hover {
-            transform: scale(1.02);
+        /* --- Efecto Timer en Tarjeta Principal --- */
+        .stats-card.timer-running {
+            border: 1px solid var(--c-red);
+            animation: pulse-card 2s infinite;
         }
 
         .stats-number {
@@ -452,7 +450,10 @@
             background: var(--input-bg);
         }
 
-        .registro-item:hover {
+        .registro-item:hover,
+        .card-header-clickable:hover,
+        .stats-card:hover,
+        button:hover {
             transform: scale(1.02);
         }
 
@@ -646,8 +647,24 @@
             }
         }
 
+        /* Animación de pulso específica para la tarjeta (más suave) */
+        @keyframes pulse-card {
+            0% {
+                box-shadow: 0 0 0 0 rgba(192, 93, 118, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(192, 93, 118, 0);
+                /* Expansión de la sombra */
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(192, 93, 118, 0);
+            }
+        }
+
         .animated-card {
-            animation: zoomIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            animation: zoomIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
         }
 
         .toggle-hint,
@@ -764,10 +781,7 @@
             align-items: center;
             width: 100%;
             position: relative;
-        }
-
-        .card-header-clickable:hover {
-            opacity: 0.8;
+            transition: transform 0.3s;
         }
 
         .chevron {
@@ -778,6 +792,46 @@
 
         .chevron.rotated {
             transform: rotate(180deg);
+        }
+
+        /* modal informacion transiciones suaves y scrool */
+        .ayuda-scroll-container {
+            scroll-behavior: smooth;
+        }
+
+        .indice-lista {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 1.5rem;
+            background: var(--input-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .indice-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .indice-link {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .indice-link:hover {
+            text-decoration: underline;
+        }
+
+        .volver-arriba {
+            display: inline-block;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
         }
     </style>
 </head>
@@ -909,13 +963,6 @@
             <line x1="12" y1="5" x2="12" y2="19" class="icon-line" stroke="currentColor"></line>
             <line x1="5" y1="12" x2="19" y2="12" class="icon-line" stroke="currentColor"></line>
         </symbol>
-        <symbol id="icon-play" viewBox="0 0 24 24">
-            <polygon points="5 3 19 12 5 21 5 3" class="icon-line" fill="currentColor" stroke="currentColor"></polygon>
-        </symbol>
-        <symbol id="icon-stop" viewBox="0 0 24 24">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" class="icon-line" fill="currentColor"
-                stroke="currentColor"></rect>
-        </symbol>
         <symbol id="icon-coffee" viewBox="0 0 24 24">
             <path d="M18 8h1a4 4 0 0 1 0 8h-1" class="icon-line" stroke="currentColor" fill="none"></path>
             <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" class="icon-line" stroke="currentColor" fill="none">
@@ -928,7 +975,16 @@
             <polyline points="6 9 12 15 18 9" class="icon-line" stroke="currentColor" stroke-width="2" fill="none">
             </polyline>
         </symbol>
+        <symbol id="icon-lock" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" class="icon-line" stroke="currentColor"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-lock-open" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" class="icon-line" stroke="currentColor"></rect>
+            <path d="M7 11V7a5 5 0 0 1 9.9-1" class="icon-line" stroke="currentColor"></path>
+        </symbol>
     </svg>
+
     <div class="header">
         <h1><svg class="icon">
                 <use href="#icon-clock" />
@@ -1135,7 +1191,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.12</span> <!-- Version -->
+                <span class="version-text">v6.17</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -1191,7 +1247,15 @@
             </h3>
             <div class="form-group">
                 <label>Fecha</label>
-                <input type="date" id="edit-fecha" />
+                <div class="input-with-btn">
+                    <input type="date" id="edit-fecha" />
+                    <button class="time-btn" id="btn-lock-toggle" onclick="UILogic.toggleBloqueoEdicion()"
+                        title="Desbloquear edición">
+                        <svg class="icon">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="form-group">
                 <label>Entrada</label>
@@ -1216,11 +1280,6 @@
                 <div class="input-with-btn">
                     <input type="text" id="edit-tiempo-fuera" inputmode="numeric" placeholder="Ej: 00:20"
                         maxlength="5" />
-                    <button class="time-btn timer-btn" id="btn-timer-break" onclick="UILogic.toggleTimerBreak()">
-                        <svg class="icon">
-                            <use href="#icon-play" />
-                        </svg>
-                    </button>
                     <button class="time-btn" onclick="UILogic.limpiarCampo('edit-tiempo-fuera')">
                         <svg class="icon">
                             <use href="#icon-broom" />
@@ -1243,7 +1302,6 @@
             </div>
         </div>
     </div>
-
     <div class="modal" id="modal-importar">
         <div class="modal-content">
             <h3><svg class="icon">
@@ -1256,7 +1314,6 @@
                     Elige una opción:
                 </div>
             </div>
-
             <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
                 <button class="btn-backup" onclick="DataManagement.importarDatos('merge')">
                     <svg class="icon">
@@ -1264,14 +1321,12 @@
                     </svg>
                     Combinar
                 </button>
-
                 <button class="btn-delete" onclick="DataManagement.importarDatos('replace')">
                     <svg class="icon">
                         <use href="#icon-trash" />
                     </svg>
                     Reemplazar
                 </button>
-
                 <button class="btn-cancel" onclick="UILogic.cerrarImportar()">
                     <svg class="icon">
                         <use href="#icon-cancelar" />
@@ -1328,33 +1383,109 @@
                     Información
                 </span>
             </h3>
-            <div
-                style="text-align: left; color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; max-height: 400px; overflow-y: auto;">
-                <p><strong><svg class="icon">
-                            <use href="#icon-save" />
-                        </svg> Registrar:</strong> Podes ingresar una hora de entrada y registrar, y luego mas
-                    tarde
-                    podes registrar la salida, directamente desde el cuadro "registrar", o editando el registro
-                    en el
-                    historico.</p>
+            <div class="ayuda-scroll-container"
+                style="text-align: left; color: var(--text-muted); font-size: 0.9rem; line-height: 1.6; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+
+                <p><strong id="inicio-ayuda">Temas de ayuda:</strong></p>
+                <ul class="indice-lista">
+                    <li class="indice-item"><a href="#ayuda-entrada" class="indice-link">📥 Registrar entrada</a></li>
+                    <li class="indice-item"><a href="#ayuda-salida" class="indice-link">📤 Registrar salida</a></li>
+                    <li class="indice-item"><a href="#ayuda-manual" class="indice-link">✏️ Fecha/Hora manual</a></li>
+                    <li class="indice-item"><a href="#ayuda-rango" class="indice-link">📅 Registrar rango</a></li>
+                    <li class="indice-item"><a href="#ayuda-borrar-rango" class="indice-link">🗑️ Borrar rango</a></li>
+                    <li class="indice-item"><a href="#ayuda-break" class="indice-link">☕ Timer / Tiempo fuera</a></li>
+                    <li class="indice-item"><a href="#ayuda-editar" class="indice-link">📝 Editar registro</a></li>
+                    <li class="indice-item"><a href="#ayuda-codigos" class="indice-link">🔢 Fechas especiales</a></li>
+                    <li class="indice-item"><a href="#ayuda-extra" class="indice-link">⚙️ Funciones extra</a></li>
+                </ul>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+
+                <p id="ayuda-entrada"><strong>¿Cómo registro una entrada?</strong></p>
+                <p>Tocá el botón <svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> <strong>Registrar</strong>. Al hacerlo se genera un registro con la fecha y hora actual en el
+                    campo de entrada.</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
                 <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
-                <p><strong>🥳 Feriados:</strong> Ingresa <code>00:00</code> en Entrada y Salida.</p>
-                <p><strong>✈️ Ausencias/Licencias:</strong> Ingresa <code>11:11</code> en Entrada y Salida.</p>
-                <p><strong>🏖️ Vacaciones:</strong> Ingresa <code>22:22</code> en Entrada y Salida, o usa el
-                    botón de
-                    "Registrar Período".</p>
-                <p><strong>☕ Tiempo Fuera:</strong> Para descontar tiempo del dia, si saliste por algun motivo,
-                    (por ejemplo, irse al medico).</p>
-                <p><strong><svg class="icon">
-                            <use href="#icon-clock" />
-                        </svg> Vistas:</strong> Toca la tarjeta de "Hoy" para ver el progreso de la "Semana".
+
+                <p id="ayuda-salida"><strong>¿Cómo registro una salida?</strong></p>
+                <p>Tocá el botón <svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> <strong>Registrar</strong>. Si ya tienes una entrada hoy, este botón completará el campo de
+                    salida automáticamente.</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-manual"><strong>¿Cómo agregar una fecha y horas personalizadas?</strong></p>
+                <p>Tocá el botón <svg class="icon">
+                        <use href="#icon-chevron-down" />
+                    </svg> que se encuentra al costado derecho del botón Registrar para expandir el formulario manual.
                 </p>
-                <p><strong><svg class="icon">
-                            <use href="#icon-save" />
-                        </svg> Datos:</strong>
-                    La configuracion y registro de la pagina usa localStorage, lo que guarda los
-                    datos de forma local en el navegador, Usa "Exportar" en Configuración para hacer
-                    copias de seguridad e importar para combinar o reemplazar los registros.</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-rango"><strong>¿Cómo registro un rango de fechas?</strong></p>
+                <p>Tocá el botón <svg class="icon">
+                        <use href="#icon-calendar-simple" />
+                    </svg> junto al campo fecha. Se abre un menú para elegir "Desde" y "Hasta" y el tipo de registro
+                    (Vacaciones, Licencias, etc.).</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-borrar-rango"><strong>¿Cómo borro un rango de fechas?</strong></p>
+                <p>En el mismo menú del calendario <svg class="icon">
+                        <use href="#icon-calendar-simple" />
+                    </svg>, selecciona las fechas, el tipo de registro y toca el botón <strong>Borrar</strong>.</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-break"><strong>¿Cómo registro un "break" o tiempo fuera?</strong></p>
+                <p>Tocá el botón <svg class="icon">
+                        <use href="#icon-coffee" />
+                    </svg> junto a Registrar. El timer comenzará a correr. Al tocarlo de nuevo, el tiempo transcurrido
+                    se descontará del total del día.</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-editar"><strong>¿Cómo edito un registro?</strong></p>
+                <p>Toca cualquier registro en la lista del Histórico. Se abrirá un menú para modificar fecha, horas o
+                    eliminar el registro.</p>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-codigos"><strong>Fechas especiales (Feriados/Licencias/etc)</strong></p>
+                <p>Editando o agregando manualmente, usa estos horarios:</p>
+                <ul style="list-style: none; padding-left: 0.5rem;">
+                    <li>🥳 <strong>Feriados:</strong> 00:00 a 00:00</li>
+                    <li>✈️ <strong>Ausencias:</strong> 11:11 a 11:11</li>
+                    <li>🏖️ <strong>Vacaciones:</strong> 22:22 a 22:22</li>
+                </ul>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 0.5rem 0;">
+
+                <p id="ayuda-extra"><strong>Funciones adicionales</strong></p>
+                <ul style="padding-left: 1.5rem;">
+                    <li>Exportar/Importar (Configuración)</li>
+                    <li>Configurar días hábiles (Configuración)</li>
+                    <li>Configurar horas diarias (Configuración)</li>
+                    <li>Deshacer/Rehacer (Menú Histórico)</li>
+                    <li>Filtros de búsqueda (Menú Histórico)</li>
+                    <li>Almacenamiento de datos en localStorage</li>
+                </ul>
+                <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
+                <br><br>
+                <p><strong>LA DISPONIBILIDAD Y USABILIDAD DEL SISTEMA ESTÁ GARANTIZADO POR PINDONGA.
+                        EL CODIGO ESTA DISPONIBLE EN EL REPOSITORIO DE GITHUB PARA BAJAR, EDITAR Y
+                        MEJORAR LIBREMENTE.</strong></p>
             </div>
             <div class="btn-group">
                 <button class="btn-cancel" onclick="UILogic.cerrarAyuda()">
@@ -1772,46 +1903,6 @@
                         if (data.hash) {
                             const hashCalculado = await S.calcularHashSHA256(data.registros);
 
-                            // comparación segura contra timing attacks
-                            if (!S.constantTimeCompare(hashCalculado, data.hash)) {
-
-                                if (data.hash.length < 64 && hashCalculado.length === 64) {
-                                    console.log('🔄 Migrando formato de seguridad (FNV1a -> SHA-256)...');
-
-                                    setTimeout(async () => {
-                                        await guardarConIntegridad((data.registros || []).filter(S.validarRegistroSeguro));
-                                        console.log('✅ Migración de hash completada en segundo plano.');
-                                    }, 2000);
-
-                                    return (data.registros || []).filter(S.validarRegistroSeguro);
-                                }
-
-                                console.warn('⚠️ Integridad comprometida');
-                                UILogic.mostrarToast('Advertencia de integridad', 'warning');
-                                const continuar = confirm('⚠️ Los datos pueden haber sido modificados.\n\n¿Deseas cargarlos de todos modos?');
-                                if (!continuar) {
-                                    localStorage.removeItem('registros');
-                                    return [];
-                                }
-                            }
-                        }
-                        return (data.registros || []).filter(S.validarRegistroSeguro);
-                    } catch (e) {
-                        console.error('Error cargando:', e);
-                        return [];
-                    }
-                }
-                // >>>>> ESTA FUNCION DE HASH DEBE VOLVER DESPUES DE 2 SEMANAS <<<<<
-
-                /*async function cargarConVerificacion() {
-                    try {
-                        const stored = localStorage.getItem('registros');
-                        if (!stored) return [];
-                        const data = JSON.parse(stored);
- 
-                        if (data.hash) {
-                            const hashCalculado = await S.calcularHashSHA256(data.registros);
- 
                             // ✅ Usar comparación segura contra timing attacks
                             if (!S.constantTimeCompare(hashCalculado, data.hash)) {
                                 console.warn('⚠️ Integridad comprometida');
@@ -1828,7 +1919,7 @@
                         console.error('Error cargando:', e);
                         return [];
                     }
-                }*/
+                }
 
                 async function registrarVacaciones() {
                     const desde = S.sanitizeString($('vacaciones-fecha-desde').value, 10);
@@ -1867,6 +1958,15 @@
 
                     let fechaActual = new Date(desde.replace(/-/g, '/') + ' 00:00:00');
                     const fechaFin = new Date(hasta.replace(/-/g, '/') + ' 00:00:00');
+                    const unDia = 1000 * 60 * 60 * 24;
+                    const diferenciaTiempo = Math.abs(fechaFin - fechaActual);
+                    const totalDias = Math.ceil(diferenciaTiempo / unDia) + 1; // +1 para incluir el día final
+                    const MAX_DIAS_LOTE = 60; // Límite de seguridad: 2 meses por operación
+
+                    if (totalDias > MAX_DIAS_LOTE) {
+                        UILogic.mostrarToast(`Por seguridad, el máximo es ${MAX_DIAS_LOTE} días por operación.`, 'error');
+                        return;
+                    }
                     const fechasARegistrar = [];
 
                     while (fechaActual <= fechaFin) {
@@ -2302,6 +2402,16 @@
                         const modal = $('modal-editar');
                         const btnEliminar = modal.querySelector('.btn-delete');
                         btnEliminar.disabled = true;
+                        const registroABorrar = registros.find(r => r.id === editandoId);
+                        const hoy = UILogic.obtenerFechaHoy();
+
+                        if (registroABorrar && registroABorrar.fecha === hoy) {
+                            // Si existe un timer activo, lo eliminamos
+                            if (localStorage.getItem('breakStartTime')) {
+                                localStorage.removeItem('breakStartTime');
+                                UILogic.mostrarToast('Timer detenido al borrar el registro', 'info');
+                            }
+                        }
 
                         registros = registros.filter(r => r.id !== editandoId);
                         HistoryManager.saveState(registros);
@@ -2313,6 +2423,8 @@
                         if (saved) {
                             UILogic.mostrarToast('Registro eliminado', 'success');
                             UILogic.cerrarEdicion();
+                            // Forzamos actualización del botón visualmente
+                            UILogic.actualizarEstadoBotonTimerMain();
                         }
                     }
                 }
@@ -2327,6 +2439,7 @@
                     $('edit-salida').value = r.salida || '';
                     $('edit-tiempo-fuera').value = r.tiempoFuera || '';
                     $('modal-editar').classList.add('show');
+                    UILogic.setBloqueoEdicion(true);
                 }
                 async function guardarEdicion() {
                     const r = registros.find(x => x.id === editandoId);
@@ -2356,6 +2469,11 @@
 
                     if (!e && !s) {
                         // Si ambos campos están vacíos, eliminar el registro
+                        const registroABorrar = registros.find(r => r.id === editandoId);
+                        if (registroABorrar && registroABorrar.fecha === UILogic.obtenerFechaHoy()) {
+                            localStorage.removeItem('breakStartTime');
+                            UILogic.actualizarEstadoBotonTimerMain();
+                        }
                         registros = registros.filter(r => r.id !== editandoId);
                         HistoryManager.saveState(registros);
 
@@ -2449,12 +2567,10 @@
                         return;
                     }
 
-                    // --- CONFIRMACIÓN SIMPLE ---
                     const confirmar = confirm(`⚠️ ¿ESTÁS SEGURO?\n\nEsto eliminará TODOS los ${totalRegistros} registros \n\Esta accion se puede DESHACER antes de cerrar la pagina.`);
 
                     if (!confirmar) return;
-                    // --- FIN CONFIRMACIÓN SIMPLE ---
-
+                    localStorage.removeItem('breakStartTime');
                     registros = [];
                     registrosVisibles = 10;
 
@@ -3478,7 +3594,6 @@
                     const diasHabilesConfig = D.diasHabiles();
                     const vistaActual = D.vistaActual();
 
-                    // AQUÍ PASAMOS EL ID NUEVO A LA LISTA
                     actualizarListaRegistros(registros, idNuevo);
 
                     const { inicio: ini, fin: fn } = obtenerSemanaActual();
@@ -3641,7 +3756,6 @@
                     }
                     actualizarEstadisticas();
                     actualizarEstadoBotonTimerMain();
-                    actualizarEstadoBotonTimer();
                 }
 
                 function alternarTema() {
@@ -4051,7 +4165,7 @@ REPORTE DE HORAS TRABAJADAS
 
 ────────────────────────────────────────────────────────────────
 
-Generado por Sistema de Horarios version v6.12
+Generado por Sistema de Horarios version v6.17
 `
                     };
 
@@ -4106,76 +4220,23 @@ Generado por Sistema de Horarios version v6.12
                     return `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
                 }
 
-                function actualizarEstadoBotonTimer() {
-                    const btn = document.getElementById('btn-timer-break');
-                    if (!btn) return;
-
-                    const isRunning = localStorage.getItem('breakStartTime') !== null;
-                    const icon = btn.querySelector('use');
-
-                    if (isRunning) {
-                        btn.classList.add('running');
-                        icon.setAttribute('href', '#icon-coffee');
-                    } else {
-                        btn.classList.remove('running');
-                        icon.setAttribute('href', '#icon-coffee');
-                    }
-                }
-
-                function toggleTimerBreak() {
-                    const storageKey = 'breakStartTime';
-                    const storedStart = localStorage.getItem(storageKey);
-                    const input = document.getElementById('edit-tiempo-fuera');
-
-                    if (!storedStart) {
-                        // --- INICIAR ---
-                        localStorage.setItem(storageKey, Date.now());
-                        mostrarToast('⏱️ Tiempo fuera iniciado', 'info');
-                    } else {
-                        // --- DETENER ---
-                        const start = parseInt(storedStart);
-                        const end = Date.now();
-                        const diffMs = end - start;
-
-                        // Mínimo 1 minuto para evitar registros de 00:00 por clicks accidentales rápidos
-                        let minutosTranscurridos = Math.round(diffMs / 60000);
-                        if (minutosTranscurridos < 1) minutosTranscurridos = 1;
-
-                        const nuevoValor = sumarMinutosAHora(input.value, minutosTranscurridos);
-                        input.value = nuevoValor;
-
-                        localStorage.removeItem(storageKey);
-                        mostrarToast(`✅ Se agregaron ${minutosTranscurridos} minutos`, 'success');
-                    }
-
-                    actualizarEstadoBotonTimer();
-                }
-
-                // ... después de la función toggleTimerBreak() ...
-
-                // --- NUEVAS FUNCIONES PARA EL BOTÓN PRINCIPAL ---
                 function actualizarEstadoBotonTimerMain() {
                     const btn = document.getElementById('btn-timer-main');
+                    const card = document.getElementById('stats-card'); // <--- 1. REFERENCIA A LA TARJETA
                     if (!btn) return;
 
                     const hoy = obtenerFechaHoy();
-                    // Buscamos el objeto del registro completo para ver sus datos
                     const registroHoy = D.registros().find(r => r.fecha === hoy);
                     const isRunning = localStorage.getItem('breakStartTime') !== null;
                     const icon = btn.querySelector('use');
 
-                    // Verificamos si existe y si ya tiene salida marcada (es decir, día cerrado)
-                    // Consideramos "cerrado" si la propiedad salida existe y no está vacía
+                    // ... (lógica de bloqueo del botón existente) ...
                     const diaCerrado = registroHoy && registroHoy.salida && registroHoy.salida.trim() !== '';
 
-                    // Lógica de bloqueo:
-                    // Se bloquea si el timer NO está corriendo Y (No hay registro de hoy O el día ya está cerrado)
-                    // Nota: Si el timer está corriendo, siempre dejamos el botón habilitado para poder detenerlo.
                     if (!isRunning && (!registroHoy || diaCerrado)) {
                         btn.disabled = true;
                         btn.style.opacity = '0.5';
                         btn.style.cursor = 'not-allowed';
-                        // Tooltip útil para saber por qué está bloqueado
                         btn.title = diaCerrado ? "Día finalizado" : "Debes registrar entrada primero";
                     } else {
                         btn.disabled = false;
@@ -4185,15 +4246,29 @@ Generado por Sistema de Horarios version v6.12
                     }
 
                     if (isRunning) {
+                        // Estado ACTIVO
                         btn.classList.add('running');
                         btn.style.color = 'var(--c-red)';
                         btn.style.borderColor = 'var(--c-red)';
                         icon.setAttribute('href', '#icon-coffee');
+
+                        // <--- 2. ACTIVAR EFECTO EN TARJETA
+                        if (card) {
+                            card.classList.add('timer-running');
+                            // Opcional: Cambiar título temporalmente
+                            const titulo = card.querySelector('h2');
+                            if (titulo) titulo.innerHTML = `<svg class="icon"><use href="#icon-coffee"/></svg> Tiempo fuera...`;
+                        }
+
                     } else {
+                        // Estado INACTIVO
                         btn.classList.remove('running');
                         btn.style.color = 'var(--text-main)';
                         btn.style.borderColor = 'var(--border)';
                         icon.setAttribute('href', '#icon-coffee');
+
+                        // <--- 3. DESACTIVAR EFECTO EN TARJETA
+                        if (card) card.classList.remove('timer-running');
                     }
                 }
 
@@ -4212,7 +4287,7 @@ Generado por Sistema de Horarios version v6.12
                     if (!storedStart) {
                         // --- INICIAR ---
                         localStorage.setItem(storageKey, Date.now());
-                        mostrarToast('⏱️ Timer iniciado (en registro de hoy)', 'info');
+                        mostrarToast('⏱️ Tiempo fuera iniciado', 'info');
                     } else {
                         // --- DETENER ---
                         const start = parseInt(storedStart);
@@ -4234,6 +4309,7 @@ Generado por Sistema de Horarios version v6.12
                         registroHoy.horas = t?.horas || 0;
                         registroHoy.minutos = t?.minutos || 0;
                         registroHoy.total = t?.total || 0;
+                        HistoryManager.saveState(D.registros());
 
                         // Guardar en base de datos
                         localStorage.removeItem(storageKey);
@@ -4242,9 +4318,45 @@ Generado por Sistema de Horarios version v6.12
                         mostrarToast(`✅ Se descontaron ${minutosTranscurridos} min al registro de hoy`, 'success');
                     }
 
-                    // Actualizamos ambos botones (el del modal y el principal)
-                    actualizarEstadoBotonTimer();
                     actualizarEstadoBotonTimerMain();
+                }
+
+                // --- Lógica de Bloqueo del Modal Editar ---
+                let edicionBloqueada = true;
+
+                function setBloqueoEdicion(bloqueado) {
+                    edicionBloqueada = bloqueado;
+
+                    // 1. Icono del candado
+                    const btnLock = $('btn-lock-toggle');
+                    if (btnLock) {
+                        const icon = btnLock.querySelector('use');
+                        icon.setAttribute('href', bloqueado ? '#icon-lock' : '#icon-lock-open');
+                        btnLock.title = bloqueado ? "Desbloquear edición" : "Bloquear edición";
+                        // Estilo visual para indicar estado (opcional, el candado cerrado ya es claro)
+                        btnLock.style.color = bloqueado ? 'var(--c-red)' : 'var(--text-main)';
+                    }
+
+                    // 2. Inputs del modal editar
+                    const inputs = ['edit-fecha', 'edit-entrada', 'edit-salida', 'edit-tiempo-fuera'];
+                    inputs.forEach(id => {
+                        const el = $(id);
+                        if (el) el.disabled = bloqueado;
+                    });
+
+                    // 3. Botones de acción y helpers dentro del modal
+                    const modal = $('modal-editar');
+                    if (modal) {
+                        // Seleccionamos todos los botones EXCEPTO el candado y el botón Cancelar
+                        const botones = modal.querySelectorAll('button:not(#btn-lock-toggle):not(.btn-cancel)');
+                        botones.forEach(btn => {
+                            btn.disabled = bloqueado;
+                        });
+                    }
+                }
+
+                function toggleBloqueoEdicion() {
+                    setBloqueoEdicion(!edicionBloqueada);
                 }
 
                 async function init() {
@@ -4317,14 +4429,17 @@ Generado por Sistema de Horarios version v6.12
                         $('modal-vacaciones').classList.remove('show');
                     }
 
+
+
                     window.UILogic = {
                         alternarTema, mostrarConfig, cerrarConfig, pegarHoraActual, alternarVista,
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
                         mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                         incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                         incrementarDiasHabiles, decrementarDiasHabiles, obtenerFechaHoy, mostrarFiltros,
-                        cerrarFiltros, mostrarAyuda, cerrarAyuda, cambiarMesStats, generarReporte, mostrarVacaciones, cerrarVacaciones, toggleFormulario,
-                        toggleBotonesHistorico, toggleStats, toggleTimerBreak, toggleTimerBreakMain
+                        cerrarFiltros, mostrarAyuda, cerrarAyuda, cambiarMesStats, generarReporte, mostrarVacaciones,
+                        cerrarVacaciones, toggleFormulario, toggleBotonesHistorico, toggleStats, toggleTimerBreakMain,
+                        actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion
                     };
                     window.DataManagement = {
                         agregarRegistro: D.agregarRegistro, guardarConfig: D.guardarConfig, exportarJSON: D.exportarJSON,
@@ -4345,7 +4460,6 @@ Generado por Sistema de Horarios version v6.12
                     PWAInstaller.init();
 
                     actualizarUI();
-                    actualizarEstadoBotonTimer();
                     setInterval(actualizarUI, 60000);
                     console.log('Sistema iniciado correctamente Luigibosca');
                 }
@@ -4448,7 +4562,9 @@ Generado por Sistema de Horarios version v6.12
                     limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                     incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
                     incrementarDiasHabiles, decrementarDiasHabiles, mostrarFiltros, cerrarFiltros, mostrarAyuda,
-                    cerrarAyuda, cambiarMesStats, generarReporte, toggleBotonesHistorico, toggleStats, toggleTimerBreak, actualizarEstadoBotonTimer, sumarMinutosAHora
+                    cerrarAyuda, cambiarMesStats, generarReporte, toggleBotonesHistorico, toggleStats, sumarMinutosAHora,
+                    toggleTimerBreakMain, actualizarEstadoBotonTimerMain, toggleBloqueoEdicion,
+                    setBloqueoEdicion,
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -4510,7 +4626,7 @@ Generado por Sistema de Horarios version v6.12
                         console.warn('⚠️ El Service Worker ha cambiado desde la última vez');
 
                         if (window.UILogic) {
-                            UILogic.mostrarToast('SW Actualizado', 'info');
+                            UILogic.mostrarToast('Actualizado', 'info');
                         }
                     }
                     localStorage.setItem('sw-hash', hash);
@@ -4538,13 +4654,8 @@ Generado por Sistema de Horarios version v6.12
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.12
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.17
     // ====================================================================
-    <<< Se crea una funcion de compatibilidad para "async function cargarConVerificacion"
-    la cual debe ser removida dentro de una semana de hosteada, y descomentar la nueva.
-    Esto debido a que se cambió de hash utilizado a SHA256 y al momento de cargar los datos
-    antiguos, da error de integridad >>>>>
+    1) agregado funcion de bloquear registro para edicion
 
-    1) cambios en algunos botones y su visualizacion
-    
     -->
