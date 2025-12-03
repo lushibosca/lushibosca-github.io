@@ -1,4 +1,4 @@
-const CACHE_NAME = 'horarios-v6.17-cache';
+const CACHE_NAME = 'horarios-v6.18-cache';
 const urlsToCache = [
   './',
   './index.html',
@@ -7,25 +7,29 @@ const urlsToCache = [
   './icons/icon-512.png'
 ];
 
+// Instalación
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Archivos cacheados exitosamente');
-        return cache.addAll(urlsToCache);
+        console.log('Abriendo cache');
+        return cache.addAll(urlsToCache).catch(err => {
+            console.error('CRÍTICO: Falló la carga de archivos en el install:', err);
+            throw err; 
+        });
       })
-      .catch(err => console.error('Error al cachear:', err))
   );
   self.skipWaiting();
 });
 
+// Activación
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Eliminando cache antiguo:', cacheName);
+            console.log('Borrando cache viejo:', cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -35,33 +39,34 @@ self.addEventListener('activate', event => {
   return self.clients.claim();
 });
 
+// Fetch
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
+
   const url = new URL(event.request.url);
-  
-  if (url.origin !== location.origin) {
-    return; 
-  }
+  if (url.origin !== location.origin) return;
 
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         if (response) {
-          return response; 
+          return response;
         }
-
         return fetch(event.request)
           .then(networkResponse => {
-            if (networkResponse && networkResponse.status === 200) {
-              const responseClone = networkResponse.clone();
-              caches.open(CACHE_NAME).then(cache => {
-                cache.put(event.request, responseClone);
-              });
+            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+              return networkResponse;
             }
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(event.request, responseClone);
+            });
             return networkResponse;
           })
-          .catch(err => {
-            console.error('Fetch falló:', err);
-            return caches.match('./index.html');
+          .catch(() => {
+            if (event.request.mode === 'navigate') {
+              return caches.match('./index.html');
+            }
           });
       })
   );
