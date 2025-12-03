@@ -1191,7 +1191,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.17</span> <!-- Version -->
+                <span class="version-text">v6.18</span> <!-- Version -->
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -2449,11 +2449,34 @@
                     const btnGuardar = modal.querySelector('.btn-edit');
                     btnGuardar.disabled = true;
 
+                    // Obtener valores de los inputs
                     const f = S.sanitizeString($('edit-fecha').value, 10);
                     const e = S.sanitizeString($('edit-entrada').value.trim(), 5);
                     const s = S.sanitizeString($('edit-salida').value.trim(), 5);
                     let tf = S.sanitizeString($('edit-tiempo-fuera').value.trim(), 5);
                     if (tf === '') tf = null;
+
+                    // DETECTAR CAMBIOS ---
+                    const actualEntrada = r.entrada || '';
+                    const nuevaEntrada = e || '';
+                    const actualSalida = r.salida || '';
+                    const nuevaSalida = s || '';
+                    const actualTF = r.tiempoFuera || '';
+                    const nuevoTF = tf || ''; // tf puede ser null, pero para comparar usamos ''
+
+                    // Comparamos todo
+                    if (r.fecha === f &&
+                        actualEntrada === nuevaEntrada &&
+                        actualSalida === nuevaSalida &&
+                        actualTF === nuevoTF) {
+
+                        // Si todo es igual, avisamos y cerramos
+                        UILogic.mostrarToast('Sin cambios', 'info');
+                        UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                        UILogic.cerrarEdicion();
+                        return;
+                    }
+                    // --------------------------------------
 
                     if (!S.validarFechaSegura(f) || (e && !S.validarHoraSegura(e)) || (s && !S.validarHoraSegura(s)) || (tf && !S.validarHoraSegura(tf))) {
                         UILogic.restaurarBotonGuardarEdicion(btnGuardar);
@@ -2496,6 +2519,7 @@
                         return;
                     }
 
+                    // Si pasó las validaciones y hubo cambios, actualizamos
                     r.fecha = f;
                     r.entrada = e || null;
                     r.salida = s || null;
@@ -2526,6 +2550,7 @@
                     const d = parseFloat($('config-dias-habiles').value);
                     const vd = parseFloat($('config-horas-diarias').value);
 
+                    // Validación básica
                     if (isNaN(d) || d < 1 || d > 7) {
                         UILogic.mostrarToast('Días hábiles inválidos', 'error');
                         return;
@@ -2535,9 +2560,19 @@
                         return;
                     }
 
+                    // --- NUEVA LÓGICA: DETECTAR CAMBIOS ---
+                    // Comparamos los valores nuevos (d, vd) con los actuales (diasHabiles, horasDiarias)
+                    if (d === diasHabiles && vd === horasDiarias) {
+                        UILogic.mostrarToast('Sin cambios', 'info');
+                        UILogic.cerrarConfig();
+                        return; // Salimos sin hacer nada más
+                    }
+                    // --------------------------------------
+
                     diasHabiles = d;
                     horasDiarias = vd;
 
+                    // Recalcular registros especiales si cambiaron las horas diarias
                     registros.forEach(r => {
                         if (r.entrada === '00:00' && r.salida === '00:00') {
                             const t = calcularHoras('00:00', '00:00', r.tiempoFuera || null);
@@ -4165,7 +4200,7 @@ REPORTE DE HORAS TRABAJADAS
 
 ────────────────────────────────────────────────────────────────
 
-Generado por Sistema de Horarios version v6.17
+Generado por Sistema de Horarios version v6.18
 `
                     };
 
@@ -4654,8 +4689,8 @@ Generado por Sistema de Horarios version v6.17
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.17
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.18
     // ====================================================================
-    1) agregado funcion de bloquear registro para edicion
+    1) Mejoras en la logica de guardado
 
     -->
