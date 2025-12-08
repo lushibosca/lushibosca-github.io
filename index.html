@@ -4315,7 +4315,7 @@
 
                     const horasEl = document.createElement('div');
                     horasEl.className = 'registro-horas';
-                    const rangoFechas = `${primerReg.fecha.substring(8)} al ${ultimoReg.fecha.substring(8)}`;
+                    const rangoFechas = `${ultimoReg.fecha.substring(8)} al ${primerReg.fecha.substring(8)}`;
                     horasEl.textContent = rangoFechas;
 
                     const totalEl = document.createElement('div');
@@ -5983,6 +5983,8 @@ Generado por Sistema de Horarios
     2) agregado las modificaciones en la ayuda
     3) Se remueve el sistema de notificaciones a archivo separado para futuras implementaciones
     que merezcan la pena ser mencionadas
+    4) se corrije el item contenedor de registros por lotes, el cual mostraba 31 al 01,
+    ahora muestra 01 al 31, (de la fecha inicial a la final)
 
 
 
