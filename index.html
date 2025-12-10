@@ -227,6 +227,7 @@
             background: var(--input-bg);
             color: var(--text-main);
             transition: border-color 0.2s;
+            height: 48px;
         }
 
         input:focus,
@@ -254,9 +255,8 @@
         }
 
         .contenedor-fechas {
-            display: flex;
+            display: block;
             flex-direction: column;
-            gap: 0.5rem;
         }
 
         .input-number-group input {
@@ -321,7 +321,7 @@
         }
 
         .btn-action-trigger {
-            width: 50%;
+            width: 70%;
             padding: 17px;
             margin: -17px;
             background: transparent;
@@ -380,8 +380,9 @@
 
         .btn-group {
             display: flex;
-            gap: 0.75rem;
+            gap: 0.5rem;
             margin-top: 0.75rem;
+            align-items: center;
         }
 
         .config-actions {
@@ -906,8 +907,8 @@
         /* Botón de perfil en el Header */
         .header-profile-btn {
             background: transparent;
-            border: 2px solid var(--border);
-            border-radius: 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
             padding: 0.25rem 0.75rem;
             color: var(--text-main);
             font-size: 0.9rem;
@@ -1037,6 +1038,18 @@
         .btn-perfil-edit:hover {
             background: var(--bg-body);
             transform: scale(1.02);
+        }
+
+        /* Transición suave entre modos */
+        #modo-normal,
+        #modo-lote {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        #modo-normal.fade-out,
+        #modo-lote.fade-out {
+            opacity: 0;
+            transform: translateY(-10px);
         }
     </style>
 </head>
@@ -1184,11 +1197,15 @@
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2" class="icon-line" stroke="currentColor"></rect>
             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" class="icon-line" stroke="currentColor"></path>
         </symbol>
+        <symbol id="icon-logo-bolt" viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" class="icon-line" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round" fill="none"></path>
+        </symbol>
     </svg>
     <div class="header">
         <h1 style="margin: 0; font-size: 1.25rem; color: var(--text-main);">
             <svg class="icon">
-                <use href="#icon-clock" />
+                <use href="#icon-logo-bolt" />
             </svg> Horarios
         </h1>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -1237,10 +1254,10 @@
                             <use href="#icon-coffee" />
                         </svg>
                     </button>
-                    <button onclick="DataManagement.agregarRegistro()" id="btn-agregar" class="btn-action-trigger">
+                    <button onclick="UILogic.ejecutarAccionRegistro()" id="btn-agregar" class="btn-action-trigger">
                         <svg class="icon">
                             <use href="#icon-save" />
-                        </svg> Registrar
+                        </svg> <span id="btn-registrar-texto">Registrar</span>
                     </button>
                     <svg class="icon chevron" id="icon-indicator-form" onclick="UILogic.toggleFormulario()"
                         style="position: absolute; right: 0; cursor: pointer;">
@@ -1248,38 +1265,93 @@
                     </svg>
                 </h2>
                 <div class="form-collapsible" id="form-registro">
-                    <div class="form-group" style="padding-top: 20px;">
-                        <label>Fecha</label>
-                        <div class="input-with-btn">
-                            <input type="date" id="fecha" />
-                            <button class="time-btn" onclick="UILogic.mostrarVacaciones()" title="Registrar lote"
-                                style="flex-shrink: 0;">
-                                <svg class="icon">
-                                    <use href="#icon-calendar-simple" />
-                                </svg>
-                            </button>
+
+                    <!-- MODO NORMAL -->
+                    <div id="modo-normal" style="display: block;">
+                        <div class="form-group" style="padding-top: 20px;">
+                            <label>Fecha</label>
+                            <div class="input-with-btn">
+                                <input type="date" id="fecha" />
+                                <button class="time-btn" onclick="UILogic.toggleModoLote()" title="Registrar lote"
+                                    style="flex-shrink: 0;">
+                                    <svg class="icon">
+                                        <use href="#icon-calendar-simple" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="input-error" id="error-fecha">Fecha inválida</span>
                         </div>
-                        <span class="input-error" id="error-fecha">Fecha inválida</span>
+                        <div class="form-group">
+                            <label>Entrada</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                                <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')">
+                                    <svg class="icon">
+                                        <use href="#icon-clock" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="input-error" id="error-entrada">Formato inválido (HH:MM)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Salida</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                                <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')">
+                                    <svg class="icon">
+                                        <use href="#icon-clock" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <span class="input-error" id="error-salida">Formato inválido (HH:MM)</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Entrada</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
-                            <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')"><svg class="icon">
-                                    <use href="#icon-clock" />
-                                </svg></button>
+
+                    <!-- MODO LOTE -->
+                    <div id="modo-lote" style="display: none;">
+                        <div class="form-group" style="padding-top: 20px;">
+                            <label>Tipo de registro</label>
+                            <div class="input-with-btn">
+                                <select id="lote-tipo" onchange="UILogic.actualizarBotonLote()">
+                                    <option value="feriado">🥳 Feriados (00:00)</option>
+                                    <option value="ausencia">✈️ Ausencia/Licencia (11:11)</option>
+                                    <option value="vacaciones">🏖️ Vacaciones (22:22)</option>
+                                    <option value="normal">🕒 Normales (borrar)</option>
+                                </select>
+                                <button class="time-btn" onclick="UILogic.toggleModoLote()" title="Volver a modo normal"
+                                    style="flex-shrink: 0;">
+                                    <svg class="icon">
+                                        <use href="#icon-undo" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                        <span class="input-error" id="error-entrada">Formato inválido (HH:MM)</span>
-                    </div>
-                    <div class="form-group">
-                        <label>Salida</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
-                            <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')"><svg class="icon">
-                                    <use href="#icon-clock" />
-                                </svg></button>
+                        <div class="contenedor-fechas">
+                            <div class="form-group">
+                                <label>Desde</label>
+                                <div class="input-with-btn">
+                                    <input type="date" id="lote-fecha-desde" />
+                                    <button class="time-btn" onclick="UILogic.alternarFechaActual('lote-fecha-desde')"
+                                        title="Pegar hoy / Limpiar">
+                                        <svg class="icon">
+                                            <use href="#icon-calendar-simple" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Hasta</label>
+                                <div class="input-with-btn">
+                                    <input type="date" id="lote-fecha-hasta" />
+                                    <button class="time-btn" onclick="UILogic.alternarFechaActual('lote-fecha-hasta')"
+                                        title="Pegar hoy / Limpiar">
+                                        <svg class="icon">
+                                            <use href="#icon-calendar-simple" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <span class="input-error" id="error-salida">Formato inválido (HH:MM)</span>
                     </div>
                 </div>
             </div>
@@ -1354,9 +1426,9 @@
                     <use href="#icon-chevron-down" />
                 </svg>
             </h2>
-            <div class="form-collapsible" id="botones-historico" style="margin-top: 0.5rem; margin-bottom: 1rem;">
+            <div class="form-collapsible" id="botones-historico" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
                 <div
-                    style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-right: 0.5rem; margin-top: 1.5rem">
+                    style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-right: 0.5rem; margin-top: 0.5rem">
                     <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
                         <svg class="icon">
                             <use href="#icon-filter" />
@@ -1386,7 +1458,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.51</span>
+                <span class="version-text">v6.59</span>
             </h3>
 
             <div class="form-group">
@@ -1418,9 +1490,7 @@
                 </div>
                 <div id="config-total-feedback" class="config-hint-text">(Total semanal: 35hs)</div>
             </div>
-
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0 1rem 0;">
-
             <div class="config-actions">
                 <button class="btn-export" onclick="DataManagement.exportarJSON()">
                     <svg class="icon">
@@ -1738,6 +1808,9 @@
                     <li><strong>Filtros:</strong> Usa el icono <svg class="icon">
                             <use href="#icon-filter" />
                         </svg> en el historial para buscar fechas específicas.</li>
+                    <li><strong>Datos:</strong> Se guardan de forma local en el almacenamiento del navegador
+                        (localStorage) del dispositvo en uso
+                    </li>
                 </ul>
                 <a href="#inicio-ayuda" class="volver-arriba">↑ Volver al índice</a>
 
@@ -1751,57 +1824,6 @@
                     <svg class="icon">
                         <use href="#icon-undo" />
                     </svg> Volver
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="modal-vacaciones">
-        <div class="modal-content">
-            <h3>
-                <span class="modal-title-block">
-                    <svg class="icon">
-                        <use href="#icon-calendar-simple" />
-                    </svg>
-                    Registrar por lote
-                </span>
-            </h3>
-            <div class="contenedor-fechas">
-                <div class="form-group">
-                    <label>Desde</label>
-                    <input type="date" id="vacaciones-fecha-desde" />
-                </div>
-                <div class="form-group">
-                    <label>Hasta</label>
-                    <input type="date" id="vacaciones-fecha-hasta" />
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Tipo de registro</label>
-                <select id="vacaciones-tipo" onchange="UILogic.actualizarBotonesVacaciones()">
-                    <option value="feriado">🥳 Feriados (00:00)</option>
-                    <option value="ausencia">✈️ Ausencia/Licencia (11:11)</option>
-                    <option value="vacaciones">🏖️ Vacaciones (22:22)</option>
-                    <option value="normal">🕒 Normales (borrar)</option>
-                </select>
-            </div>
-            <div class="btn-group">
-                <button class="btn-backup" onclick="DataManagement.registrarVacaciones()">
-                    <svg class="icon">
-                        <use href="#icon-save" />
-                    </svg> Registrar
-                </button>
-                <button class="btn-delete" onclick="DataManagement.borrarPeriodo()">
-                    <svg class="icon">
-                        <use href="#icon-trash" />
-                    </svg> Borrar
-                </button>
-            </div>
-            <div class="btn-group" style="margin-top: 0.5rem;">
-                <button class="btn-cancel" onclick="UILogic.cerrarVacaciones()">
-                    <svg class="icon">
-                        <use href="#icon-cancelar" />
-                    </svg> Cerrar
                 </button>
             </div>
         </div>
@@ -1902,7 +1924,7 @@
             </div>
         </div>
     </div>
-    
+
     <script>
         (function () {
             'use strict';
@@ -2298,23 +2320,6 @@
 
                 function cargarDatosPerfilActual() { return perfiles[perfilActual]; }
 
-                function crearPerfil() {
-                    const input = document.getElementById('nombre-nuevo-perfil');
-                    if (!input) return;
-                    const nombre = S.sanitizeString(input.value.trim(), 30);
-                    if (!nombre) return;
-                    if (Object.keys(perfiles).length >= MAX_PERFILES) {
-                        if (window.UILogic) window.UILogic.mostrarToast('Máximo de perfiles alcanzado', 'error');
-                        return;
-                    }
-                    const id = 'perfil_' + Date.now();
-                    perfiles[id] = { nombre: nombre, registros: [], diasHabiles: 5, horasDiarias: 7 };
-                    guardarPerfiles();
-                    actualizarSelector();
-                    input.value = '';
-                    if (window.UILogic) window.UILogic.mostrarToast(`Perfil "${nombre}" creado`, 'success');
-                }
-
                 function actualizarSelector() {
                     // Actualiza el TEXTO del botón del header en lugar del select
                     const btnTexto = document.getElementById('nombre-perfil-header');
@@ -2345,54 +2350,13 @@
                     location.reload();
                 }
 
-                async function eliminarPerfilActual() {
-                    if (perfilActual === 'default') {
-                        if (window.UILogic) window.UILogic.mostrarToast('No se puede eliminar el perfil Principal', 'error');
-                        return;
-                    }
-
-                    const nombre = perfiles[perfilActual].nombre;
-                    const confirmacion = window.confirm(`¿Estás seguro de que quieres eliminar el perfil "${nombre}"?\n\nEsta acción NO se puede deshacer.`);
-
-                    if (!confirmacion) return;
-
-                    // Preguntar por Backup
-                    const deseaBackup = window.confirm(`Antes de eliminar "${nombre}":\n\n¿Deseas descargar una copia de seguridad de estos datos?`);
-
-                    if (deseaBackup) {
-                        // Usamos la función de exportar existente
-                        if (window.DataManagement) {
-                            window.DataManagement.exportarJSON();
-                            // Damos un pequeño tiempo para que inicie la descarga antes de borrar
-                            await new Promise(resolve => setTimeout(resolve, 1000));
-                        }
-                    }
-
-                    delete perfiles[perfilActual];
-                    perfilActual = 'default';
-                    localStorage.setItem('perfilActivo', perfilActual);
-                    guardarPerfiles();
-                    location.reload();
-                }
-
                 function obtenerPerfilActual() { return perfilActual; }
+
                 function obtenerDatosPerfil() { return perfiles[perfilActual]; }
-                function renombrarPerfilActual() {
-                    const input = document.getElementById('nombre-perfil-actual');
-                    if (!input) return;
-                    const nuevo = S.sanitizeString(input.value.trim(), 30);
-                    if (!nuevo) return;
-                    perfiles[perfilActual].nombre = nuevo;
-                    guardarPerfiles();
-                    actualizarSelector();
-                    if (window.UILogic) window.UILogic.mostrarToast('Renombrado', 'success');
-                }
 
                 return {
-                    inicializar, cambiarPerfil, crearPerfil, eliminarPerfilActual,
-                    guardarDatosPerfilActual, cargarDatosPerfilActual,
-                    obtenerPerfilActual, obtenerDatosPerfil, renombrarPerfilActual,
-                    obtenerListaPerfiles
+                    inicializar, cambiarPerfil, guardarDatosPerfilActual, cargarDatosPerfilActual,
+                    obtenerPerfilActual, obtenerDatosPerfil, obtenerListaPerfiles
                 };
 
             })(SecurityAndUtils);
@@ -2533,115 +2497,7 @@
                     }
                 }
 
-                async function registrarVacaciones() {
-                    const desde = S.sanitizeString($('vacaciones-fecha-desde').value, 10);
-                    const hasta = S.sanitizeString($('vacaciones-fecha-hasta').value, 10);
-                    const tipo = $('vacaciones-tipo').value;
 
-                    // --- NUEVO: Si ambos campos están vacíos, usar fecha actual ---
-                    if (!desde && !hasta) {
-                        const fechaHoy = UILogic.obtenerFechaHoy();
-                        return registrarDiaEspecial(fechaHoy, tipo);
-                    }
-
-                    // --- Validaciones para rangos ---
-                    if (!S.validarFechaSegura(desde) || !S.validarFechaSegura(hasta)) {
-                        UILogic.mostrarToast('Fechas inválidas', 'error');
-                        return;
-                    }
-
-                    if (desde > hasta) {
-                        UILogic.mostrarToast('La fecha "Desde" debe ser anterior a "Hasta"', 'error');
-                        return;
-                    }
-
-                    // Determinar valores según tipo
-                    let entrada, salida;
-                    switch (tipo) {
-                        case 'vacaciones':
-                            entrada = '22:22';
-                            salida = '22:22';
-                            break;
-                        case 'ausencia':
-                            entrada = '11:11';
-                            salida = '11:11';
-                            break;
-                        case 'feriado':
-                            entrada = '00:00';
-                            salida = '00:00';
-                            break;
-                        default:
-                            entrada = '11:11';
-                            salida = '11:11';
-                    }
-
-                    let fechaActual = new Date(desde.replace(/-/g, '/') + ' 00:00:00');
-                    const fechaFin = new Date(hasta.replace(/-/g, '/') + ' 00:00:00');
-                    const unDia = 1000 * 60 * 60 * 24;
-                    const diferenciaTiempo = Math.abs(fechaFin - fechaActual);
-                    const totalDias = Math.ceil(diferenciaTiempo / unDia) + 1;
-                    const MAX_DIAS_LOTE = 60;
-
-                    if (totalDias > MAX_DIAS_LOTE) {
-                        UILogic.mostrarToast(`Por seguridad, el máximo es ${MAX_DIAS_LOTE} días por operación.`, 'error');
-                        return;
-                    }
-                    const fechasARegistrar = [];
-
-                    while (fechaActual <= fechaFin) {
-                        const y = fechaActual.getFullYear();
-                        const m = String(fechaActual.getMonth() + 1).padStart(2, '0');
-                        const d = String(fechaActual.getDate()).padStart(2, '0');
-                        fechasARegistrar.push(`${y}-${m}-${d}`);
-                        fechaActual.setDate(fechaActual.getDate() + 1);
-                    }
-
-                    // Verificar límites
-                    const nuevosRegistros = fechasARegistrar.filter(f => !registros.some(r => r.fecha === f));
-
-                    if (registros.length + nuevosRegistros.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
-                        UILogic.mostrarToast(`Límite alcanzado. Solo se pueden agregar ${S.SECURITY_LIMITS.MAX_REGISTROS - registros.length} registros más`, 'error');
-                        return;
-                    }
-
-                    if (nuevosRegistros.length === 0) {
-                        UILogic.mostrarToast('Todas las fechas ya están registradas', 'warning');
-                        return;
-                    }
-
-                    // Crear registros
-                    nuevosRegistros.forEach(fecha => {
-                        const t = calcularHoras(entrada, salida, null);
-                        registros.push({
-                            id: S.generarIDSeguro(),
-                            fecha: fecha,
-                            entrada: entrada,
-                            salida: salida,
-                            tiempoFuera: null,
-                            horas: t?.horas || 0,
-                            minutos: t?.minutos || 0,
-                            total: t?.total || 0
-                        });
-                    });
-
-                    registros.sort((a, b) => {
-                        if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
-                        return (b.entrada || '').localeCompare(a.entrada || '');
-                    });
-
-                    const saved = await guardarYActualizar();
-
-                    if (saved) {
-                        HistoryManager.saveState(registros);
-                    }
-                    if (saved) {
-                        const tipoTexto = tipo === 'vacaciones' ? 'Vacaciones' : tipo === 'ausencia' ? 'Ausencias' : 'Feriados';
-                        UILogic.mostrarToast(`${nuevosRegistros.length} días registrados como ${tipoTexto}`, 'success');
-                        UILogic.cerrarVacaciones();
-                        $('vacaciones-fecha-desde').value = '';
-                        $('vacaciones-fecha-hasta').value = '';
-                    }
-                }
 
                 // --- NUEVA FUNCIÓN AUXILIAR ---
                 async function registrarDiaEspecial(fecha, tipo) {
@@ -2707,97 +2563,6 @@
 
                     if (saved) {
                         UILogic.mostrarToast(`Hoy registrado como ${tipoTexto}`, 'success');
-                        UILogic.cerrarVacaciones();
-                    }
-                }
-
-                async function borrarPeriodo() {
-                    const desde = S.sanitizeString($('vacaciones-fecha-desde').value, 10);
-                    const hasta = S.sanitizeString($('vacaciones-fecha-hasta').value, 10);
-                    const tipo = $('vacaciones-tipo').value;
-
-                    if (!S.validarFechaSegura(desde) || !S.validarFechaSegura(hasta)) {
-                        UILogic.mostrarToast('Fechas inválidas', 'error');
-                        return;
-                    }
-
-                    if (desde > hasta) {
-                        UILogic.mostrarToast('La fecha "Desde" debe ser anterior a "Hasta"', 'error');
-                        return;
-                    }
-
-                    let entrada, salida, tipoTexto;
-
-                    // casos
-                    switch (tipo) {
-                        case 'vacaciones':
-                            entrada = '22:22';
-                            salida = '22:22';
-                            tipoTexto = 'Vacaciones';
-                            break;
-                        case 'ausencia':
-                            entrada = '11:11';
-                            salida = '11:11';
-                            tipoTexto = 'Ausencias';
-                            break;
-                        case 'feriado':
-                            entrada = '00:00';
-                            salida = '00:00';
-                            tipoTexto = 'Feriados';
-                            break;
-                        case 'normal':
-                            // Para normales, borramos cualquier registro que NO sea especial
-                            entrada = null;
-                            salida = null;
-                            tipoTexto = 'Normales';
-                            break;
-                        default:
-                            UILogic.mostrarToast('Tipo inválido', 'error');
-                            return;
-                    }
-
-                    // LÓGICA DIFERENTE PARA NORMALES
-                    let registrosAEliminar;
-
-                    if (tipo === 'normal') {
-                        // Para normales: eliminar registros que NO sean feriados, ausencias o vacaciones
-                        registrosAEliminar = registros.filter(r => {
-                            const dentroDelRango = r.fecha >= desde && r.fecha <= hasta;
-                            const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
-                            const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
-                            const esVacaciones = r.entrada === '22:22' && r.salida === '22:22';
-
-                            // Solo eliminar si está en el rango Y NO es un tipo especial
-                            return dentroDelRango && !esFeriado && !esAusencia && !esVacaciones;
-                        });
-                    } else {
-                        // Para tipos especiales: lógica original
-                        registrosAEliminar = registros.filter(r => {
-                            return r.fecha >= desde &&
-                                r.fecha <= hasta &&
-                                r.entrada === entrada &&
-                                r.salida === salida;
-                        });
-                    }
-
-                    if (registrosAEliminar.length === 0) {
-                        UILogic.mostrarToast(`No hay registros de ${tipoTexto} en ese período`, 'info');
-                        return;
-                    }
-
-                    registros = registros.filter(r => !registrosAEliminar.includes(r));
-
-                    const saved = await guardarYActualizar();
-
-                    if (saved) {
-                        HistoryManager.saveState(registros);
-                    }
-
-                    if (saved) {
-                        UILogic.mostrarToast(`${registrosAEliminar.length} registro(s) de ${tipoTexto} eliminados`, 'success');
-                        UILogic.cerrarVacaciones();
-                        $('vacaciones-fecha-desde').value = '';
-                        $('vacaciones-fecha-hasta').value = '';
                     }
                 }
 
@@ -3152,6 +2917,10 @@
                             UILogic.cerrarEdicion();
                             // Forzamos actualización del botón visualmente
                             UILogic.actualizarEstadoBotonTimerMain();
+
+                            if (window.UILogic && window.UILogic.actualizarBotonLote) {
+                                window.UILogic.actualizarBotonLote();
+                            }
                         }
                     }
                 }
@@ -3723,6 +3492,118 @@
                     });
                 }
 
+                async function registrarVacacionesDirecto(desde, hasta, tipo) {
+                    const entrada = tipo === 'vacaciones' ? '22:22' : tipo === 'ausencia' ? '11:11' : '00:00';
+                    const salida = entrada;
+
+                    let fechaActual = new Date(desde.replace(/-/g, '/') + ' 00:00:00');
+                    const fechaFin = new Date(hasta.replace(/-/g, '/') + ' 00:00:00');
+                    const fechasARegistrar = [];
+
+                    while (fechaActual <= fechaFin) {
+                        const y = fechaActual.getFullYear();
+                        const m = String(fechaActual.getMonth() + 1).padStart(2, '0');
+                        const d = String(fechaActual.getDate()).padStart(2, '0');
+                        fechasARegistrar.push(`${y}-${m}-${d}`);
+                        fechaActual.setDate(fechaActual.getDate() + 1);
+                    }
+
+                    const nuevosRegistros = fechasARegistrar.filter(f => !registros.some(r => r.fecha === f));
+
+                    if (nuevosRegistros.length === 0) {
+                        UILogic.mostrarToast('Todas las fechas ya están registradas', 'warning');
+                        return;
+                    }
+
+                    // --- CAMBIO CLAVE 1: Creamos array para guardar IDs ---
+                    const idsNuevosParaAnimar = [];
+
+                    nuevosRegistros.forEach(fecha => {
+                        const t = calcularHoras(entrada, salida, null);
+                        const nuevoId = S.generarIDSeguro(); // Generamos ID
+
+                        idsNuevosParaAnimar.push(nuevoId); // Lo guardamos para animar
+
+                        registros.push({
+                            id: nuevoId,
+                            fecha: fecha,
+                            entrada: entrada,
+                            salida: salida,
+                            tiempoFuera: null,
+                            horas: t?.horas || 0,
+                            minutos: t?.minutos || 0,
+                            total: t?.total || 0
+                        });
+                    });
+
+                    registros.sort((a, b) => {
+                        if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
+                        return (b.entrada || '').localeCompare(a.entrada || '');
+                    });
+
+                    HistoryManager.saveState(registros);
+
+                    // --- CAMBIO CLAVE 2: Enviamos el array de IDs a la UI ---
+                    const saved = await guardarYActualizar(true, idsNuevosParaAnimar);
+
+                    if (saved) {
+                        UILogic.mostrarToast(`${nuevosRegistros.length} días registrados`, 'success');
+                        if (UILogic.actualizarBotonLote) {
+                            UILogic.actualizarBotonLote();
+                        }
+                    }
+                }
+
+                async function borrarPeriodoDirecto(desde, hasta, tipo) {
+                    let registrosAEliminar;
+
+                    if (tipo === 'normal') {
+                        // Si es tipo "normal", borrar solo registros normales (no especiales)
+                        registrosAEliminar = registros.filter(r => {
+                            const dentroDelRango = r.fecha >= desde && r.fecha <= hasta;
+                            const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
+                            const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                            const esVacaciones = r.entrada === '22:22' && r.salida === '22:22';
+                            return dentroDelRango && !esFeriado && !esAusencia && !esVacaciones;
+                        });
+                    } else {
+                        // Para tipos específicos, borrar SOLO ese tipo
+                        const entrada = tipo === 'vacaciones' ? '22:22' : tipo === 'ausencia' ? '11:11' : '00:00';
+                        const salida = entrada;
+
+                        registrosAEliminar = registros.filter(r =>
+                            r.fecha >= desde &&
+                            r.fecha <= hasta &&
+                            r.entrada === entrada &&
+                            r.salida === salida
+                        );
+                    }
+
+                    if (registrosAEliminar.length === 0) {
+                        const nombreTipo = tipo === 'normal' ? 'normales' :
+                            tipo === 'feriado' ? 'Feriados' :
+                                tipo === 'ausencia' ? 'Ausencias' : 'Vacaciones';
+                        UILogic.mostrarToast(`No hay registros de ${nombreTipo} en ese período`, 'info');
+                        return;
+                    }
+
+                    registros = registros.filter(r => !registrosAEliminar.includes(r));
+                    HistoryManager.saveState(registros);
+                    const saved = await guardarYActualizar();
+
+                    if (saved) {
+                        const nombreTipo = tipo === 'normal' ? 'normales' :
+                            tipo === 'feriado' ? 'Feriados' :
+                                tipo === 'ausencia' ? 'Ausencias' : 'Vacaciones';
+                        UILogic.mostrarToast(`${registrosAEliminar.length} registro(s) de ${nombreTipo} eliminados`, 'success');
+
+                        // Actualizar el botón después de borrar
+                        if (UILogic.actualizarBotonLote) {
+                            UILogic.actualizarBotonLote();
+                        }
+                    }
+                }
+
                 return {
                     registros: () => registros,
                     horasSemanales: () => (horasDiarias * diasHabiles),
@@ -3753,15 +3634,18 @@
                     aplicarFiltros,
                     limpiarFiltros,
                     obtenerRegistrosFiltrados,
-                    registrarVacaciones,
-                    borrarPeriodo,
-                    registrarDiaEspecial, // <--- AGREGAR ESTA LÍNEA
+                    registrarVacacionesDirecto,
+                    borrarPeriodoDirecto,
+                    registrarDiaEspecial,
                     undoAction: function () {
                         const prevState = HistoryManager.undo();
                         if (prevState) {
                             registros.splice(0, registros.length, ...prevState);
                             guardarYActualizar();
                             UILogic.mostrarToast('Deshecho', 'info');
+                            if (window.UILogic && window.UILogic.actualizarBotonLote) {
+                                window.UILogic.actualizarBotonLote();
+                            }
                         }
                     },
                     redoAction: function () {
@@ -3770,6 +3654,9 @@
                             registros.splice(0, registros.length, ...nextState);
                             guardarYActualizar();
                             UILogic.mostrarToast('Rehecho', 'info');
+                            if (window.UILogic && window.UILogic.actualizarBotonLote) {
+                                window.UILogic.actualizarBotonLote();
+                            }
                         }
                     }
                 };
@@ -3825,7 +3712,7 @@
 
                 function resetearBoton(btn) {
                     btn.disabled = false;
-                    btn.innerHTML = '<svg class="icon"><use href="#icon-save"/></svg> Registrar';
+                    btn.innerHTML = '<svg class="icon"><use href="#icon-save"/></svg> <span id="btn-registrar-texto">Registrar</span>';
                 }
 
                 function restaurarBotonGuardarEdicion(btnGuardar) {
@@ -4153,7 +4040,7 @@
                         }
                     });
 
-                    // 2. Guardar estado de qué mes está abierto actualmente
+                    // 2. Guardar estado de mes abierto
                     const mesesExpandidos = new Set();
                     lista.querySelectorAll('.registro-mes-container').forEach(container => {
                         const detalle = container.querySelector('.registro-mes-detalle');
@@ -4180,16 +4067,14 @@
                     const hoy = obtenerFechaHoy();
                     const mesHoy = hoy.substring(0, 7);
 
-                    // (HEMOS ELIMINADO LA LÓGICA QUE DETECTABA EL MES NUEVO PARA EVITAR EL SALTO)
-
                     gruposPorMes.forEach((registrosDelMes, claveMes) => {
                         const grupos = agruparRegistrosConsecutivos(registrosDelMes);
 
-                        // Crear contenedor de mes
+                        // Contenedor Mes
                         const contenedorMesActual = document.createElement('div');
                         contenedorMesActual.className = 'registro-mes-container';
 
-                        // Header del mes
+                        // Header Mes
                         const headerMes = document.createElement('h3');
                         headerMes.className = 'registro-mes-header';
                         headerMes.dataset.mesId = claveMes;
@@ -4200,7 +4085,6 @@
                         chevron.style.width = '1.2em';
                         chevron.style.height = '1.2em';
                         chevron.style.verticalAlign = 'middle';
-
                         const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
                         use.setAttribute('href', '#icon-chevron-down');
                         chevron.appendChild(use);
@@ -4209,23 +4093,16 @@
                         headerMes.appendChild(chevron);
                         headerMes.appendChild(textoMes);
 
-                        // Contenedor detalle
+                        // Detalle Mes
                         const detalleMesActual = document.createElement('div');
                         detalleMesActual.className = 'registro-mes-detalle';
 
-                        // --- LÓGICA DE APERTURA SIMPLIFICADA (SIN SALTOS) ---
-                        // Solo miramos qué estaba abierto antes. No nos importa si hay un registro nuevo.
+                        // Lógica de apertura
                         let debeEstarExpandido = false;
-
-                        const estabaExpandido = mesesExpandidos.has(claveMes);
-                        const esMesActual = claveMes === mesHoy;
-
                         if (mesesExpandidos.size > 0) {
-                            // Si el usuario tenía algo abierto, respetamos ESO y nada más.
-                            debeEstarExpandido = estabaExpandido;
+                            debeEstarExpandido = mesesExpandidos.has(claveMes);
                         } else {
-                            // Si no había nada abierto (ej: primera carga), abrimos el mes actual.
-                            debeEstarExpandido = esMesActual;
+                            debeEstarExpandido = (claveMes === mesHoy);
                         }
 
                         if (debeEstarExpandido) {
@@ -4233,20 +4110,21 @@
                             chevron.style.transform = 'rotate(180deg)';
                         }
 
-                        // Renderizar items
+                        // --- BUCLE PRINCIPAL DE ITEMS ---
                         grupos.forEach(grupo => {
                             if (grupo.tipo === 'grupo') {
-                                const container = crearGrupoExpandible(grupo, horasDiarias, gruposExpandidos);
+                                // CAMBIO CLAVE 3: ¡AQUÍ ESTABA EL ERROR! 
+                                // Asegúrate de que 'idNuevo' esté aquí como 4to parámetro
+                                const container = crearGrupoExpandible(grupo, horasDiarias, gruposExpandidos, idNuevo);
                                 detalleMesActual.appendChild(container);
                             } else {
                                 const r = grupo.registros[0];
-                                // Pasamos idNuevo para que parpadee SI el mes está visible, pero sin forzar scroll
                                 const item = crearItemRegistroIndividual(r, horasDiarias, idNuevo);
                                 detalleMesActual.appendChild(item);
                             }
                         });
 
-                        // Evento Click (Mantenemos el fix del scroll suave MANUAL)
+                        // Evento Click del Mes
                         (function (header, detalle, chevronIcon, contenedor) {
                             header.onclick = (e) => {
                                 e.stopPropagation();
@@ -4256,7 +4134,6 @@
                                     detalle.classList.remove('expanded');
                                     chevronIcon.style.transform = 'rotate(0deg)';
                                 } else {
-                                    // Cerrar otros
                                     lista.querySelectorAll('.registro-mes-detalle.expanded').forEach(otroDetalle => {
                                         if (otroDetalle !== detalle) {
                                             otroDetalle.classList.remove('expanded');
@@ -4265,17 +4142,11 @@
                                             if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
                                         }
                                     });
-
-                                    // Abrir actual
                                     detalle.classList.add('expanded');
                                     chevronIcon.style.transform = 'rotate(180deg)';
 
-                                    // Scroll suave SOLO cuando el usuario hace click manualmente
                                     setTimeout(() => {
-                                        contenedor.scrollIntoView({
-                                            behavior: 'smooth',
-                                            block: 'start'
-                                        });
+                                        contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                     }, 310);
                                 }
                             };
@@ -4289,7 +4160,7 @@
                     lista.appendChild(fragmento);
                 }
 
-                function crearGrupoExpandible(grupo, horasDiarias, gruposExpandidos = new Set()) {
+                function crearGrupoExpandible(grupo, horasDiarias, gruposExpandidos = new Set(), idResaltar = null) {
                     const primerReg = grupo.registros[0];
                     const ultimoReg = grupo.registros[grupo.registros.length - 1];
 
@@ -4298,7 +4169,28 @@
 
                     // Encabezado del grupo
                     const header = document.createElement('div');
-                    header.className = 'registro-item';
+
+                    // --- CAMBIO CLAVE 4: Lógica de detección de IDs nuevos ---
+                    let className = 'registro-item';
+                    let animarGrupo = false;
+
+                    if (idResaltar) {
+                        // Convertimos a array si no lo es, para buscar fácil
+                        const idsNuevos = Array.isArray(idResaltar) ? idResaltar : [idResaltar];
+
+                        // ¿Alguno de los registros de este grupo es nuevo?
+                        const contieneNuevo = grupo.registros.some(r => idsNuevos.includes(r.id));
+
+                        if (contieneNuevo) {
+                            animarGrupo = true;
+                        }
+                    }
+
+                    if (animarGrupo) {
+                        className += ' nuevo-registro-animacion';
+                    }
+                    header.className = className;
+                    // ---------------------------------------------------------
 
                     const info = document.createElement('div');
                     info.className = 'registro-info';
@@ -4325,7 +4217,6 @@
                     const listaExpandible = document.createElement('div');
                     listaExpandible.className = 'registro-grupo-detalle';
 
-                    // 🔑 Verificar si este grupo estaba expandido
                     const estabaExpandido = gruposExpandidos.has(rangoFechas);
                     listaExpandible.style.display = estabaExpandido ? 'block' : 'none';
                     totalEl.innerHTML = estabaExpandido ?
@@ -4333,7 +4224,8 @@
                         '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-list"/></svg> Ver detalles';
 
                     grupo.registros.forEach(r => {
-                        const item = crearItemRegistroIndividual(r, horasDiarias);
+                        // IMPORTANTE: Pasamos null aquí para que los items internos NO destellen
+                        const item = crearItemRegistroIndividual(r, horasDiarias, null);
                         item.style.marginLeft = '1rem';
                         listaExpandible.appendChild(item);
                     });
@@ -4466,18 +4358,14 @@
                     if (elVacaciones) elVacaciones.textContent = stats.vacaciones;
                 }
 
-                function esFinDeSemana() {
-                    const d = new Date().getDay();
-                    return d === 0 || d === 6;
-                }
-
                 function actualizarUI(idNuevo = null, soloReloj = false) {
                     const registros = D.registros();
                     const horasSemanales = D.horasSemanales();
                     const horasDiarias = D.horasDiarias();
-                    const diasHabilesConfig = D.diasHabiles(); // calcular si es fin de semana
+                    const diasHabilesConfig = D.diasHabiles();
                     const vistaActual = D.vistaActual();
 
+                    // Actualizar lista solo si no es un refresco de reloj
                     if (!soloReloj) {
                         actualizarListaRegistros(registros, idNuevo);
                     }
@@ -4485,11 +4373,10 @@
                     const { inicio: ini, fin: fn } = obtenerSemanaActual();
                     const hoy = obtenerFechaHoy();
 
-                    // --- 1. DETECTAR SI HOY ES DÍA DE DESCANSO ---
+                    // Detectar si hoy es día de descanso
                     const fechaHoyObj = new Date();
-                    const diaSemanaHoy = fechaHoyObj.getDay(); // 0 = Domingo, 6 = Sábado
+                    const diaSemanaHoy = fechaHoyObj.getDay(); // 0 = Domingo
                     let esDiaDeDescanso = false;
-
                     if (diaSemanaHoy === 0) {
                         esDiaDeDescanso = (diasHabilesConfig < 7);
                     } else {
@@ -4498,6 +4385,7 @@
 
                     const bufferSemanal = D.calcularBufferSemanal(ini, hoy);
 
+                    // Elementos del DOM
                     const statsEl = $('stats-semana');
                     const progressEl = $('progress-bar');
                     const mensajeEl = $('stats-mensaje');
@@ -4505,33 +4393,33 @@
                     const hintEl = $('toggle-hint');
                     const bufferEl = $('stats-buffer');
 
+                    // --- 1. MOSTRAR BUFFER (EXTRAS/FALTANTES) ---
                     if (bufferEl) {
                         bufferEl.innerHTML = '';
-                        // Solo mostrar buffer si hay objetivo, no es 0 Y NO es día de descanso
-                        if (horasDiarias > 0 && bufferSemanal !== 0 && !esDiaDeDescanso) {
-                            if (Math.abs(bufferSemanal) > 0.01) {
-                                const esPositivo = bufferSemanal > 0;
-                                const bufferIcono = esPositivo ? '✅' : '⚠️';
-                                const bufferColor = esPositivo ? '#60ac94' : '#c05d76';
-                                const bufferTextoHoras = horasATexto(Math.abs(bufferSemanal));
-                                const bufferLabel = esPositivo ? 'extras' : 'faltantes';
+                        if (horasDiarias > 0 && Math.abs(bufferSemanal) > 0.01 && !esDiaDeDescanso) {
+                            const esPositivo = bufferSemanal > 0;
+                            const bufferIcono = esPositivo ? '✅' : '⚠️';
+                            const bufferColor = esPositivo ? '#60ac94' : '#c05d76';
+                            const bufferTextoHoras = horasATexto(Math.abs(bufferSemanal));
+                            const bufferLabel = esPositivo ? 'extras' : 'faltantes';
 
-                                bufferEl.textContent = '';
-                                const span = document.createElement('span');
-                                span.style.color = bufferColor;
-                                span.style.fontWeight = '500';
-                                span.textContent = `${bufferIcono} ${bufferTextoHoras} ${bufferLabel} esta semana`;
-                                bufferEl.appendChild(span);
-                            }
+                            const span = document.createElement('span');
+                            span.style.color = bufferColor;
+                            span.style.fontWeight = '500';
+                            span.textContent = `${bufferIcono} ${bufferTextoHoras} ${bufferLabel} esta semana`;
+                            bufferEl.appendChild(span);
                         }
                     }
 
+                    // =========================================================
+                    // VISTA SEMANAL
+                    // =========================================================
                     if (vistaActual === 'semana') {
                         tituloEl.innerHTML = `<svg class="icon"><use href="#icon-calendar-simple" /></svg> Esta Semana`;
 
+                        // Calcular total trabajado en la semana (excluyendo días especiales)
                         const tot = registros.filter(r =>
-                            r.fecha >= ini &&
-                            r.fecha <= fn &&
+                            r.fecha >= ini && r.fecha <= fn &&
                             !(r.entrada === '00:00' && r.salida === '00:00') &&
                             !(r.entrada === '11:11' && r.salida === '11:11') &&
                             !(r.entrada === '22:22' && r.salida === '22:22')
@@ -4544,8 +4432,6 @@
                         if (statsEl) statsEl.innerHTML = `<div>${horasATexto(tot)}</div>`;
                         if (progressEl) {
                             progressEl.style.width = prog + '%';
-
-                            // Sin objetivo: color neutral
                             if (horasDiarias === 0) {
                                 setProgressBarColor(progressEl, 'blue');
                             } else {
@@ -4554,21 +4440,11 @@
                         }
 
                         if (mensajeEl) {
-                            // SIN OBJETIVO: Solo mostrar total
                             if (horasDiarias === 0) {
                                 mensajeEl.textContent = `Total registrado: ${horasATexto(tot)}`;
                                 mensajeEl.style.display = 'none';
                             } else {
                                 mensajeEl.style.display = 'block';
-                                const diaSemanaHoy = new Date().getDay();
-                                let esDiaDeDescanso = false;
-
-                                if (diaSemanaHoy === 0) {
-                                    esDiaDeDescanso = (diasHabilesConfig < 7);
-                                } else {
-                                    esDiaDeDescanso = (diaSemanaHoy > diasHabilesConfig);
-                                }
-
                                 if (objetivoAjustado === 0) {
                                     mensajeEl.textContent = `Semana sin objetivo. Total: ${horasATexto(tot)}`;
                                 } else if (esDiaDeDescanso) {
@@ -4584,6 +4460,9 @@
                         }
                         if (hintEl) hintEl.textContent = 'Toca para ver Hoy';
 
+                        // =========================================================
+                        // VISTA DIARIA (HOY)
+                        // =========================================================
                     } else {
                         tituloEl.innerHTML = `<svg class="icon"><use href="#icon-clock" /></svg> Hoy`;
                         const regHoy = registros.find(r => r.fecha === hoy);
@@ -4597,32 +4476,25 @@
 
                             if (isFeriadoHoy) {
                                 if (statsEl) statsEl.innerHTML = `<div>🥳 Feriado</div>`;
-                                if (progressEl) {
-                                    progressEl.style.width = '100%';
-                                    setProgressBarColor(progressEl, 'purple');
-                                }
+                                if (progressEl) { progressEl.style.width = '100%'; setProgressBarColor(progressEl, 'purple'); }
                                 if (mensajeEl) mensajeEl.textContent = `¡Día no laboral!`;
 
                             } else if (isAusenciaHoy) {
                                 if (statsEl) statsEl.innerHTML = `<div>✈️ Ausencia</div>`;
-                                if (progressEl) {
-                                    progressEl.style.width = '100%';
-                                    setProgressBarColor(progressEl, 'purple');
-                                }
+                                if (progressEl) { progressEl.style.width = '100%'; setProgressBarColor(progressEl, 'purple'); }
                                 if (mensajeEl) mensajeEl.textContent = `¡Día justificado!`;
 
                             } else if (isVacacionesHoy) {
                                 if (statsEl) statsEl.innerHTML = `<div>🏖️ Vacaciones</div>`;
-                                if (progressEl) {
-                                    progressEl.style.width = '100%';
-                                    setProgressBarColor(progressEl, 'purple');
-                                }
+                                if (progressEl) { progressEl.style.width = '100%'; setProgressBarColor(progressEl, 'purple'); }
                                 if (mensajeEl) mensajeEl.textContent = `¡Día de vacaciones!`;
 
                             } else {
+                                // --- DÍA NORMAL CON REGISTRO ---
                                 if (regHoy.salida) {
                                     tiempoTranscurrido = regHoy.total;
                                 } else {
+                                    // Calculando en tiempo real
                                     const ahora = new Date();
                                     const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
                                     const t = D.calcularHoras(regHoy.entrada, horaActual, regHoy.tiempoFuera || null);
@@ -4638,12 +4510,10 @@
                                 }
 
                                 if (regHoy.salida) {
-                                    // DÍA COMPLETADO
+                                    // DÍA CERRADO
                                     if (objetivoDiario === 0) {
-                                        // Sin objetivo: color neutral
                                         setProgressBarColor(progressEl, 'blue');
-                                        if (mensajeEl) mensajeEl.textContent = `Total registrado: ${horasATexto(tiempoTranscurrido)}`;
-                                        mensajeEl.style.display = 'none'; // <--- NUEVO
+                                        if (mensajeEl) mensajeEl.style.display = 'none';
                                     } else {
                                         if (mensajeEl) mensajeEl.style.display = 'block';
                                         setProgressBarColor(progressEl, tiempoTranscurrido >= objetivoDiario ? 'green' : 'red');
@@ -4651,12 +4521,10 @@
                                         if (mensajeEl) mensajeEl.textContent = dif >= 0 ? `${horasATexto(dif)} extras` : `Faltaron ${horasATexto(Math.abs(dif))}`;
                                     }
                                 } else {
-                                    // DÍA EN CURSO
+                                    // DÍA EN CURSO (ABIERTO)
                                     if (objetivoDiario === 0) {
-                                        // Sin objetivo: solo mostrar total
                                         setProgressBarColor(progressEl, 'blue');
-                                        if (mensajeEl) mensajeEl.textContent = `Registrando tiempo...`;
-                                        mensajeEl.style.display = 'none';
+                                        if (mensajeEl) mensajeEl.style.display = 'none';
                                     } else {
                                         if (mensajeEl) mensajeEl.style.display = 'block';
                                         setProgressBarColor(progressEl, 'blue');
@@ -4664,26 +4532,19 @@
 
                                         if (mensajeEl) {
                                             if (tiempoTranscurrido >= objetivoDiario) {
-                                                // Ya cumplió el objetivo diario
-                                                const bufferSemanal = D.calcularBufferSemanal(ini, hoy);
+                                                // Objetivo cumplido, chequear deuda semanal
                                                 const extraHoy = tiempoTranscurrido - objetivoDiario;
-
-                                                // Solo mostrar déficit si aún debe tiempo después de las horas extras de hoy
                                                 if (bufferSemanal < 0 && Math.abs(bufferSemanal) > extraHoy) {
                                                     mensajeEl.textContent = `Te podes ir, pero debés tiempo`;
                                                 } else {
                                                     mensajeEl.textContent = `Te podes ir`;
                                                 }
                                             } else {
-                                                // Aún no cumplió el objetivo diario
+                                                // Falta para el objetivo
                                                 const faltanteTexto = `Faltan ${horasATexto(faltante)}`;
-                                                const bufferSemanal = D.calcularBufferSemanal(ini, hoy);
-
-                                                // Si el buffer cubre lo que falta hoy
                                                 if (bufferSemanal >= faltante) {
                                                     mensajeEl.textContent = `${faltanteTexto}, pero te podés ir`;
                                                 } else {
-                                                    // Buffer insuficiente, negativo o en 0
                                                     mensajeEl.textContent = faltanteTexto;
                                                 }
                                             }
@@ -4692,22 +4553,71 @@
                                 }
                             }
                         } else {
-                            if (progressEl) {
-                                progressEl.style.width = '0%';
-                                setProgressBarColor(progressEl, 'blue');
-                            }
+                            // SIN REGISTRO HOY
+                            if (progressEl) { progressEl.style.width = '0%'; setProgressBarColor(progressEl, 'blue'); }
                             if (statsEl) statsEl.innerHTML = `<div style="font-size: 1.8rem;">😴 Sin actividad</div>`;
                             if (mensajeEl) {
-                                if (horasDiarias === 0) {
-                                    mensajeEl.style.display = 'none';
-                                } else {
-                                    mensajeEl.textContent = '...';
-                                    mensajeEl.style.display = 'block';
-                                }
+                                if (horasDiarias === 0) mensajeEl.style.display = 'none';
+                                else { mensajeEl.textContent = '...'; mensajeEl.style.display = 'block'; }
                             }
                         }
-                        if (hintEl) hintEl.textContent = 'Toca para ver la Semana';
+
+                        // --- LÓGICA DE SALIDA ESTIMADA (NUEVO) ---
+                        if (hintEl) {
+                            let mostrarEstimacion = false;
+                            let horaSalida = '';
+
+                            // Solo calcular si hay entrada, no hay salida, y hay un objetivo > 0
+                            if (regHoy && regHoy.entrada && !regHoy.salida && objetivoDiario > 0) {
+                                const esEspecial = (regHoy.entrada === '00:00' || regHoy.entrada === '11:11' || regHoy.entrada === '22:22');
+
+                                if (!esEspecial) {
+                                    // 1. Hora Entrada a minutos
+                                    const [hE, mE] = regHoy.entrada.split(':').map(Number);
+                                    let minutosTotal = (hE * 60) + mE;
+
+                                    // 2. Sumar Objetivo Diario
+                                    minutosTotal += (objetivoDiario * 60);
+
+                                    // 3. Sumar Tiempo Fuera ya registrado (estático)
+                                    if (regHoy.tiempoFuera) {
+                                        const [hF, mF] = regHoy.tiempoFuera.split(':').map(Number);
+                                        minutosTotal += (hF * 60) + mF;
+                                    }
+
+                                    // 4. Sumar Tiempo Fuera EN CURSO (Live Timer)
+                                    const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
+                                    const storageKey = `breakStartTime_${perfilId}`;
+                                    const inicioBreak = localStorage.getItem(storageKey);
+
+                                    if (inicioBreak) {
+                                        const ahora = Date.now();
+                                        const minutosEnCurso = Math.floor((ahora - parseInt(inicioBreak)) / 60000);
+                                        if (minutosEnCurso > 0) minutosTotal += minutosEnCurso;
+                                    }
+
+                                    // 5. Formatear hora de salida
+                                    let hS = Math.floor(minutosTotal / 60);
+                                    const mS = Math.round(minutosTotal % 60);
+
+                                    if (hS >= 24) hS = hS % 24; // Ajuste si pasa de medianoche
+
+                                    horaSalida = `${String(hS).padStart(2, '0')}:${String(mS).padStart(2, '0')}`;
+                                    mostrarEstimacion = true;
+                                }
+                            }
+
+                            if (mostrarEstimacion) {
+                                hintEl.innerHTML = `Salida estimada: <strong>${horaSalida}</strong>`;
+                                hintEl.style.color = 'var(--text-muted)';
+                            } else {
+                                hintEl.textContent = 'Toca para ver la Semana';
+                                hintEl.style.color = 'var(--text-muted)';
+                            }
+                        }
                     }
+
+                    // Actualizar resto de componentes
                     actualizarEstadisticas();
                     actualizarEstadoBotonTimerMain();
                 }
@@ -4856,12 +4766,6 @@
                     actualizarFeedbackConfig();
                 }
 
-                // Funciones legacy para compatibilidad
-                function incrementarHorasDiarias() { cambiarHorasDiarias(0.5); }
-                function decrementarHorasDiarias() { cambiarHorasDiarias(-0.5); }
-                function incrementarDiasHabiles() { cambiarDiasHabiles(1); }
-                function decrementarDiasHabiles() { cambiarDiasHabiles(-1); }
-
                 function mostrarConfig() {
                     $('config-dias-habiles').value = D.diasHabiles();
                     $('config-horas-diarias').value = D.horasDiarias();
@@ -4871,26 +4775,6 @@
 
                 function cerrarConfig() {
                     $('modal-config').classList.remove('show');
-                }
-
-                function mostrarPerfiles() {
-                    const perfilActual = window.PerfilManager.obtenerDatosPerfil();
-                    const perfilId = window.PerfilManager.obtenerPerfilActual();
-
-                    $('nombre-perfil-actual').value = perfilActual.nombre;
-                    $('perfil-actual-id').textContent = perfilId;
-
-                    const btnEliminar = $('btn-eliminar-perfil-modal');
-                    if (btnEliminar) {
-                        btnEliminar.disabled = (perfilId === 'default');
-                        btnEliminar.style.opacity = (perfilId === 'default') ? '0.5' : '1';
-                    }
-
-                    $('modal-perfiles').classList.add('show');
-                }
-
-                function cerrarPerfiles() {
-                    $('modal-perfiles').classList.remove('show');
                 }
 
                 function cerrarEdicion() {
@@ -5255,8 +5139,20 @@ Generado por Sistema de Horarios
 
                 function actualizarEstadoBotonTimerMain() {
                     const btn = document.getElementById('btn-timer-main');
-                    const card = document.getElementById('stats-card'); // <--- 1. REFERENCIA A LA TARJETA
+                    const card = document.getElementById('stats-card');
                     if (!btn) return;
+
+                    // Verificamos si el 'modo-lote' es el que está visible actualmente
+                    const modoLote = document.getElementById('modo-lote');
+                    if (modoLote && modoLote.style.display !== 'none') {
+                        // Si estamos en modo lote, nos aseguramos que el botón siga oculto y SALIMOS
+                        btn.style.display = 'none';
+                        return;
+                    }
+
+                    // Si no estamos en modo lote, nos aseguramos que se vea
+                    btn.style.display = '';
+                    // ---------------------------------
 
                     const hoy = obtenerFechaHoy();
                     const registroHoy = D.registros().find(r => r.fecha === hoy);
@@ -5267,7 +5163,6 @@ Generado por Sistema de Horarios
                     const isRunning = localStorage.getItem(storageKey) !== null;
                     const icon = btn.querySelector('use');
 
-                    // ... (lógica de bloqueo del botón existente) ...
                     const diaCerrado = registroHoy && registroHoy.salida && registroHoy.salida.trim() !== '';
 
                     if (!isRunning && (!registroHoy || diaCerrado)) {
@@ -5289,10 +5184,8 @@ Generado por Sistema de Horarios
                         btn.style.borderColor = 'var(--c-red)';
                         icon.setAttribute('href', '#icon-coffee');
 
-                        // <--- 2. ACTIVAR EFECTO EN TARJETA
                         if (card) {
                             card.classList.add('timer-running');
-                            // Opcional: Cambiar título temporalmente
                             const titulo = card.querySelector('h2');
                             if (titulo) titulo.innerHTML = `<svg class="icon"><use href="#icon-coffee"/></svg> Tiempo fuera...`;
                         }
@@ -5304,7 +5197,6 @@ Generado por Sistema de Horarios
                         btn.style.borderColor = 'var(--border)';
                         icon.setAttribute('href', '#icon-coffee');
 
-                        // <--- 3. DESACTIVAR EFECTO EN TARJETA
                         if (card) card.classList.remove('timer-running');
                     }
                 }
@@ -5391,33 +5283,6 @@ Generado por Sistema de Horarios
 
                 function toggleBloqueoEdicion() {
                     setBloqueoEdicion(!edicionBloqueada);
-                }
-
-                function mostrarVacaciones() {
-                    $('vacaciones-fecha-desde').value = '';
-                    $('vacaciones-fecha-hasta').value = '';
-                    $('vacaciones-tipo').value = 'feriado';
-                    $('modal-vacaciones').classList.add('show');
-                    actualizarBotonesVacaciones();
-                }
-
-                function cerrarVacaciones() {
-                    $('modal-vacaciones').classList.remove('show');
-                }
-
-                function actualizarBotonesVacaciones() {
-                    const tipo = $('vacaciones-tipo').value;
-                    const btnRegistrar = document.querySelector('#modal-vacaciones .btn-backup');
-
-                    if (tipo === 'normal') {
-                        btnRegistrar.disabled = true;
-                        btnRegistrar.style.opacity = '0.5';
-                        btnRegistrar.title = 'No se pueden registrar rangos de tipo Normal';
-                    } else {
-                        btnRegistrar.disabled = false;
-                        btnRegistrar.style.opacity = '1';
-                        btnRegistrar.title = '';
-                    }
                 }
 
                 function renderizarListaPerfiles() {
@@ -5720,10 +5585,207 @@ Generado por Sistema de Horarios
                         if (window.PerfilManager) {
                             window.PerfilManager.inicializar();
                         }
-                        // --------------------------------------------------------
 
                         mostrarToast('Perfil eliminado', 'success');
                         cerrarEditorPerfil();
+                    }
+                }
+
+                let modoLoteActivo = false;
+
+                function toggleModoLote() {
+                    const modoNormal = document.getElementById('modo-normal');
+                    const modoLote = document.getElementById('modo-lote');
+                    const btnTexto = document.getElementById('btn-registrar-texto');
+                    const btnTimer = document.getElementById('btn-timer-main');
+                    const btn = document.getElementById('btn-agregar');
+
+                    modoLoteActivo = !modoLoteActivo;
+
+                    if (modoLoteActivo) {
+                        // Cambiar a modo lote
+                        modoNormal.classList.add('fade-out');
+
+                        setTimeout(() => {
+                            modoNormal.style.display = 'none';
+                            modoLote.style.display = 'block';
+                            modoLote.classList.remove('fade-out');
+
+                            // Limpiar campos
+                            document.getElementById('lote-tipo').value = 'feriado';
+                            document.getElementById('lote-fecha-desde').value = '';
+                            document.getElementById('lote-fecha-hasta').value = '';
+
+                            // Limpieza visual inicial al entrar
+                            btnTexto.textContent = 'Registrar Lote';
+                            btn.style.background = '';
+                            btn.style.color = '';
+
+                            btnTimer.disabled = true;
+                            btnTimer.style.opacity = '0.3';
+
+                            actualizarBotonLote();
+                        }, 300);
+
+                    } else {
+                        // Volver a modo normal
+                        modoLote.classList.add('fade-out');
+
+                        setTimeout(() => {
+                            modoLote.style.display = 'none';
+                            modoNormal.style.display = 'block';
+                            modoNormal.classList.remove('fade-out');
+
+                            btnTexto.textContent = 'Registrar';
+
+                            btn.style.background = '';
+                            btn.style.color = '';
+
+                            btnTimer.disabled = false;
+                            btnTimer.style.opacity = '1';
+
+                            actualizarEstadoBotonTimerMain();
+                        }, 300);
+                    }
+                }
+
+                async function ejecutarAccionRegistro() {
+                    if (modoLoteActivo) {
+                        await registrarLoteDesdeCard();
+                    } else {
+                        await DataManagement.agregarRegistro();
+                    }
+
+                    // Actualizar el estado del botón después de la operación
+                    if (modoLoteActivo) {
+                        setTimeout(() => actualizarBotonLote(), 100);
+                    }
+                }
+
+                async function registrarLoteDesdeCard() {
+                    const desde = document.getElementById('lote-fecha-desde').value;
+                    const hasta = document.getElementById('lote-fecha-hasta').value;
+                    const tipo = document.getElementById('lote-tipo').value;
+
+                    // --- Lógica para registrar HOY si no hay fechas ---
+                    if (!desde && !hasta) {
+                        if (tipo === 'normal') {
+                            mostrarToast('Para borrar normales, selecciona un rango "Desde" y "Hasta".', 'info');
+                            return;
+                        }
+
+                        const fechaHoy = UILogic.obtenerFechaHoy();
+
+                        // Verificamos si ya existe algo hoy
+                        const registroExistente = DataManagement.registros().find(r => r.fecha === fechaHoy);
+                        if (registroExistente) {
+                            mostrarToast('Ya existe un registro para hoy', 'warning');
+                            return;
+                        }
+
+                        await DataManagement.registrarDiaEspecial(fechaHoy, tipo);
+                        return;
+                    }
+
+                    // Validación de Rango (Solo si el usuario intentó poner fechas)
+                    if ((desde && !hasta) || (!desde && hasta)) {
+                        mostrarToast('Para un rango, debes completar "Desde" y "Hasta"', 'warning');
+                        return;
+                    }
+
+                    if (desde > hasta) {
+                        mostrarToast('La fecha "Desde" debe ser anterior a "Hasta"', 'error');
+                        return;
+                    }
+
+                    // Lógica de Rango (Igual que antes)
+                    let registrosDelTipoEnRango;
+
+                    if (tipo === 'normal') {
+                        registrosDelTipoEnRango = DataManagement.registros().filter(r => {
+                            const dentroDelRango = r.fecha >= desde && r.fecha <= hasta;
+                            const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
+                            const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                            const esVacaciones = r.entrada === '22:22' && r.salida === '22:22';
+                            return dentroDelRango && !esFeriado && !esAusencia && !esVacaciones;
+                        });
+                    } else {
+                        const entrada = tipo === 'vacaciones' ? '22:22' : tipo === 'ausencia' ? '11:11' : '00:00';
+                        const salida = entrada;
+
+                        registrosDelTipoEnRango = DataManagement.registros().filter(r =>
+                            r.fecha >= desde &&
+                            r.fecha <= hasta &&
+                            r.entrada === entrada &&
+                            r.salida === salida
+                        );
+                    }
+
+                    if (registrosDelTipoEnRango.length > 0 || tipo === 'normal') {
+                        await DataManagement.borrarPeriodoDirecto(desde, hasta, tipo);
+                    } else {
+                        await DataManagement.registrarVacacionesDirecto(desde, hasta, tipo);
+                    }
+                }
+
+                function actualizarBotonLote() {
+                    const tipo = document.getElementById('lote-tipo').value;
+                    const desde = document.getElementById('lote-fecha-desde').value;
+                    const hasta = document.getElementById('lote-fecha-hasta').value;
+                    const btn = document.getElementById('btn-agregar');
+                    const btnTexto = document.getElementById('btn-registrar-texto');
+
+                    // 1. LIMPIEZA: Reseteamos siempre al estilo original (Transparente / Color texto normal)
+                    btn.style.background = '';
+                    btn.style.color = '';
+
+                    // 2. Si faltan fechas, mostramos "Registrar" estándar y salimos
+                    if (!desde || !hasta) {
+                        btnTexto.textContent = 'Registrar';
+                        return;
+                    }
+
+                    // 3. Buscamos registros en el rango
+                    let registrosDelTipoEnRango;
+
+                    if (tipo === 'normal') {
+                        registrosDelTipoEnRango = DataManagement.registros().filter(r => {
+                            const dentroDelRango = r.fecha >= desde && r.fecha <= hasta;
+                            const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
+                            const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                            const esVacaciones = r.entrada === '22:22' && r.salida === '22:22';
+                            return dentroDelRango && !esFeriado && !esAusencia && !esVacaciones;
+                        });
+
+                        // Caso Normal: Siempre es una acción de borrado
+                        if (registrosDelTipoEnRango.length > 0) {
+                            btnTexto.textContent = 'Borrar Normales';
+                            btn.style.color = 'var(--c-red)'; // <--- Texto rojo
+                        } else {
+                            btnTexto.textContent = 'Borrar (Vacío)';
+                            btn.style.color = 'var(--text-muted)'; // Gris para indicar vacío
+                        }
+
+                    } else {
+                        // Casos Especiales (Feriado, Vacaciones, Ausencia)
+                        const entrada = tipo === 'vacaciones' ? '22:22' : tipo === 'ausencia' ? '11:11' : '00:00';
+                        const salida = entrada;
+
+                        registrosDelTipoEnRango = DataManagement.registros().filter(r =>
+                            r.fecha >= desde &&
+                            r.fecha <= hasta &&
+                            r.entrada === entrada &&
+                            r.salida === salida
+                        );
+
+                        if (registrosDelTipoEnRango.length > 0) {
+                            // Si ya existen, el botón se convierte en BORRAR
+                            const cantidad = registrosDelTipoEnRango.length;
+                            btnTexto.textContent = `Borrar Lote (${cantidad})`;
+                            btn.style.color = 'var(--c-red)';
+                        } else {
+                            btnTexto.textContent = 'Registrar Lote';
+                        }
                     }
                 }
 
@@ -5748,8 +5810,6 @@ Generado por Sistema de Horarios
                         redoAction: D.redoAction,
                         aplicarFiltros: D.aplicarFiltros,
                         limpiarFiltros: D.limpiarFiltros,
-                        registrarVacaciones: D.registrarVacaciones,
-                        borrarPeriodo: D.borrarPeriodo,
                         registrarDiaEspecial: D.registrarDiaEspecial,
                         registros: D.registros,
                         diasHabiles: D.diasHabiles,
@@ -5765,16 +5825,14 @@ Generado por Sistema de Horarios
                         alternarTema, mostrarConfig, cerrarConfig, pegarHoraActual, alternarVista,
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
                         mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
-                        incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo,
-                        incrementarDiasHabiles, decrementarDiasHabiles, obtenerFechaHoy, mostrarFiltros,
-                        cerrarFiltros, mostrarAyuda, cerrarAyuda, cambiarMesStats, generarReporte, mostrarVacaciones,
-                        cerrarVacaciones, toggleFormulario, toggleBotonesHistorico, toggleStats, toggleTimerBreakMain,
-                        actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion, actualizarBotonesVacaciones,
-                        actualizarFeedbackConfig, poblarSelectorMeses, mostrarPerfiles, cerrarPerfiles,
-                        abrirSelectorPerfiles, cerrarSelectorPerfiles,
+                        limpiarCampo, obtenerFechaHoy, mostrarFiltros, poblarSelectorMeses, actualizarBotonLote,
+                        cerrarFiltros, mostrarAyuda, cerrarAyuda, cambiarMesStats, generarReporte,
+                        toggleFormulario, toggleBotonesHistorico, toggleStats, toggleTimerBreakMain,
+                        actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion, actualizarFeedbackConfig,
                         init, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, eliminarPerfilDesdeEditor,
                         crearPerfilDesdeSelector, renderizarListaPerfiles, iniciarCambioHoras, iniciarCambioDias, detenerCambio,
-                        abrirConfigDesdePerfiles
+                        abrirConfigDesdePerfiles, toggleModoLote, ejecutarAccionRegistro, registrarLoteDesdeCard,
+                        abrirSelectorPerfiles, cerrarSelectorPerfiles, alternarFechaActual
                     };
 
                     // =========================================================
@@ -5858,6 +5916,21 @@ Generado por Sistema de Horarios
                     actualizarUI();
                     setInterval(() => actualizarUI(null, true), 60000);
                     console.log('Sistema iniciado correctamente v6.29');
+
+                    // Listeners para actualizar botón cuando cambien las fechas en modo lote
+                    const loteDesde = document.getElementById('lote-fecha-desde');
+                    const loteHasta = document.getElementById('lote-fecha-hasta');
+
+                    // Usamos una función helper para añadir ambos eventos
+                    const agregarListenersFecha = (el) => {
+                        if (!el) return;
+                        el.addEventListener('change', () => actualizarBotonLote());
+                        el.addEventListener('input', () => actualizarBotonLote());
+                    };
+
+                    // Aplicamos la función a AMBOS campos (Desde y Hasta)
+                    agregarListenersFecha(loteDesde);
+                    agregarListenersFecha(loteHasta);
                 }
 
                 function mostrarFiltros() {
@@ -5930,18 +6003,36 @@ Generado por Sistema de Horarios
                     });
                 }
 
+                // ... dentro de UILogic ...
+
+                function alternarFechaActual(id) {
+                    const c = document.getElementById(id);
+                    if (!c) return;
+
+                    // Si tiene datos, limpiar. Si está vacío, poner hoy.
+                    if (c.value.trim() !== '') {
+                        c.value = '';
+                    } else {
+                        c.value = obtenerFechaHoy();
+                    }
+
+                    // Importante: Actualizar el estado del botón principal
+                    actualizarBotonLote();
+                }
+
+                // ...
+
                 return {
                     init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, mostrarConfig, cerrarConfig,
                     cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError,
-                    limpiarError, resetearBoton, restaurarBotonGuardarEdicion, mostrarVacaciones, toggleFormulario,
-                    cerrarVacaciones, incrementarHorasDiarias, decrementarHorasDiarias, limpiarCampo, actualizarBotonesVacaciones,
-                    incrementarDiasHabiles, decrementarDiasHabiles, mostrarFiltros, cerrarFiltros, mostrarAyuda,
+                    limpiarError, resetearBoton, restaurarBotonGuardarEdicion, toggleFormulario,
+                    limpiarCampo, mostrarFiltros, cerrarFiltros, mostrarAyuda, registrarLoteDesdeCard,
                     cerrarAyuda, cambiarMesStats, generarReporte, toggleBotonesHistorico, toggleStats, sumarMinutosAHora,
                     toggleTimerBreakMain, actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion,
-                    actualizarFeedbackConfig, poblarSelectorMeses, mostrarPerfiles, cerrarPerfiles, abrirSelectorPerfiles,
-                    cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil,
-                    eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles,
-                    iniciarCambioHoras, iniciarCambioDias, detenerCambio, abrirConfigDesdePerfiles
+                    actualizarFeedbackConfig, poblarSelectorMeses, abrirSelectorPerfiles, actualizarBotonLote,
+                    cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
+                    eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
+                    iniciarCambioHoras, iniciarCambioDias, detenerCambio, abrirConfigDesdePerfiles, alternarFechaActual
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -5968,24 +6059,15 @@ Generado por Sistema de Horarios
                     .catch(err => console.error('❌ Error SW:', err));
             });
         }
-
     </script>
-
 </body>
 
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.51
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.59
     // ====================================================================
-    1) el boton de registrar por lotes agrega el tipo de registro para el dia actual
-    si no hay datos rellenos en los campos de fechas
-    2) agregado las modificaciones en la ayuda
-    3) Se remueve el sistema de notificaciones a archivo separado para futuras implementaciones
-    que merezcan la pena ser mencionadas
-    4) se corrije el item contenedor de registros por lotes, el cual mostraba 31 al 01,
-    ahora muestra 01 al 31, (de la fecha inicial a la final)
-
+    1) Se agrega salida estimada en la tarjeta de estado
 
 
     -->
