@@ -1455,7 +1455,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.59</span>
+                <span class="version-text">v6.60</span>
             </h3>
 
             <div class="form-group">
@@ -2809,6 +2809,7 @@
                     }
 
                     if (registroExistente && !e && s && registroExistente.entrada && !registroExistente.salida) {
+                        detenerYRegistrarTimer(registroExistente);
                         registroExistente.salida = s;
                         let t = calcularHoras(registroExistente.entrada, s, registroExistente.tiempoFuera || null);
                         registroExistente.horas = t?.horas || 0;
@@ -3018,6 +3019,13 @@
                     // Si pasó las validaciones y hubo cambios, actualizamos
                     r.fecha = f;
                     r.entrada = e || null;
+
+                    // 🔧 Detener timer si está corriendo y se agrega salida
+                    if (s && !actualSalida) {
+                        const timerDetenido = detenerYRegistrarTimer(r);
+                        if (timerDetenido) tf = r.tiempoFuera; // Actualizar tf con el nuevo valor
+                    }
+
                     r.salida = s || null;
                     r.tiempoFuera = tf;
                     const t = calcularHoras(r.entrada, r.salida, r.tiempoFuera);
@@ -3348,6 +3356,40 @@
                         UILogic.cerrarConfig();
                         $('file-import').value = '';
                     }
+                }
+
+                // 🔧 FUNCIÓN HELPER PARA DETENER TIMER
+                function detenerYRegistrarTimer(registro) {
+                    const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
+                    const storageKey = `breakStartTime_${perfilId}`;
+                    const storedStart = localStorage.getItem(storageKey);
+
+                    if (!storedStart) return false; // No hay timer corriendo
+
+                    const start = parseInt(storedStart);
+                    const end = Date.now();
+                    const diffMs = end - start;
+                    const segundosTranscurridos = Math.floor(diffMs / 1000);
+
+                    // Si el tiempo es menor a 30 segundos, no registrar
+                    if (segundosTranscurridos < 30) {
+                        localStorage.removeItem(storageKey);
+                        return false;
+                    }
+
+                    // Calcular minutos con umbral de 30 segundos
+                    let minutosTranscurridos = Math.floor(segundosTranscurridos / 60);
+                    const segundosRestantes = segundosTranscurridos % 60;
+                    if (segundosRestantes >= 30) minutosTranscurridos += 1;
+
+                    // Sumar al tiempo existente
+                    const tiempoActual = registro.tiempoFuera || '00:00';
+                    registro.tiempoFuera = UILogic.sumarMinutosAHora(tiempoActual, minutosTranscurridos);
+
+                    // Limpiar timer
+                    localStorage.removeItem(storageKey);
+
+                    return true; // Timer detenido exitosamente
                 }
 
                 function calcularBufferSemanal(inicioSemana, fechaHoy) {
@@ -5222,8 +5264,23 @@ Generado por Sistema Horarios
                         const end = Date.now();
                         const diffMs = end - start;
 
-                        let minutosTranscurridos = Math.round(diffMs / 60000);
-                        if (minutosTranscurridos < 1) minutosTranscurridos = 1;
+                        // NUEVO: Calcular minutos con umbral de 30 segundos
+                        const segundosTranscurridos = Math.floor(diffMs / 1000);
+                        let minutosTranscurridos = Math.floor(segundosTranscurridos / 60);
+                        const segundosRestantes = segundosTranscurridos % 60;
+
+                        // Si los segundos restantes son >= 30, sumar 1 minuto más
+                        if (segundosRestantes >= 30) {
+                            minutosTranscurridos += 1;
+                        }
+
+                        // Si el tiempo es menor a 30 segundos, no registrar nada
+                        if (segundosTranscurridos < 30) {
+                            localStorage.removeItem(storageKey);
+                            mostrarToast('⏱️ Tiempo muy corto, no se registró', 'info');
+                            actualizarEstadoBotonTimerMain();
+                            return;
+                        }
 
                         // Calcular nuevo tiempo
                         const tiempoActual = registroHoy.tiempoFuera || '00:00';
@@ -5248,6 +5305,8 @@ Generado por Sistema Horarios
 
                     actualizarEstadoBotonTimerMain();
                 }
+
+
 
                 // --- Lógica de Bloqueo del Modal Editar ---
                 let edicionBloqueada = true;
@@ -6062,9 +6121,10 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.59
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.60
     // ====================================================================
-    1) Se agrega salida estimada en la tarjeta de estado
+    1) Se modifica el funcionamiento del boton tiempo fuera, redondea para arriba o abajo con 30
+    segundos en el medio
 
 
     -->
