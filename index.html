@@ -110,6 +110,7 @@
             gap: 0.5rem;
             flex-shrink: 0;
             margin-right: auto;
+            margin-left: 1rem;
         }
 
         .card,
@@ -1203,11 +1204,7 @@
         </symbol>
     </svg>
     <div class="header">
-        <h1 style="margin: 0; font-size: 1.25rem; color: var(--text-main);">
-            <svg class="icon">
-                <use href="#icon-logo-bolt" />
-            </svg> Horarios
-        </h1>
+        <h1>Horarios</h1>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <button class="icon-btn" id="btn-install" style="display: none;" onclick="PWAInstaller.instalarApp()"
                 title="Instalar aplicación">
@@ -1816,7 +1813,7 @@
 
                 <br><br>
                 <p style="font-size: 0.8rem; text-align: center; opacity: 0.7;">
-                    Horarios Código Libre
+                    Sistema Horarios 2025
                 </p>
             </div>
             <div class="btn-group">
@@ -3148,7 +3145,7 @@
                         const fechaHoy = new Date().toISOString().split('T')[0];
 
                         // Formato: horarios_NombrePerfil_2023-12-06.json
-                        a.download = `horarios_${nombreSafe}_${fechaHoy}.json`;
+                        a.download = `Horarios_${nombreSafe}_${fechaHoy}.json`;
                         // --------------------------------------------------
 
                         document.body.appendChild(a);
@@ -5082,7 +5079,7 @@ REPORTE DE HORAS TRABAJADAS
 
 ────────────────────────────────────────────────────────────────
 
-Generado por Sistema de Horarios
+Generado por Sistema Horarios
 `
                     };
 
