@@ -73,13 +73,17 @@
             box-sizing: border-box;
         }
 
+        html {
+            scrollbar-gutter: stable;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: var(--bg-body);
             color: var(--text-main);
             overflow-anchor: none;
             transition: background 0.3s, color 0.3s;
-            overflow-y: scroll;
+            overflow-y: autos;
             scrollbar-gutter: stable;
         }
 
@@ -1523,7 +1527,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.69</span>
+                <span class="version-text">v6.70</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -3077,6 +3081,8 @@
 
                     // 4. Mostrar el modal y activar bloqueos
                     $('modal-editar').classList.add('show');
+                    document.body.classList.add('modal-open');
+
                     UILogic.setBloqueoEdicion(true);
 
                     requestAnimationFrame(() => {
@@ -5099,14 +5105,17 @@
 
                     UILogic.actualizarFeedbackConfig();
                     $('modal-config').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 function cerrarConfig() {
                     $('modal-config').classList.remove('show');
+                    document.body.classList.remove('modal-open');
                 }
 
                 function cerrarEdicion() {
                     $('modal-editar').classList.remove('show');
+                    document.body.classList.remove('modal-open');
                     D.setEditandoId(null);
                 }
 
@@ -5114,11 +5123,13 @@
                     $('modal-config').classList.remove('show');
                     $('file-import').value = '';
                     $('modal-importar').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 function cerrarImportar() {
                     $('modal-importar').classList.remove('show');
                     $('modal-config').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 function poblarSelectorMeses() {
@@ -5700,6 +5711,7 @@ Generado por Sistema Horarios
                     // --------------------------------------------------
 
                     document.getElementById('modal-selector-perfiles').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
 
@@ -5766,6 +5778,7 @@ Generado por Sistema Horarios
 
                 function cerrarSelectorPerfiles() {
                     document.getElementById('modal-selector-perfiles').classList.remove('show');
+                    document.body.classList.remove('modal-open');
                 }
 
                 function abrirConfigDesdePerfiles() {
@@ -5800,6 +5813,7 @@ Generado por Sistema Horarios
                     // Cerrar selector y abrir editor
                     document.getElementById('modal-selector-perfiles').classList.remove('show');
                     document.getElementById('modal-editar-perfil').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 function cerrarEditorPerfil() {
@@ -6208,7 +6222,7 @@ Generado por Sistema Horarios
                         toggleCredito, init, toggleFormulario
                     };
 
-                    // === LISTENERS E INTERACTIVIDAD (CORREGIDO) ===
+                    // === LISTENERS E INTERACTIVIDAD ===
 
                     // A) Inputs normales del formulario principal (Solo formato)
                     ['entrada', 'salida'].forEach(id => {
@@ -6318,22 +6332,24 @@ Generado por Sistema Horarios
 
                     // Si no hay filtro, mostrar modal
                     $('modal-filtros').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 function cerrarFiltros() {
                     $('modal-filtros').classList.remove('show');
+                    document.body.classList.remove('modal-open');
                 }
-
-                // Busca estas funciones dentro de UILogic (cerca de la línea 2030) y reemplázalas:
 
                 function mostrarAyuda() {
                     $('modal-config').classList.remove('show');
                     $('modal-ayuda').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 function cerrarAyuda() {
                     $('modal-ayuda').classList.remove('show');
                     $('modal-config').classList.add('show');
+                    document.body.classList.add('modal-open');
                 }
 
                 // --- FUNCIÓN GENÉRICA PARA COLAPSABLES ---
@@ -6477,10 +6493,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.69
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.70
     // ====================================================================
-    1) se agrega validacion para los registros futuros, ahora no se puede crear un registro
-    con fecha mas alta que la actual, con excepcion de los registros especiales (feriados, etc)
-    2) se corrige la importacion de registros con la variable credito, las cuales no se importaban
+    1) se corrige nuevamente el salto al abrir modales
+    2) se corrige nuevamente el bloqueo de scroll al abrir modales
 
     -->
