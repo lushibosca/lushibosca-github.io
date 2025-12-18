@@ -609,15 +609,15 @@
         }
 
         /* --- Animaciones y Textos --- */
-        @keyframes zoomIn {
+        @keyframes slideDownFade {
             from {
                 opacity: 0;
-                transform: scale(0.8);
+                transform: translateY(-20px);
             }
 
             to {
                 opacity: 1;
-                transform: scale(1);
+                transform: translateY(0);
             }
         }
 
@@ -711,7 +711,7 @@
         }
 
         .animated-card {
-            animation: zoomIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+            animation: slideDownFade 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
         }
 
         .toggle-hint,
@@ -1526,7 +1526,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.71</span>
+                <span class="version-text">v6.72</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -6507,8 +6507,8 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.71
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.72
     // ====================================================================
-    1) Se corrige el toggle theme que no guardaba el modo
+    1) Se cambia la animacion de las tarjetas par amayor consistencia
 
     -->
