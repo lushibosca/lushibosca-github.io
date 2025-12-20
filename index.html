@@ -57,8 +57,8 @@
             --text-muted: #d1d5db;
             --border: #374151;
             --input-bg: #374151;
-            --input-focus: #4b5563;
-            --c-gray-btn: #4b5563;
+            --input-focus: #374151;
+            --c-gray-btn: #374151;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             --bg-progress-bar: rgba(255, 255, 255, 0.2);
         }
@@ -1526,7 +1526,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.72</span>
+                <span class="version-text">v6.73</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -4432,32 +4432,70 @@
                                 const estaExpandido = detalle.classList.contains('expanded');
 
                                 if (estaExpandido) {
+                                    // Simplemente cerrar
                                     detalle.classList.remove('expanded');
                                     chevronIcon.style.transform = 'rotate(0deg)';
                                 } else {
-                                    lista.querySelectorAll('.registro-mes-detalle.expanded').forEach(otroDetalle => {
-                                        if (otroDetalle !== detalle) {
-                                            otroDetalle.classList.remove('expanded');
-                                            const otroContainer = otroDetalle.closest('.registro-mes-container');
-                                            const otroChevron = otroContainer?.querySelector('.chevron-mes');
-                                            if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
-                                        }
-                                    });
-                                    detalle.classList.add('expanded');
-                                    chevronIcon.style.transform = 'rotate(180deg)';
+                                    // SECUENCIA MEJORADA: Primero cerrar otros, luego abrir
+                                    const otrosMesesAbiertos = lista.querySelectorAll('.registro-mes-detalle.expanded');
+                                    const hayOtrosAbiertos = Array.from(otrosMesesAbiertos).some(otro => otro !== detalle);
 
-                                    setTimeout(() => {
-                                        // 1. Obtenemos la posición del contenedor del mes
-                                        const rect = contenedor.getBoundingClientRect();
+                                    if (hayOtrosAbiertos) {
+                                        // 1. Cerrar otros meses primero
+                                        otrosMesesAbiertos.forEach(otroDetalle => {
+                                            if (otroDetalle !== detalle) {
+                                                otroDetalle.classList.remove('expanded');
+                                                const otroContainer = otroDetalle.closest('.registro-mes-container');
+                                                const otroChevron = otroContainer?.querySelector('.chevron-mes');
+                                                if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
+                                            }
+                                        });
 
-                                        // 2. Definimos el margen del header (la barra blanca de arriba)
-                                        const margenHeader = 80;
+                                        // 2. Esperar a que termine la animación de cierre (300ms)
+                                        setTimeout(() => {
+                                            // 3. Ahora sí, abrir el nuevo mes
+                                            detalle.classList.add('expanded');
+                                            chevronIcon.style.transform = 'rotate(180deg)';
 
-                                        // 3. LOGICA CONDICIONAL:
-                                        if (rect.top < margenHeader) {
-                                            contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                        }
-                                    }, 310);
+                                            // 4. Scroll suave después de que se expanda
+                                            setTimeout(() => {
+                                                const rect = contenedor.getBoundingClientRect();
+                                                const margenHeader = 80;
+                                                const alturaVentana = window.innerHeight;
+
+                                                // Verificar si el contenedor está COMPLETAMENTE visible
+                                                const alturaContenedor = rect.height;
+                                                const estaArribaFueraDePantalla = rect.top < margenHeader;
+                                                const estaAbajoFueraDePantalla = rect.bottom > alturaVentana;
+                                                const noEstaCompletamenteVisible = estaArribaFueraDePantalla || estaAbajoFueraDePantalla;
+
+                                                // Solo hacer scroll si no está completamente visible
+                                                if (noEstaCompletamenteVisible) {
+                                                    contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                }
+                                            }, 310);
+                                        }, 300);
+                                    } else {
+                                        // No hay otros abiertos, abrir inmediatamente
+                                        detalle.classList.add('expanded');
+                                        chevronIcon.style.transform = 'rotate(180deg)';
+
+                                        setTimeout(() => {
+                                            const rect = contenedor.getBoundingClientRect();
+                                            const margenHeader = 80;
+                                            const alturaVentana = window.innerHeight;
+
+                                            // Verificar si el contenedor está COMPLETAMENTE visible
+                                            const estaArribaFueraDePantalla = rect.top < margenHeader;
+                                            const estaAbajoFueraDePantalla = rect.bottom > alturaVentana;
+                                            const noEstaCompletamenteVisible = estaArribaFueraDePantalla || estaAbajoFueraDePantalla;
+
+                                            // Solo hacer scroll si no está completamente visible
+                                            if (noEstaCompletamenteVisible) {
+                                                contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }
+                                        }, 310);
+                                    }
                                 }
                             };
                         })(headerMes, detalleMesActual, chevron, contenedorMesActual);
@@ -6507,8 +6545,8 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.72
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.73
     // ====================================================================
-    1) Se cambia la animacion de las tarjetas par amayor consistencia
+    1) Se mejora la transicion al desplegar un mes en la lista de historico
 
     -->
