@@ -4459,19 +4459,29 @@
 
                                             // 4. Scroll suave después de que se expanda
                                             setTimeout(() => {
-                                                const rect = contenedor.getBoundingClientRect();
                                                 const margenHeader = 80;
                                                 const alturaVentana = window.innerHeight;
 
-                                                // Verificar si el contenedor está COMPLETAMENTE visible
-                                                const alturaContenedor = rect.height;
-                                                const estaArribaFueraDePantalla = rect.top < margenHeader;
-                                                const estaAbajoFueraDePantalla = rect.bottom > alturaVentana;
-                                                const noEstaCompletamenteVisible = estaArribaFueraDePantalla || estaAbajoFueraDePantalla;
+                                                // Buscar los 2 primeros registros dentro del mes expandido
+                                                const registros = detalle.querySelectorAll('.registro-item');
+                                                
+                                                if (registros.length > 0) {
+                                                    // Verificar el primer registro
+                                                    const primerRegistro = registros[0];
+                                                    const rectPrimero = primerRegistro.getBoundingClientRect();
+                                                    
+                                                    // Verificar el segundo registro (si existe)
+                                                    const segundoRegistro = registros.length > 1 ? registros[1] : null;
+                                                    const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
 
-                                                // Solo hacer scroll si no está completamente visible
-                                                if (noEstaCompletamenteVisible) {
-                                                    contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                    // Verificar si alguno de los dos primeros NO está completamente visible
+                                                    const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
+                                                    const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
+
+                                                    // Hacer scroll solo si alguno de los dos primeros está cortado
+                                                    if (primeroCortado || segundoCortado) {
+                                                        contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                    }
                                                 }
                                             }, 310);
                                         }, 300);
@@ -4481,18 +4491,29 @@
                                         chevronIcon.style.transform = 'rotate(180deg)';
 
                                         setTimeout(() => {
-                                            const rect = contenedor.getBoundingClientRect();
                                             const margenHeader = 80;
                                             const alturaVentana = window.innerHeight;
 
-                                            // Verificar si el contenedor está COMPLETAMENTE visible
-                                            const estaArribaFueraDePantalla = rect.top < margenHeader;
-                                            const estaAbajoFueraDePantalla = rect.bottom > alturaVentana;
-                                            const noEstaCompletamenteVisible = estaArribaFueraDePantalla || estaAbajoFueraDePantalla;
+                                            // Buscar los 2 primeros registros dentro del mes expandido
+                                            const registros = detalle.querySelectorAll('.registro-item');
+                                            
+                                            if (registros.length > 0) {
+                                                // Verificar el primer registro
+                                                const primerRegistro = registros[0];
+                                                const rectPrimero = primerRegistro.getBoundingClientRect();
+                                                
+                                                // Verificar el segundo registro (si existe)
+                                                const segundoRegistro = registros.length > 1 ? registros[1] : null;
+                                                const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
 
-                                            // Solo hacer scroll si no está completamente visible
-                                            if (noEstaCompletamenteVisible) {
-                                                contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                // Verificar si alguno de los dos primeros NO está completamente visible
+                                                const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
+                                                const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
+
+                                                // Hacer scroll solo si alguno de los dos primeros está cortado
+                                                if (primeroCortado || segundoCortado) {
+                                                    contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                }
                                             }
                                         }, 310);
                                     }
