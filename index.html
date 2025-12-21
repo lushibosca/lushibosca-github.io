@@ -1529,7 +1529,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.74</span>
+                <span class="version-text">v6.76</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -6513,9 +6513,38 @@ Generado por Sistema Horarios
                     if (isExpanded && callback) callback();
                 }
 
-                // Reemplazos simples
                 function toggleFormulario() {
+                    const el = $('form-registro');
+                    const estabaExpandido = el.classList.contains('expanded');
+
+                    // 1. Ejecuta la animación visual de contraer/expandir
                     toggleSeccionGen('form-registro', 'icon-indicator-form', 'formularioExpandido');
+
+                    // 2. Si la tarjeta estaba abierta y ahora se está cerrando...
+                    if (estabaExpandido) {
+
+                        // --- Limpieza de Modo Normal ---
+                        $('entrada').value = '';
+                        $('salida').value = '';
+                        $('fecha').value = obtenerFechaHoy(); // Resetea la fecha a hoy
+
+                        // --- Limpieza de Modo Lote ---
+                        const loteDesde = $('lote-fecha-desde');
+                        const loteHasta = $('lote-fecha-hasta');
+                        const loteTipo = $('lote-tipo');
+
+                        if (loteDesde) loteDesde.value = '';
+                        if (loteHasta) loteHasta.value = '';
+                        if (loteTipo) loteTipo.value = 'feriado'; // Vuelve al valor por defecto
+
+                        // 3. Si estaba activo el modo lote, resetearlo al modo normal
+                        if (modoLoteActivo) {
+                            toggleModoLote();
+                        } else {
+                            // Si ya estaba en modo normal, refrescamos el estado del botón principal
+                            actualizarEstadoBotonTimerMain();
+                        }
+                    }
                 }
 
                 function toggleBotonesHistorico() {
@@ -6633,10 +6662,8 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.75
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.76
     // ====================================================================
-    1) Se agregan funciones al campo "desde" del modo lote, para permitir registrar el dia
-    sin tener que comopletar "hasta"
-    2) se agrega limite de 60 registros por operacion
+    1) mejoras varias en el modo lote y al contraer la tarjeta de "registrar"
 
     -->
