@@ -319,8 +319,7 @@
         }
 
         .btn-backup,
-        .btn-edit,
-        .toast.info {
+        .btn-edit {
             background: var(--c-gray-btn);
         }
 
@@ -601,6 +600,10 @@
 
         .toast.success {
             background: var(--c-green);
+        }
+
+        .toast.info {
+            background: var(--c-blue);
         }
 
         .toast.error,
@@ -1352,7 +1355,7 @@
                         <div class="form-group">
                             <label>Entrada</label>
                             <div class="input-with-btn">
-                                <input type="text" id="entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                                <input type="text" id="entrada" inputmode="numeric" placeholder="Hora" maxlength="5" />
                                 <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')">
                                     <svg class="icon">
                                         <use href="#icon-clock" />
@@ -1364,7 +1367,7 @@
                         <div class="form-group">
                             <label>Salida</label>
                             <div class="input-with-btn">
-                                <input type="text" id="salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                                <input type="text" id="salida" inputmode="numeric" placeholder="hora" maxlength="5" />
                                 <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')">
                                     <svg class="icon">
                                         <use href="#icon-clock" />
@@ -1408,7 +1411,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Hasta</label>
+                                <label>Hasta (opcional)</label>
                                 <div class="input-with-btn">
                                     <input type="date" id="lote-fecha-hasta" />
                                     <button class="time-btn" onclick="UILogic.alternarFechaActual('lote-fecha-hasta')"
@@ -1645,7 +1648,7 @@
             <div class="form-group">
                 <label>Entrada</label>
                 <div class="input-with-btn">
-                    <input type="text" id="edit-entrada" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                    <input type="text" id="edit-entrada" inputmode="numeric" placeholder="Hora" maxlength="5" />
                     <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-entrada')"><svg class="icon">
                             <use href="#icon-clock" />
                         </svg>
@@ -1655,7 +1658,7 @@
             <div class="form-group">
                 <label>Salida</label>
                 <div class="input-with-btn">
-                    <input type="text" id="edit-salida" inputmode="numeric" placeholder="hh:mm" maxlength="5" />
+                    <input type="text" id="edit-salida" inputmode="numeric" placeholder="Hora" maxlength="5" />
                     <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-salida')"><svg class="icon">
                             <use href="#icon-clock" />
                         </svg>
@@ -3780,6 +3783,12 @@
                         fechaActual.setDate(fechaActual.getDate() + 1);
                     }
 
+                    // VALIDACIÓN DE LÍMITE
+                    if (fechasARegistrar.length > 60) {
+                        UILogic.mostrarToast(`El rango seleccionado contiene ${fechasARegistrar.length} días.\n Máximo permitido: 60 días por operación.`, 'error');
+                        return;
+                    }
+
                     const nuevosRegistros = fechasARegistrar.filter(f => !registros.some(r => r.fecha === f));
 
                     if (nuevosRegistros.length === 0) {
@@ -3849,6 +3858,11 @@
                             r.entrada === entrada &&
                             r.salida === salida
                         );
+                    }
+
+                    if (registrosAEliminar.length > 60) {
+                        UILogic.mostrarToast(`El rango seleccionado contiene ${registrosAEliminar.length} registros.\n Máximo permitido: 60 registros por operación.`, 'error');
+                        return;
                     }
 
                     if (registrosAEliminar.length === 0) {
@@ -4464,12 +4478,12 @@
 
                                                 // Buscar los 2 primeros registros dentro del mes expandido
                                                 const registros = detalle.querySelectorAll('.registro-item');
-                                                
+
                                                 if (registros.length > 0) {
                                                     // Verificar el primer registro
                                                     const primerRegistro = registros[0];
                                                     const rectPrimero = primerRegistro.getBoundingClientRect();
-                                                    
+
                                                     // Verificar el segundo registro (si existe)
                                                     const segundoRegistro = registros.length > 1 ? registros[1] : null;
                                                     const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
@@ -4496,12 +4510,12 @@
 
                                             // Buscar los 2 primeros registros dentro del mes expandido
                                             const registros = detalle.querySelectorAll('.registro-item');
-                                            
+
                                             if (registros.length > 0) {
                                                 // Verificar el primer registro
                                                 const primerRegistro = registros[0];
                                                 const rectPrimero = primerRegistro.getBoundingClientRect();
-                                                
+
                                                 // Verificar el segundo registro (si existe)
                                                 const segundoRegistro = registros.length > 1 ? registros[1] : null;
                                                 const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
@@ -6097,7 +6111,7 @@ Generado por Sistema Horarios
                     const hasta = document.getElementById('lote-fecha-hasta').value;
                     const tipo = document.getElementById('lote-tipo').value;
 
-                    // --- Lógica para registrar HOY si no hay fechas ---
+                    // --- CASO 1: Sin fechas (registrar HOY) ---
                     if (!desde && !hasta) {
                         if (tipo === 'normal') {
                             mostrarToast('Para borrar normales, selecciona un rango "Desde" y "Hasta".', 'info');
@@ -6105,8 +6119,6 @@ Generado por Sistema Horarios
                         }
 
                         const fechaHoy = UILogic.obtenerFechaHoy();
-
-                        // Verificamos si ya existe algo hoy
                         const registroExistente = DataManagement.registros().find(r => r.fecha === fechaHoy);
                         if (registroExistente) {
                             mostrarToast('Ya existe un registro para hoy', 'warning');
@@ -6114,12 +6126,36 @@ Generado por Sistema Horarios
                         }
 
                         await DataManagement.registrarDiaEspecial(fechaHoy, tipo);
+                        // LIMPIAR campos después de registro exitoso
+                        document.getElementById('lote-fecha-desde').value = '';
+                        document.getElementById('lote-fecha-hasta').value = '';
                         return;
                     }
 
-                    // Validación de Rango (Solo si el usuario intentó poner fechas)
-                    if ((desde && !hasta) || (!desde && hasta)) {
-                        mostrarToast('Para un rango, debes completar "Desde" y "Hasta"', 'warning');
+                    // --- CASO 2: Solo campo "Desde" (registrar día único) ---
+                    if (desde && !hasta) {
+                        if (tipo === 'normal') {
+                            mostrarToast('Para borrar normales, necesitas un rango completo', 'info');
+                            return;
+                        }
+
+                        // Verificar si ya existe algo en esa fecha
+                        const registroExistente = DataManagement.registros().find(r => r.fecha === desde);
+                        if (registroExistente) {
+                            mostrarToast('Ya existe un registro para esa fecha', 'warning');
+                            return;
+                        }
+
+                        await DataManagement.registrarDiaEspecial(desde, tipo);
+                        // LIMPIAR campos después de registro exitoso
+                        document.getElementById('lote-fecha-desde').value = '';
+                        document.getElementById('lote-fecha-hasta').value = '';
+                        return;
+                    }
+
+                    // --- CASO 3: Solo "Hasta" sin "Desde" (error) ---
+                    if (!desde && hasta) {
+                        mostrarToast('Debes completar "Desde" primero', 'warning');
                         return;
                     }
 
@@ -6128,7 +6164,7 @@ Generado por Sistema Horarios
                         return;
                     }
 
-                    // Lógica de Rango (Igual que antes)
+                    // Lógica de Rango
                     let registrosDelTipoEnRango;
 
                     if (tipo === 'normal') {
@@ -6156,6 +6192,10 @@ Generado por Sistema Horarios
                     } else {
                         await DataManagement.registrarVacacionesDirecto(desde, hasta, tipo);
                     }
+
+                    // LIMPIAR campos después de operación exitosa (registrar o borrar)
+                    document.getElementById('lote-fecha-desde').value = '';
+                    document.getElementById('lote-fecha-hasta').value = '';
                 }
 
                 function actualizarBotonLote() {
@@ -6170,8 +6210,35 @@ Generado por Sistema Horarios
                     btn.style.color = '';
 
                     // 2. Si faltan fechas, mostramos "Registrar" estándar y salimos
-                    if (!desde || !hasta) {
+                    if (!desde && !hasta) {
                         btnTexto.textContent = 'Registrar';
+                        return;
+                    }
+
+                    // Solo "Desde" (día único)
+                    if (desde && !hasta) {
+                        if (tipo === 'normal') {
+                            btnTexto.textContent = 'Requiere rango';
+                            btn.style.color = 'var(--text-muted)';
+                            return;
+                        }
+
+                        // Verificar si ya existe
+                        const registroExiste = DataManagement.registros().find(r => r.fecha === desde);
+                        if (registroExiste) {
+                            // Para día único, siempre mostrar "Ya ocupado" (no permitir borrado)
+                            btnTexto.textContent = 'Ya ocupado';
+                            btn.style.color = 'var(--text-muted)';
+                        } else {
+                            btnTexto.textContent = 'Registrar día';
+                        }
+                        return;
+                    }
+
+                    // Solo "Hasta" (error)
+                    if (!desde && hasta) {
+                        btnTexto.textContent = 'Falta "Desde"';
+                        btn.style.color = 'var(--c-red)';
                         return;
                     }
 
@@ -6566,8 +6633,10 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.74
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.75
     // ====================================================================
-    1) Cambios de colores de los botones
+    1) Se agregan funciones al campo "desde" del modo lote, para permitir registrar el dia
+    sin tener que comopletar "hasta"
+    2) se agrega limite de 60 registros por operacion
 
     -->
