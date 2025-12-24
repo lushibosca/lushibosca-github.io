@@ -1407,7 +1407,7 @@
                         </div>
                         <div class="contenedor-fechas">
                             <div class="form-group">
-                                <label>Desde</label>
+                                <label>Desde (opcional)</label>
                                 <div class="input-with-btn">
                                     <input type="date" id="lote-fecha-desde" />
                                     <button class="time-btn" onclick="UILogic.alternarFechaActual('lote-fecha-desde')"
@@ -1550,7 +1550,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.78</span>
+                <span class="version-text">v6.79</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -3364,7 +3364,6 @@
                             localStorage.setItem('diasHabiles', JSON.stringify(diasHabiles));
                             localStorage.setItem('horasDiarias', horasDiarias);
                             localStorage.removeItem('horasSemanales');
-                            // ✅ NO tocamos 'temaOscuro' aquí
                         }
                     } catch (e) {
                         UILogic.mostrarToast('Error al guardar', 'error');
@@ -4921,15 +4920,26 @@
                         // Solo mostrar buffer si hay horas configuradas, hay diferencia y la semana no terminó
                         if (horasDiarias > 0 && Math.abs(bufferSemanal) > 0.01 && semanaAbierta) {
                             const esPositivo = bufferSemanal > 0;
-                            const bufferIcono = esPositivo ? '✅' : '⚠️';
                             const bufferColor = esPositivo ? '#60ac94' : '#c05d76';
                             const bufferTextoHoras = horasATexto(Math.abs(bufferSemanal));
                             const bufferLabel = esPositivo ? 'extras' : 'faltantes';
 
+                            // Crear punto como elemento DOM
+                            const punto = document.createElement('span');
+                            punto.style.display = 'inline-block';
+                            punto.style.width = '10px';
+                            punto.style.height = '10px';
+                            punto.style.borderRadius = '50%';
+                            punto.style.backgroundColor = bufferColor;
+                            punto.style.marginRight = '6px';
+
                             const span = document.createElement('span');
                             span.style.color = bufferColor;
                             span.style.fontWeight = '500';
-                            span.textContent = `${bufferIcono} ${bufferTextoHoras} ${bufferLabel} esta semana`;
+                            span.textContent = `${bufferTextoHoras} ${bufferLabel} esta semana`;
+
+                            // Insertar punto + texto
+                            span.insertBefore(punto, span.firstChild);
                             bufferEl.appendChild(span);
                         }
                     }
@@ -5132,13 +5142,21 @@
                         if (hintEl) {
                             let mostrarEstimacion = false;
                             let horaSalida = '';
+                            let minutosTotal = 0;
 
                             if (regHoy && regHoy.entrada && !regHoy.salida && objetivoDiario > 0) {
-                                const esEspecial = (regHoy.entrada === '00:00' || regHoy.entrada === '11:11' || regHoy.entrada === '12:12' || regHoy.entrada === '14:14' || regHoy.entrada === '13:13');
+                                // Solo es especial si AMBOS (entrada Y salida) tienen el código
+                                const esEspecial = regHoy.salida && (
+                                    (regHoy.entrada === '00:00' && regHoy.salida === '00:00') ||
+                                    (regHoy.entrada === '11:11' && regHoy.salida === '11:11') ||
+                                    (regHoy.entrada === '12:12' && regHoy.salida === '12:12') ||
+                                    (regHoy.entrada === '14:14' && regHoy.salida === '14:14') ||
+                                    (regHoy.entrada === '13:13' && regHoy.salida === '13:13')
+                                );
 
                                 if (!esEspecial) {
                                     const [hE, mE] = regHoy.entrada.split(':').map(Number);
-                                    let minutosTotal = (hE * 60) + mE + (objetivoDiario * 60);
+                                    minutosTotal = (hE * 60) + mE + (objetivoDiario * 60);
 
                                     if (regHoy.tiempoFuera) {
                                         const [hF, mF] = regHoy.tiempoFuera.split(':').map(Number);
@@ -5165,7 +5183,26 @@
                             }
 
                             if (mostrarEstimacion) {
-                                hintEl.innerHTML = `Salida estimada: <strong>${horaSalida}</strong>`;
+                                let textoFinal = `Salida estimada: <strong>${horaSalida}</strong>`;
+
+                                // Calcular salida considerando el buffer (positivo o negativo)
+                                const minutosBuffer = bufferSemanal * 60;
+                                const minutosConBuffer = minutosTotal - minutosBuffer;
+
+                                let hSB = Math.floor(minutosConBuffer / 60);
+                                const mSB = Math.round(minutosConBuffer % 60);
+                                if (hSB >= 24) hSB = hSB % 24;
+
+                                const horaSalidaBuffer = `${String(hSB).padStart(2, '0')}:${String(mSB).padStart(2, '0')}`;
+
+                                // Color según el buffer
+                                const colorBuffer = bufferSemanal > 0 ? 'var(--c-green)' :
+                                    bufferSemanal < 0 ? 'var(--c-red)' :
+                                        'var(--text-main)';
+
+                                textoFinal = `Salida estimada: <strong>${horaSalida}</strong> <span style="color: ${colorBuffer};">(<strong>${horaSalidaBuffer}</strong>)</span>`;
+
+                                hintEl.innerHTML = textoFinal;
                             } else {
                                 hintEl.textContent = 'Toca para ver la Semana';
                             }
@@ -5180,7 +5217,7 @@
                     let temaOscuro = !D.cargarConfiguracion().temaOscuro;
                     document.body.classList.toggle('dark-mode');
 
-                    // ✅ Guardar en la raíz (NO dentro del perfil)
+                    // Guardar en la raíz (NO dentro del perfil)
                     try {
                         localStorage.setItem('temaOscuro', temaOscuro);
                     } catch (e) { }
@@ -6827,10 +6864,12 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.78
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.79
     // ====================================================================
-    1) Se modifica la funcion actualizarEstadisticas para que oculte los elementos
-    que den como resultado 0, por ejemplo si en el periodo seleccionado no hay feriados,
-    ese elemento no se va a mostrar, ahorrando espacio de pantalla
+    1) Se agrega junto a salida estimada, la salida estimada actual + la estimada
+    con el bufferEl
+    2) se corrige bug que al marcar una entrada que comience con el codigo de dia
+    especial, (aun sin marcar la salida), la salida estimada no se mostraba
+    3) se reemplazan los emoji del bufferEl por puntos de color
 
     -->
