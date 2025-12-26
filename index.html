@@ -1493,6 +1493,12 @@
                                 <div class="stat-label">Promedio diario</div>
                                 <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
                             </div>
+                            <div style="grid-column: 1 / -1; height: 1px; background: var(--border); margin: 0.5rem 0;">
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Semana pasada</div>
+                                <div class="stat-value" id="stat-semana-pasada">0h 0m</div>
+                            </div>
                         </div>
 
                         <div class="btn-group" style="margin-top: 1rem;">
@@ -1550,7 +1556,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.79</span>
+                <span class="version-text">v6.80</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -4412,7 +4418,7 @@
                         }
                     });
 
-                    // 2. Guardar estado de mes abierto
+                    // 2. Guardar estado de meses abiertos
                     const mesesExpandidos = new Set();
                     lista.querySelectorAll('.registro-mes-container').forEach(container => {
                         const detalle = container.querySelector('.registro-mes-detalle');
@@ -4469,11 +4475,21 @@
                         const detalleMesActual = document.createElement('div');
                         detalleMesActual.className = 'registro-mes-detalle';
 
-                        // Lógica de apertura
+                        // 🆕 LÓGICA DE APERTURA CON LOCALSTORAGE
                         let debeEstarExpandido = false;
-                        if (mesesExpandidos.size > 0) {
-                            debeEstarExpandido = mesesExpandidos.has(claveMes);
-                        } else {
+
+                        try {
+                            const estadoGuardado = localStorage.getItem(`mes-${claveMes}-expandido`);
+
+                            if (estadoGuardado !== null) {
+                                // Si hay estado guardado, usarlo
+                                debeEstarExpandido = estadoGuardado === 'true';
+                            } else {
+                                // Si no hay estado guardado (primera vez), abrir solo el mes actual
+                                debeEstarExpandido = (claveMes === mesHoy);
+                            }
+                        } catch (e) {
+                            // Fallback: abrir solo mes actual
                             debeEstarExpandido = (claveMes === mesHoy);
                         }
 
@@ -4486,6 +4502,7 @@
                         let semanaAnterior = null;
 
                         grupos.forEach(grupo => {
+                            // ... resto del código sin cambios ...
                             if (grupo.tipo === 'grupo') {
                                 const primerRegistro = grupo.registros[grupo.registros.length - 1]; // El más antiguo del grupo
                                 const semanaActual = obtenerLunesSemana(primerRegistro.fecha);
@@ -4526,53 +4543,62 @@
                                 const estaExpandido = detalle.classList.contains('expanded');
 
                                 if (estaExpandido) {
-                                    // Simplemente cerrar
+                                    // Cerrar
                                     detalle.classList.remove('expanded');
                                     chevronIcon.style.transform = 'rotate(0deg)';
+
+                                    // 🆕 GUARDAR ESTADO AL CERRAR
+                                    try {
+                                        localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'false');
+                                    } catch (e) { }
                                 } else {
-                                    // SECUENCIA MEJORADA: Primero cerrar otros, luego abrir
+                                    // Abrir
                                     const otrosMesesAbiertos = lista.querySelectorAll('.registro-mes-detalle.expanded');
                                     const hayOtrosAbiertos = Array.from(otrosMesesAbiertos).some(otro => otro !== detalle);
 
                                     if (hayOtrosAbiertos) {
-                                        // 1. Cerrar otros meses primero
+                                        // 🆕 CERRAR OTROS Y GUARDAR SU ESTADO
                                         otrosMesesAbiertos.forEach(otroDetalle => {
                                             if (otroDetalle !== detalle) {
                                                 otroDetalle.classList.remove('expanded');
                                                 const otroContainer = otroDetalle.closest('.registro-mes-container');
                                                 const otroChevron = otroContainer?.querySelector('.chevron-mes');
+                                                const otroHeader = otroContainer?.querySelector('.registro-mes-header');
+
                                                 if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
+
+                                                // 🆕 GUARDAR QUE SE CERRÓ
+                                                if (otroHeader && otroHeader.dataset.mesId) {
+                                                    try {
+                                                        localStorage.setItem(`mes-${otroHeader.dataset.mesId}-expandido`, 'false');
+                                                    } catch (e) { }
+                                                }
                                             }
                                         });
 
-                                        // 2. Esperar a que termine la animación de cierre (300ms)
                                         setTimeout(() => {
-                                            // 3. Ahora sí, abrir el nuevo mes
                                             detalle.classList.add('expanded');
                                             chevronIcon.style.transform = 'rotate(180deg)';
 
-                                            // 4. Scroll suave después de que se expanda
+                                            // 🆕 GUARDAR QUE SE ABRIÓ
+                                            try {
+                                                localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
+                                            } catch (e) { }
+
                                             setTimeout(() => {
                                                 const margenHeader = 80;
                                                 const alturaVentana = window.innerHeight;
-
-                                                // Buscar los 2 primeros registros dentro del mes expandido
                                                 const registros = detalle.querySelectorAll('.registro-item');
 
                                                 if (registros.length > 0) {
-                                                    // Verificar el primer registro
                                                     const primerRegistro = registros[0];
                                                     const rectPrimero = primerRegistro.getBoundingClientRect();
-
-                                                    // Verificar el segundo registro (si existe)
                                                     const segundoRegistro = registros.length > 1 ? registros[1] : null;
                                                     const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
 
-                                                    // Verificar si alguno de los dos primeros NO está completamente visible
                                                     const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
                                                     const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
 
-                                                    // Hacer scroll solo si alguno de los dos primeros está cortado
                                                     if (primeroCortado || segundoCortado) {
                                                         contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                                     }
@@ -4580,31 +4606,28 @@
                                             }, 310);
                                         }, 300);
                                     } else {
-                                        // No hay otros abiertos, abrir inmediatamente
                                         detalle.classList.add('expanded');
                                         chevronIcon.style.transform = 'rotate(180deg)';
+
+                                        // 🆕 GUARDAR QUE SE ABRIÓ
+                                        try {
+                                            localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
+                                        } catch (e) { }
 
                                         setTimeout(() => {
                                             const margenHeader = 80;
                                             const alturaVentana = window.innerHeight;
-
-                                            // Buscar los 2 primeros registros dentro del mes expandido
                                             const registros = detalle.querySelectorAll('.registro-item');
 
                                             if (registros.length > 0) {
-                                                // Verificar el primer registro
                                                 const primerRegistro = registros[0];
                                                 const rectPrimero = primerRegistro.getBoundingClientRect();
-
-                                                // Verificar el segundo registro (si existe)
                                                 const segundoRegistro = registros.length > 1 ? registros[1] : null;
                                                 const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
 
-                                                // Verificar si alguno de los dos primeros NO está completamente visible
                                                 const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
                                                 const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
 
-                                                // Hacer scroll solo si alguno de los dos primeros está cortado
                                                 if (primeroCortado || segundoCortado) {
                                                     contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                                 }
@@ -4798,11 +4821,54 @@
                     const hPromedio = Math.floor(promedioDiario);
                     const mPromedio = Math.round((promedioDiario - hPromedio) * 60);
 
+                    // 🆕 CALCULAR SEMANA PASADA
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0); // Normalizar a medianoche
+
+                    const diaSemana = hoy.getDay(); // 0=Dom, 1=Lun...
+                    const offsetLunesActual = diaSemana === 0 ? -6 : 1 - diaSemana;
+
+                    // Lunes de esta semana
+                    const lunesActual = new Date(hoy);
+                    lunesActual.setDate(hoy.getDate() + offsetLunesActual);
+
+                    // Lunes de semana pasada (restar 7 días al lunes actual)
+                    const lunesPasado = new Date(lunesActual);
+                    lunesPasado.setDate(lunesActual.getDate() - 7);
+
+                    // Domingo de semana pasada (restar 1 día al lunes actual)
+                    const domingoPasado = new Date(lunesActual);
+                    domingoPasado.setDate(lunesActual.getDate() - 1);
+
+                    // Formatear a YYYY-MM-DD
+                    const inicioSemanaPasada = `${lunesPasado.getFullYear()}-${String(lunesPasado.getMonth() + 1).padStart(2, '0')}-${String(lunesPasado.getDate()).padStart(2, '0')}`;
+                    const finSemanaPasada = `${domingoPasado.getFullYear()}-${String(domingoPasado.getMonth() + 1).padStart(2, '0')}-${String(domingoPasado.getDate()).padStart(2, '0')}`;
+
+                    // Filtrar registros de semana pasada (SOLO registros normales)
+                    const registrosSemanaPasada = D.registros().filter(r => {
+                        const codigosEspeciales = ['00:00', '11:11', '12:12', '13:13', '14:14'];
+
+                        // Solo es especial si entrada === salida Y es un código especial
+                        const esEspecial = codigosEspeciales.includes(r.entrada) && r.entrada === r.salida;
+                        const esNormal = r.entrada && r.salida && !esEspecial;
+
+                        const dentroDelRango = r.fecha >= inicioSemanaPasada && r.fecha <= finSemanaPasada;
+
+                        return dentroDelRango && esNormal;
+                    });
+
+                    // Sumar horas
+                    const totalSemanaPasada = registrosSemanaPasada.reduce((sum, r) => sum + r.total, 0);
+                    const hSemanaPasada = Math.floor(totalSemanaPasada);
+                    const mSemanaPasada = Math.round((totalSemanaPasada - hSemanaPasada) * 60);
+
+
                     return {
                         entradaPromedio: `${String(hEntrada).padStart(2, '0')}:${String(mEntrada).padStart(2, '0')}`,
                         salidaPromedio: `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`,
                         diasTrabajados: registrosValidos.length,
                         promedioDiario: `${hPromedio}h ${mPromedio}m`,
+                        semanaPasada: `${hSemanaPasada}h ${mSemanaPasada}m`,
                         feriados: feriados,
                         ausencias: ausencias,
                         vacaciones: vacaciones,
@@ -4819,6 +4885,7 @@
                     const elSalida = $('stat-salida-promedio');
                     const elDias = $('stat-dias-trabajados');
                     const elPromedio = $('stat-promedio-diario');
+                    const elSemanaPasada = $('stat-semana-pasada');
                     const elFeriados = $('stat-feriados');
                     const elAusencias = $('stat-ausencias');
                     const elVacaciones = $('stat-vacaciones');
@@ -4830,7 +4897,9 @@
                     if (elSalida) elSalida.textContent = stats.salidaPromedio;
                     if (elDias) elDias.textContent = stats.diasTrabajados;
                     if (elPromedio) elPromedio.textContent = stats.promedioDiario;
+                    if (elSemanaPasada) elSemanaPasada.textContent = stats.semanaPasada;
 
+                    // 🆕 Ocultar/Mostrar items según valor
                     const toggleStatItem = (element, value) => {
                         if (!element) return;
                         const statItem = element.closest('.stat-item');
@@ -5516,10 +5585,10 @@ REPORTE DE HORAS TRABAJADAS
                         detalleDiario: () => {
                             let seccion = `
 
-────────────────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────
 
 📋 DETALLE DIARIO
-────────────────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────
 
 `;
                             const registrosOrdenados = [...registrosMes].sort((a, b) =>
@@ -5541,15 +5610,15 @@ REPORTE DE HORAS TRABAJADAS
                                 let linea = '';
 
                                 if (esFeriado) {
-                                    linea = `${dia.padEnd(10)} ${fecha}  FERIADO`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} FERIADO`; // 🔄 INTERCAMBIADO
                                 } else if (esAusencia) {
-                                    linea = `${dia.padEnd(10)} ${fecha}  AUSENCIA`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} AUSENCIA`; // 🔄 INTERCAMBIADO
                                 } else if (esVacaciones) {
-                                    linea = `${dia.padEnd(10)} ${fecha}  VACACIONES`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} VACACIONES`; // 🔄 INTERCAMBIADO
                                 } else if (esEnfermedad) {
-                                    linea = `${dia.padEnd(10)} ${fecha}  ENFERMEDAD`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} ENFERMEDAD`; // 🔄 INTERCAMBIADO
                                 } else if (esAsueto) {
-                                    linea = `${dia.padEnd(10)} ${fecha}  ASUETO`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} ASUETO`; // 🔄 INTERCAMBIADO
                                 }
                                 else {
                                     const entrada = r.entrada || '--:--';
@@ -5570,7 +5639,7 @@ REPORTE DE HORAS TRABAJADAS
                                         }
                                     }
 
-                                    linea = `${dia.padEnd(10)} ${fecha}  ${entrada} → ${salida}  [${total}]${tiempoFuera}${infoAsueto} ${indicador}`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} ${entrada} → ${salida}  [${total}]${tiempoFuera}${infoAsueto} ${indicador}`; // 🔄 INTERCAMBIADO
                                 }
 
                                 seccion += linea + '\n';
@@ -5654,7 +5723,7 @@ REPORTE DE HORAS TRABAJADAS
                                 const viernesFormato = viernes.split('-').reverse().join('/');
 
                                 seccion += `   Semana ${index + 1} (${lunesFormato} - ${viernesFormato}):\n`;
-                                seccion += `      └─ ${horasSem}h ${minutosSem}m (${totalSemanal.toFixed(2)}h)`;
+                                seccion += `      └─ ${horasSem}h ${minutosSem}m`;
 
                                 const notasExtras = [];
                                 if (datos.feriados.length > 0) notasExtras.push(`${datos.feriados.length} feriado(s)`);
@@ -6864,12 +6933,10 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.79
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.80
     // ====================================================================
-    1) Se agrega junto a salida estimada, la salida estimada actual + la estimada
-    con el bufferEl
-    2) se corrige bug que al marcar una entrada que comience con el codigo de dia
-    especial, (aun sin marcar la salida), la salida estimada no se mostraba
-    3) se reemplazan los emoji del bufferEl por puntos de color
+    1) Se agrega "semana pasada" a la tarjeta de estadisticas
+    2) se intercambia la calumna 1 y 2 del detalle diario en reporte
+    3) se agrega guardado de localstorage de la vista de registros del historico
 
     -->
