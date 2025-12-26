@@ -1556,7 +1556,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.80</span>
+                <span class="version-text">v6.81</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -5916,6 +5916,7 @@ Generado por Sistema Horarios
                             localStorage.removeItem(storageKey);
                             mostrarToast('⏱️ Tiempo muy corto, no se registró', 'info');
                             actualizarEstadoBotonTimerMain();
+                            actualizarUI();
                             return;
                         }
 
@@ -6933,10 +6934,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.80
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.81
     // ====================================================================
-    1) Se agrega "semana pasada" a la tarjeta de estadisticas
-    2) se intercambia la calumna 1 y 2 del detalle diario en reporte
-    3) se agrega guardado de localstorage de la vista de registros del historico
+    1) Se corrige bug luego de tocar el boton tiempo fuera y el tiempo es muy corto,
+    no se actualiza la etiqueta a hoy.
 
     -->
