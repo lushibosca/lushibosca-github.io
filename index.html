@@ -494,7 +494,22 @@
         }
 
         .registro-item.hoy {
-            border-left: 5px solid var(--text-main);
+            border-left: 3px solid var(--c-green);
+            position: relative;
+        }
+
+        .registro-item.hoy::before {
+            content: "HOY";
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--c-green);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
         }
 
         .registro-info {
@@ -6936,7 +6951,8 @@ Generado por Sistema Horarios
 <!--// ====================================================================
     //             CAMBIOS REALIZADOS EN ESTA VERSION 6.81
     // ====================================================================
-    1) Se corrige bug luego de tocar el boton tiempo fuera y el tiempo es muy corto,
-    no se actualiza la etiqueta a hoy.
+    1) Se corrige bug luego de tocar el boton tiempo fuera y si el tiempo es muy corto,
+    no se actualizaba la etiqueta a hoy.
+    2) Se cambia el destaque del registro hoy
 
     -->
