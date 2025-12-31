@@ -43,6 +43,7 @@
             --c-gold: #d6af66;
             --c-gray-btn: #4b5563;
             --c-gray-light: #cbd5e1;
+            --c-white: #ffffff;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             --radius: 12px;
             --bg-progress-bar: rgba(224, 224, 224, 0.3);
@@ -148,7 +149,7 @@
         @media (min-width: 1024px) {
             .container {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: minmax(350px, 1fr) minmax(400px, 1fr);
                 gap: 1rem;
                 align-items: start;
             }
@@ -504,7 +505,7 @@
             top: 8px;
             right: 8px;
             background: var(--c-green);
-            color: white;
+            color: var(--c-white);
             font-size: 0.65rem;
             font-weight: 700;
             padding: 2px 6px;
@@ -1571,7 +1572,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.81</span>
+                <span class="version-text">v6.82</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -2498,7 +2499,7 @@
                     });
                 }
 
-                function cambiarPerfil(nuevoId) { // Modificado para aceptar ID directo
+                function cambiarPerfil(nuevoId) {
                     if (!nuevoId) return; // Si viene del select antiguo (ya no existe)
                     if (nuevoId === perfilActual) return;
 
@@ -2766,16 +2767,12 @@
 
                 async function guardarYActualizar(actualizarRegistros = true, idNuevo = null) {
                     let saveSuccessful = true;
-
-                    // DETALLE IMPORTANTE:
                     // Verificamos si estamos en el perfil 'default' (el principal)
                     const esPerfilDefault = window.PerfilManager && PerfilManager.obtenerPerfilActual() === 'default';
-
                     // 1. Guardado Legacy (Compatibilidad hacia atrás)
                     // SOLO guardamos en la clave raíz 'registros' si estamos en el perfil default.
                     // Esto evita que un perfil secundario sobrescriba tu backup principal.
                     if (actualizarRegistros && esPerfilDefault) {
-                        // Nota: Asegúrate de que la función guardarConIntegridad esté accesible o descomentada si la usas
                         saveSuccessful = await guardarConIntegridad(registros);
                     }
 
@@ -3353,8 +3350,7 @@
                         return;
                     }
 
-                    // --- NUEVA VALIDACIÓN DE CAMBIOS (Array vs Array) ---
-                    // Ordenamos la configuración actual para que la comparación sea justa
+                    // --- VALIDACIÓN DE CAMBIOS (Array vs Array) ---
                     const diasActuales = [...diasHabiles].sort((a, b) => a - b);
 
                     // Convertimos a texto para comparar contenido real
@@ -3365,8 +3361,6 @@
                         UILogic.cerrarConfig();
                         return;
                     }
-                    // ---------------------------------------------------
-
                     // Guardar en memoria
                     diasHabiles = nuevosDias;
                     horasDiarias = vd;
@@ -4562,7 +4556,7 @@
                                     detalle.classList.remove('expanded');
                                     chevronIcon.style.transform = 'rotate(0deg)';
 
-                                    // 🆕 GUARDAR ESTADO AL CERRAR
+                                    // GUARDAR ESTADO AL CERRAR
                                     try {
                                         localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'false');
                                     } catch (e) { }
@@ -4572,9 +4566,15 @@
                                     const hayOtrosAbiertos = Array.from(otrosMesesAbiertos).some(otro => otro !== detalle);
 
                                     if (hayOtrosAbiertos) {
-                                        // 🆕 CERRAR OTROS Y GUARDAR SU ESTADO
+                                        // CALCULAR Y RESERVAR ALTURA ANTES DE CERRAR
                                         otrosMesesAbiertos.forEach(otroDetalle => {
                                             if (otroDetalle !== detalle) {
+                                                const alturaActual = otroDetalle.scrollHeight;
+
+                                                // Fijar altura actual como mínima temporalmente
+                                                otroDetalle.style.minHeight = `${alturaActual}px`;
+
+                                                // Cerrar visualmente
                                                 otroDetalle.classList.remove('expanded');
                                                 const otroContainer = otroDetalle.closest('.registro-mes-container');
                                                 const otroChevron = otroContainer?.querySelector('.chevron-mes');
@@ -4582,12 +4582,17 @@
 
                                                 if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
 
-                                                // 🆕 GUARDAR QUE SE CERRÓ
+                                                // GUARDAR QUE SE CERRÓ
                                                 if (otroHeader && otroHeader.dataset.mesId) {
                                                     try {
                                                         localStorage.setItem(`mes-${otroHeader.dataset.mesId}-expandido`, 'false');
                                                     } catch (e) { }
                                                 }
+
+                                                // LIBERAR LA ALTURA DESPUÉS DE LA ANIMACIÓN
+                                                setTimeout(() => {
+                                                    otroDetalle.style.minHeight = '';
+                                                }, 350); // 50ms después de la animación de 300ms
                                             }
                                         });
 
@@ -4595,7 +4600,7 @@
                                             detalle.classList.add('expanded');
                                             chevronIcon.style.transform = 'rotate(180deg)';
 
-                                            // 🆕 GUARDAR QUE SE ABRIÓ
+                                            // GUARDAR QUE SE ABRIÓ
                                             try {
                                                 localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
                                             } catch (e) { }
@@ -4624,7 +4629,7 @@
                                         detalle.classList.add('expanded');
                                         chevronIcon.style.transform = 'rotate(180deg)';
 
-                                        // 🆕 GUARDAR QUE SE ABRIÓ
+                                        // GUARDAR QUE SE ABRIÓ
                                         try {
                                             localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
                                         } catch (e) { }
@@ -4671,7 +4676,7 @@
                     // Encabezado del grupo
                     const header = document.createElement('div');
 
-                    // --- CAMBIO CLAVE 4: Lógica de detección de IDs nuevos ---
+                    // --- Lógica de detección de IDs nuevos ---
                     let className = 'registro-item';
                     let animarGrupo = false;
 
@@ -6120,7 +6125,7 @@ Generado por Sistema Horarios
 
                     input.value = '';
 
-                    // ⭐ RENDERIZAR LISTA ACTUALIZADA
+                    // RENDERIZAR LISTA ACTUALIZADA
                     renderizarListaPerfiles();
 
                     // Resaltar nuevo perfil
@@ -6226,7 +6231,6 @@ Generado por Sistema Horarios
                     if (window.PerfilManager) {
                         window.PerfilManager.inicializar();
                     }
-                    // --------------------------------------------------------
 
                     mostrarToast('Perfil actualizado', 'success');
                     cerrarEditorPerfil();
@@ -6949,10 +6953,11 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.81
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.82
     // ====================================================================
-    1) Se corrige bug luego de tocar el boton tiempo fuera y si el tiempo es muy corto,
-    no se actualizaba la etiqueta a hoy.
-    2) Se cambia el destaque del registro hoy
+    1) Mejora al cambiar entre meses en el histórico
+    - Ahora el cambio entre meses es más suave y no "salta" la pantalla
+    - Se mantiene la posición del scroll durante la transición
+
 
     -->
