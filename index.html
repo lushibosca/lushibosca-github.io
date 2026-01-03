@@ -355,20 +355,6 @@
             touch-action: manipulation;
         }
 
-        @media (hover: hover) and (pointer: fine) {
-
-            .icon-btn:hover:not(:disabled),
-            .time-btn:hover:not(:disabled),
-            .btn-increment:hover:not(:disabled),
-            .filter-btn:hover:not(:disabled),
-            .registro-item:hover,
-            .header-profile-btn:hover,
-            .btn-perfil-select:hover,
-            .day-checkbox:hover span {
-                border: 1px solid var(--text-main);
-            }
-        }
-
         .time-btn,
         .btn-increment {
             background: var(--border);
@@ -403,6 +389,23 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+        }
+
+        /* --- Hovers de botones en general --- */
+
+        @media (hover: hover) and (pointer: fine) {
+
+            .icon-btn:hover:not(:disabled),
+            .time-btn:hover:not(:disabled),
+            .btn-increment:hover:not(:disabled),
+            .filter-btn:hover:not(:disabled),
+            .registro-item:hover,
+            .header-profile-btn:hover,
+            .btn-perfil-select:hover,
+            .day-checkbox:hover span,
+            .btn-perfil-edit:hover {
+                border: 1px solid var(--text-main);
+            }
         }
 
         /* --- Stats & Progreso --- */
@@ -486,7 +489,7 @@
             content-visibility: auto;
             contain-intrinsic-size: 85px;
         }
- 
+
         .btn-perfil-edit:active,
         .registro-item:active {
             transform: scale(1);
@@ -1047,10 +1050,6 @@
             width: 1em;
             height: 1em;
             font-size: 18px;
-        }
-
-        .btn-perfil-edit:hover {
-            border: 1px solid var(--text-main);
         }
 
         /* Transición suave entre modos */
