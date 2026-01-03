@@ -352,20 +352,21 @@
             background: transparent;
             color: var(--text-main);
             user-select: none;
-            -webkit-user-select: none;
-            -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
 
-        .icon-btn:hover:not(:disabled),
-        .time-btn:hover:not(:disabled),
-        .btn-increment:hover:not(:disabled),
-        .filter-btn:hover:not(:disabled),
-        .registro-item:hover,
-        .header-profile-btn:hover,
-        .btn-perfil-select:hover,
-        .day-checkbox:hover span {
-            border: 1px solid var(--text-main);
+        @media (hover: hover) and (pointer: fine) {
+
+            .icon-btn:hover:not(:disabled),
+            .time-btn:hover:not(:disabled),
+            .btn-increment:hover:not(:disabled),
+            .filter-btn:hover:not(:disabled),
+            .registro-item:hover,
+            .header-profile-btn:hover,
+            .btn-perfil-select:hover,
+            .day-checkbox:hover span {
+                border: 1px solid var(--text-main);
+            }
         }
 
         .time-btn,
@@ -485,11 +486,7 @@
             content-visibility: auto;
             contain-intrinsic-size: 85px;
         }
-
-        .stats-card:hover {
-            transform: scale(1.02);
-        }
-
+ 
         .btn-perfil-edit:active,
         .registro-item:active {
             transform: scale(1);
@@ -1557,7 +1554,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.82</span>
+                <span class="version-text">v6.84</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -3273,6 +3270,26 @@
                         UILogic.restaurarBotonGuardarEdicion(btnGuardar);
                         UILogic.mostrarToast('Ya existe otro registro para esa fecha', 'error');
                         return;
+                    }
+
+                    // Tiempo Fuera no puede superar tiempo trabajado
+                    if (e && s && tf) {
+                        const [hE, mE] = e.split(':').map(Number);
+                        const [hS, mS] = s.split(':').map(Number);
+                        const [hF, mF] = tf.split(':').map(Number);
+
+                        const minutosEntrada = hE * 60 + mE;
+                        const minutosSalida = hS * 60 + mS;
+                        const minutosFuera = hF * 60 + mF;
+
+                        let tiempoTranscurrido = minutosSalida - minutosEntrada;
+                        if (tiempoTranscurrido < 0) tiempoTranscurrido += 24 * 60;
+
+                        if (minutosFuera > tiempoTranscurrido) {
+                            UILogic.restaurarBotonGuardarEdicion(btnGuardar);
+                            UILogic.mostrarToast('El tiempo fuera no puede superar el tiempo trabajado', 'error');
+                            return;
+                        }
                     }
 
                     // --- 4. ACTUALIZAR EL OBJETO ---
@@ -7034,9 +7051,10 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.83
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.84
     // ====================================================================
-    1) Se agrupan y cambia el tipo de hover de algunos elementos
+    1) Se agregan validaciones para el tiempo fuera
+    2) se quita .stats-card:hover
 
 
     -->
