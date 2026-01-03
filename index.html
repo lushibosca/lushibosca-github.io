@@ -357,11 +357,15 @@
             touch-action: manipulation;
         }
 
-        .icon-btn:hover,
-        .time-btn:hover,
-        .btn-increment:hover,
-        .filter-btn:hover {
-            transform: scale(1.02);
+        .icon-btn:hover:not(:disabled),
+        .time-btn:hover:not(:disabled),
+        .btn-increment:hover:not(:disabled),
+        .filter-btn:hover:not(:disabled),
+        .registro-item:hover,
+        .header-profile-btn:hover,
+        .btn-perfil-select:hover,
+        .day-checkbox:hover span {
+            border: 1px solid var(--text-main);
         }
 
         .time-btn,
@@ -482,10 +486,7 @@
             contain-intrinsic-size: 85px;
         }
 
-        .registro-item:hover,
-        .card-header-clickable:hover,
-        .stats-card:hover,
-        button:hover {
+        .stats-card:hover {
             transform: scale(1.02);
         }
 
@@ -504,9 +505,9 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: var(--c-green);
-            color: var(--c-white);
-            font-size: 0.65rem;
+            border: 2px solid var(--c-green);
+            color: var(--text-main);
+            font-size: 0.75rem;
             font-weight: 700;
             padding: 2px 6px;
             border-radius: 4px;
@@ -778,8 +779,6 @@
             background: var(--bg-body);
         }
 
-        /* --- Select personalizado --- */
-
         select:hover {
             border-color: var(--text-muted);
         }
@@ -956,11 +955,6 @@
             }
         }
 
-        .header-profile-btn:hover {
-            border-color: var(--text-muted);
-            background: var(--bg-body);
-        }
-
         .header-profile-btn span {
             white-space: nowrap;
             overflow: hidden;
@@ -1012,10 +1006,6 @@
             transition: all 0.2s;
         }
 
-        .btn-perfil-select:hover {
-            transform: scale(1.02);
-        }
-
         .btn-perfil-select.activo {
             border-color: var(--c-green);
             background: rgba(96, 172, 148, 0.1);
@@ -1063,8 +1053,7 @@
         }
 
         .btn-perfil-edit:hover {
-            background: var(--bg-body);
-            transform: scale(1.02);
+            border: 1px solid var(--text-main);
         }
 
         /* Transición suave entre modos */
@@ -1129,10 +1118,6 @@
             border: 1px solid var(--c-green);
             font-weight: bold;
             transform: scale(1.1);
-        }
-
-        .day-checkbox:hover span {
-            border-color: var(--text-muted);
         }
     </style>
 </head>
@@ -7049,15 +7034,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.82
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.83
     // ====================================================================
-    1) Mejora al cambiar entre meses en el histórico
-    - Ahora el cambio entre meses es más suave y no "salta" la pantalla
-    - Se mantiene la posición del scroll durante la transición
-    2) se corrige bug al actualizar las estadisticas, al realizar algun registro
-    no se actualiza en tiempo real
-    3) se agrega leyenda en el reporte cuando una semana del periodo tiene registros
-    de otro mes
+    1) Se agrupan y cambia el tipo de hover de algunos elementos
 
 
     -->
