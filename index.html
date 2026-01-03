@@ -29,7 +29,7 @@
             /* --- Variables de Color (Tema Claro) --- */
             --bg-body: #f9fafb;
             --bg-card: #ffffff;
-            --bg-header: #ffffff;
+            --bg-header: rgba(255, 255, 255, 0.800);
             --text-main: #1f2937;
             --text-muted: #6b7280;
             --text-inv: #ffffff;
@@ -53,7 +53,7 @@
             /* --- Variables de Color (Tema Oscuro) --- */
             --bg-body: #111827;
             --bg-card: #1f2937;
-            --bg-header: #111827;
+            --bg-header: rgba(17, 24, 39, 0.800);
             --text-main: #f9fafb;
             --text-muted: #d1d5db;
             --border: #374151;
@@ -97,6 +97,7 @@
 
         .header {
             background: var(--bg-header);
+            backdrop-filter: blur(10px);
             padding: 0.6rem;
             box-shadow: var(--shadow);
             position: sticky;
@@ -478,12 +479,11 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: 1rem;
-            margin: 0.5rem;
+            margin-bottom: 0.5rem;
             display: flex;
             justify-content: space-between;
             align-items: start;
             cursor: pointer;
-            transition: all 0.2s;
             background: var(--input-bg);
             content-visibility: auto;
             contain-intrinsic-size: 85px;
@@ -684,18 +684,32 @@
             }
         }
 
-        @keyframes highlight-fade {
-            0% {
-                background-color: var(--c-green);
-                /* Color del destello */
-                transform: scale(1.02);
-                box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        @keyframes fade-blur {
+            from {
+                opacity: 0;
+                filter: blur(5px);
+                background-color: var(--c-green)
             }
 
-            100% {
-                background-color: var(--input-bg);
+            to {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        @keyframes fade-blur-out {
+            from {
+                opacity: 1;
+                filter: blur(0);
                 transform: scale(1);
-                box-shadow: none;
+                background-color: var(--c-red)
+
+            }
+
+            to {
+                opacity: 0;
+                filter: blur(10px);
+                transform: scale(0.8);
             }
         }
 
@@ -807,14 +821,21 @@
             transform: rotate(180deg);
         }
 
-        /* Animación de destello suave */
-
+        /* Animación al crear y eliminar registro */
 
         .nuevo-registro-animacion {
-            animation: highlight-fade 2s ease-out forwards;
+            animation: fade-blur 0.5s ease-out forwards;
+            transform-origin: center;
             z-index: 10;
             position: relative;
         }
+
+        .registro-eliminando {
+            animation: fade-blur-out 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        /* Animación del boton tiempo fuera*/
 
         .timer-btn.running {
             color: var(--c-red);
@@ -892,7 +913,7 @@
         }
 
         .registro-mes-header {
-            margin: 1rem;
+            margin: 1rem 0rem;
             color: var(--text-muted);
             font-size: 18px;
             transition: color 0.2s;
@@ -1528,12 +1549,12 @@
                             <use href="#icon-filter" />
                         </svg>
                     </button>
-                    <button class="time-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
+                    <button class="filter-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
                         <svg class="icon">
                             <use href="#icon-undo" />
                         </svg>
                     </button>
-                    <button class="time-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
+                    <button class="filter-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
                         <svg class="icon">
                             <use href="#icon-redo" />
                         </svg>
@@ -1552,7 +1573,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.84</span>
+                <span class="version-text">v6.85</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -7049,10 +7070,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.84
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.85
     // ====================================================================
-    1) Se agregan validaciones para el tiempo fuera
-    2) se quita .stats-card:hover
+    1) Se cambia la animacion al crear un registro
 
 
     -->
