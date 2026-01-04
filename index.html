@@ -41,7 +41,7 @@
             --c-red: #c05d76;
             --c-purple: #8b5cf6;
             --c-gold: #d6af66;
-            --c-gray-btn: #4b5563;
+            --c-gray-btn: #e7e7e7;
             --c-gray-light: #cbd5e1;
             --c-white: #ffffff;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -291,7 +291,7 @@
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            color: white;
+            color: var(--text-main);
             background: var(--c-gray-btn);
         }
 
@@ -311,20 +311,13 @@
         }
 
         /* Variantes de botones */
-        .btn-delete {
-            background: var(--c-gray-btn);
-        }
-
-        .btn-export {
-            background: var(--c-gray-btn);
-        }
-
+        .btn-delete,
+        .btn-cancel,
+        .btn-export,
         .btn-backup,
-        .btn-edit {
-            background: var(--c-gray-btn);
-        }
-
-        .btn-cancel {
+        .btn-edit,
+        .time-btn,
+        .btn-increment {
             background: var(--c-gray-btn);
         }
 
@@ -349,22 +342,14 @@
             padding: 0.5rem;
             min-width: 44px;
             height: 44px;
-            background: transparent;
             color: var(--text-main);
             user-select: none;
             touch-action: manipulation;
         }
 
-        .time-btn,
-        .btn-increment {
-            background: var(--border);
-            border: none;
-        }
-
+        .icon-btn,
         .filter-btn {
-            width: 50px;
-            height: 50px;
-            border: none;
+            background: transparent;
         }
 
         .filter-btn.filtro-activo {
@@ -421,7 +406,7 @@
 
         .stats-card.cambiando-vista {
             transform: scale(0.98);
-            opacity: 0.6;
+            opacity: 0.5;
             /* Se desvanece ligeramente mientras cambia */
         }
 
@@ -703,7 +688,6 @@
                 filter: blur(0);
                 transform: scale(1);
                 background-color: var(--c-red)
-
             }
 
             to {
@@ -1573,7 +1557,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.85</span>
+                <span class="version-text">v6.86</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -7070,9 +7054,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.85
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.86
     // ====================================================================
-    1) Se cambia la animacion al crear un registro
+    1) Se agrupan algunos elementos para standarizar colores
 
 
     -->
