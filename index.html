@@ -656,19 +656,6 @@
             }
         }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                max-height: 0;
-                overflow: hidden;
-            }
-
-            to {
-                opacity: 1;
-                max-height: 1000px;
-            }
-        }
-
         @keyframes fade-blur {
             from {
                 opacity: 0;
@@ -768,7 +755,15 @@
 
         .registro-grupo-detalle {
             margin-top: 0.5rem;
-            animation: slideDown 0.3s ease-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+        }
+
+        .registro-grupo-detalle.expanded {
+            max-height: 10000px;
+            opacity: 1;
         }
 
         .registro-grupo-detalle .registro-item {
@@ -791,6 +786,7 @@
         .form-collapsible.expanded {
             max-height: 1000px;
             opacity: 1;
+            transition: all 0.3s;
         }
 
         .collapse-toggle {
@@ -1557,7 +1553,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.86</span>
+                <span class="version-text">v6.87</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -4416,7 +4412,7 @@
 
                     // 1. Guardar estado de grupos expandidos
                     const gruposExpandidos = new Set();
-                    lista.querySelectorAll('.registro-grupo-detalle[style*="display: block"]').forEach(detalle => {
+                    lista.querySelectorAll('.registro-grupo-detalle.expanded').forEach(detalle => {
                         const container = detalle.closest('.registro-grupo-container');
                         if (container) {
                             const header = container.querySelector('.registro-item');
@@ -4731,7 +4727,9 @@
                     listaExpandible.className = 'registro-grupo-detalle';
 
                     const estabaExpandido = gruposExpandidos.has(rangoFechas);
-                    listaExpandible.style.display = estabaExpandido ? 'block' : 'none';
+                    if (estabaExpandido) {
+                        listaExpandible.classList.add('expanded'); // ← Usar clase en lugar de display
+                    }
                     totalEl.innerHTML = estabaExpandido ?
                         '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-cancelar"/></svg> Ocultar' :
                         '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-list"/></svg> Ver detalles';
@@ -4746,11 +4744,15 @@
                     // Toggle
                     header.onclick = (e) => {
                         e.stopPropagation();
-                        const estaExpandido = listaExpandible.style.display !== 'none';
-                        listaExpandible.style.display = estaExpandido ? 'none' : 'block';
-                        totalEl.innerHTML = estaExpandido ?
-                            '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-list"/></svg> Ver detalles' :
-                            '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-cancelar"/></svg> Ocultar';
+                        const estaExpandido = listaExpandible.classList.contains('expanded');
+
+                        if (estaExpandido) {
+                            listaExpandible.classList.remove('expanded');
+                            totalEl.innerHTML = '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-list"/></svg> Ver detalles';
+                        } else {
+                            listaExpandible.classList.add('expanded');
+                            totalEl.innerHTML = '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-cancelar"/></svg> Ocultar';
+                        }
                     };
 
                     info.appendChild(fechaEl);
@@ -7051,8 +7053,8 @@ Generado por Sistema Horarios
 <!--// ====================================================================
     //             CAMBIOS REALIZADOS EN ESTA VERSION 6.87
     // ====================================================================
-    1) Se agrupan algunos elementos para standarizar colores
-    2) Se quita el boton limpiar del modal filtrar
+    1) Se mejora la transicion de las tarjetas colapsables
+    2) Se mejora y agrega la transicion al desplegar y cerrar un gruopo de registros
 
 
     -->
