@@ -72,6 +72,14 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            /* Desactiva selección de forma global */
+            -webkit-user-select: none;
+            /* Safari */
+            -moz-user-select: none;
+            /* Firefox */
+            -ms-user-select: none;
+            /* IE/Edge */
         }
 
         html {
@@ -343,7 +351,6 @@
             min-width: 44px;
             height: 44px;
             color: var(--text-main);
-            user-select: none;
             touch-action: manipulation;
         }
 
@@ -454,11 +461,6 @@
         }
 
         /* --- Lista de Registros --- */
-        .registro-grupo-titulo {
-            margin: 1rem;
-            color: var(--text-muted);
-            font-size: 18px;
-        }
 
         .registro-item {
             border: 1px solid var(--border);
@@ -748,29 +750,6 @@
             }
         }
 
-        /* --- Grupos de Registros Expandibles --- */
-        .registro-grupo-container {
-            margin: 0;
-        }
-
-        .registro-grupo-detalle {
-            margin-top: 0.5rem;
-            max-height: 0;
-            opacity: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-        }
-
-        .registro-grupo-detalle.expanded {
-            max-height: 10000px;
-            opacity: 1;
-        }
-
-        .registro-grupo-detalle .registro-item {
-            margin: 0.25rem 0;
-            background: var(--bg-body);
-        }
-
         select:hover {
             border-color: var(--text-muted);
         }
@@ -826,7 +805,6 @@
         /* Estilos para cabeceras colapsables */
         .card-header-clickable {
             cursor: pointer;
-            user-select: none;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -839,7 +817,6 @@
             transition: transform 0.3s ease;
             position: absolute;
             right: 0;
-            user-select: none;
         }
 
         .chevron.rotated {
@@ -898,7 +875,6 @@
             font-size: 18px;
             transition: color 0.2s;
             cursor: pointer;
-            user-select: none;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -1083,7 +1059,6 @@
         .day-checkbox {
             position: relative;
             cursor: pointer;
-            user-select: none;
         }
 
         .day-checkbox input {
@@ -1404,7 +1379,7 @@
                         </div>
                         <div class="contenedor-fechas">
                             <div class="form-group">
-                                <label>Desde (opcional)</label>
+                                <label>Desde</label>
                                 <div class="input-with-btn">
                                     <input type="date" id="lote-fecha-desde" />
                                     <button class="time-btn" onclick="UILogic.alternarFechaActual('lote-fecha-desde')"
@@ -1416,7 +1391,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label>Hasta (opcional)</label>
+                                <label>Hasta</label>
                                 <div class="input-with-btn">
                                     <input type="date" id="lote-fecha-hasta" />
                                     <button class="time-btn" onclick="UILogic.alternarFechaActual('lote-fecha-hasta')"
@@ -1477,7 +1452,10 @@
                                 <div class="stat-label">Salidas Temprano</div>
                                 <div class="stat-value" id="stat-compensaciones">0</div>
                             </div>
-
+                            <div class="stat-item">
+                                <div class="stat-label">Tiempo Fuera</div>
+                                <div class="stat-value" id="stat-tiempo-fuera-total">0h 0m</div>
+                            </div>
                             <div class="stat-item">
                                 <div class="stat-label">Entrada promedio</div>
                                 <div class="stat-value" id="stat-entrada-promedio">--:--</div>
@@ -1553,7 +1531,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.87</span>
+                <span class="version-text">v6.91</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -1730,11 +1708,18 @@
                     <use href="#icon-upload" />
                 </svg> Importar Datos</h3>
             <div class="form-group">
-                <label>Selecciona archivo (.json)</label>
-                <input type="file" id="file-import" accept=".json" />
-                <div class="config-hint-text" style="text-align: left; margin-top: 0.5rem;">
-                    Elige una opción:
+                <input type="file" id="file-import" accept=".json" style="display: none;" />
+                <button type="button" class="btn-backup" onclick="document.getElementById('file-import').click()">
+                    <svg class="icon">
+                        <use href="#icon-upload" />
+                    </svg>
+                    Seleccionar archivo
+                </button>
+                <div id="nombre-archivo-seleccionado" class="config-hint-text"
+                    style="text-align: center; margin-top: 0.5rem; color: var(--c-green); display: none;">
+                    <!-- Aquí aparecerá el nombre del archivo -->
                 </div>
+                <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0 1rem 0;">
             </div>
             <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
                 <button class="btn-backup" onclick="DataManagement.importarDatos('merge')">
@@ -2052,6 +2037,79 @@
                         <use href="#icon-cancelar" />
                     </svg>
                     Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-editar-grupo">
+        <div class="modal-content">
+            <h3>
+                <span class="modal-title-block">
+                    <svg class="icon">
+                        <use href="#icon-edit" />
+                    </svg>Editar Grupo
+                </span>
+            </h3>
+            <div class="form-group">
+                <label>Tipo de registro</label>
+                <div class="input-with-btn">
+                    <select id="edit-grupo-tipo">
+                        <option value="feriado">🥳 Feriados</option>
+                        <option value="ausencia">✈️ Ausencia/Licencia</option>
+                        <option value="vacaciones">🏖️ Vacaciones</option>
+                        <option value="asueto">🎁 Asueto</option>
+                        <option value="enfermedad">🏥 Enfermedad</option>
+                    </select>
+                    <button class="time-btn" id="btn-lock-grupo-toggle" onclick="UILogic.toggleBloqueoEdicionGrupo()"
+                        title="Desbloquear edición">
+                        <svg class="icon">
+                            <use href="#icon-lock" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Desde</label>
+                <div class="input-with-btn">
+                    <input type="date" id="edit-grupo-desde" />
+                    <button class="time-btn" onclick="UILogic.alternarFechaActual('edit-grupo-desde')"
+                        title="Pegar hoy / Limpiar">
+                        <svg class="icon">
+                            <use href="#icon-calendar-simple" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Hasta</label>
+                <div class="input-with-btn">
+                    <input type="date" id="edit-grupo-hasta" />
+                    <button class="time-btn" onclick="UILogic.alternarFechaActual('edit-grupo-hasta')"
+                        title="Pegar hoy / Limpiar">
+                        <svg class="icon">
+                            <use href="#icon-calendar-simple" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn-edit" onclick="DataManagement.guardarEdicionGrupo()">
+                    <svg class="icon">
+                        <use href="#icon-save" />
+                    </svg> Guardar
+                </button>
+                <button class="btn-delete" onclick="DataManagement.eliminarGrupoActual()">
+                    <svg class="icon">
+                        <use href="#icon-trash" />
+                    </svg> Eliminar
+                </button>
+            </div>
+            <div class="btn-group">
+                <button class="btn-cancel" onclick="UILogic.cerrarEdicionGrupo()">
+                    <svg class="icon">
+                        <use href="#icon-cancelar" />
+                    </svg> Cancelar
                 </button>
             </div>
         </div>
@@ -2603,6 +2661,183 @@
                 let filtroDesde = null;
                 let filtroHasta = null;
                 let filtroTipo = null;
+                let grupoEnEdicion = null;
+
+                function editarGrupo(grupo) {
+                    if (grupoEnEdicion !== null) return;
+
+                    grupoEnEdicion = {
+                        registros: grupo.registros,
+                        subtipo: grupo.subtipo,
+                        fechaDesde: grupo.registros[grupo.registros.length - 1].fecha, // El más antiguo
+                        fechaHasta: grupo.registros[0].fecha // El más reciente
+                    };
+
+                    $('edit-grupo-tipo').value = grupo.subtipo;
+                    $('edit-grupo-desde').value = grupoEnEdicion.fechaDesde;
+                    $('edit-grupo-hasta').value = grupoEnEdicion.fechaHasta;
+
+                    $('modal-editar-grupo').classList.add('show');
+                    document.body.classList.add('modal-open');
+
+                    UILogic.setBloqueoEdicionGrupo(true);
+                }
+
+                async function guardarEdicionGrupo() {
+                    if (!grupoEnEdicion) return;
+
+                    const modal = $('modal-editar-grupo');
+                    const btnGuardar = modal.querySelector('.btn-edit');
+                    btnGuardar.disabled = true;
+
+                    const nuevoTipo = $('edit-grupo-tipo').value;
+                    const nuevaDesde = $('edit-grupo-desde').value;
+                    const nuevaHasta = $('edit-grupo-hasta').value;
+
+                    // Validaciones básicas
+                    if (!nuevaDesde || !nuevaHasta) {
+                        UILogic.mostrarToast('Verifica ambas fechas', 'error');
+                        btnGuardar.disabled = false;
+                        return;
+                    }
+
+                    if (nuevaDesde > nuevaHasta) {
+                        UILogic.mostrarToast('La fecha "Desde" debe ser anterior a "Hasta"', 'error');
+                        btnGuardar.disabled = false;
+                        return;
+                    }
+
+                    // VALIDACIÓN DE LÍMITE DE 60 DÍAS
+                    const fechaInicioObj = new Date(nuevaDesde.replace(/-/g, '/') + ' 00:00:00');
+                    const fechaFinObj = new Date(nuevaHasta.replace(/-/g, '/') + ' 00:00:00');
+                    const diffTime = Math.abs(fechaFinObj - fechaInicioObj);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                    if (diffDays > 60) {
+                        UILogic.mostrarToast(`El rango seleccionado contiene ${diffDays} días.\n Máximo permitido: 60 días por operación.`, 'error');
+                        btnGuardar.disabled = false;
+                        return;
+                    }
+
+                    // Detectar si hubo cambios reales
+                    const huboCambios =
+                        nuevoTipo !== grupoEnEdicion.subtipo ||
+                        nuevaDesde !== grupoEnEdicion.fechaDesde ||
+                        nuevaHasta !== grupoEnEdicion.fechaHasta;
+
+                    if (!huboCambios) {
+                        UILogic.mostrarToast('Sin cambios', 'info');
+                        btnGuardar.disabled = false;
+                        UILogic.cerrarEdicionGrupo();
+                        return;
+                    }
+
+                    // 1. Identificamos los IDs que pertenecen a este grupo (los que vamos a borrar/actualizar).
+                    const idsDelGrupo = grupoEnEdicion.registros.map(r => r.id);
+
+                    // 2. Recorremos el NUEVO rango de fechas para ver si chocan con OTROS registros externos.
+                    let checkFecha = new Date(nuevaDesde.replace(/-/g, '/') + ' 00:00:00');
+                    const checkFin = new Date(nuevaHasta.replace(/-/g, '/') + ' 00:00:00');
+
+                    while (checkFecha <= checkFin) {
+                        const y = checkFecha.getFullYear();
+                        const m = String(checkFecha.getMonth() + 1).padStart(2, '0');
+                        const d = String(checkFecha.getDate()).padStart(2, '0');
+                        const fechaISO = `${y}-${m}-${d}`;
+
+                        // Buscamos si existe algun registro con esa fecha que NO sea parte de este grupo
+                        const existeConflicto = registros.some(r => r.fecha === fechaISO && !idsDelGrupo.includes(r.id));
+
+                        if (existeConflicto) {
+                            UILogic.mostrarToast(`Hay fechas registradas en el rango seleccionado.`, 'error');
+                            btnGuardar.disabled = false;
+                            return; // Detenemos el guardado
+                        }
+
+                        checkFecha.setDate(checkFecha.getDate() + 1);
+                    }
+ 
+                    // Eliminar registros antiguos del grupo
+                    // Nota: Usamos idsDelGrupo que definimos arriba
+                    registros = registros.filter(r => !idsDelGrupo.includes(r.id));
+
+                    // Crear nuevos registros según el nuevo tipo
+                    const entrada = nuevoTipo === 'vacaciones' ? '12:12' :
+                        nuevoTipo === 'ausencia' ? '11:11' :
+                            nuevoTipo === 'enfermedad' ? '14:14' :
+                                nuevoTipo === 'asueto' ? '13:13' :
+                                    '00:00';
+                    const salida = entrada;
+
+                    const idsNuevos = [];
+
+                    let fechaActual = new Date(nuevaDesde.replace(/-/g, '/') + ' 00:00:00');
+                    const fechaFin = new Date(nuevaHasta.replace(/-/g, '/') + ' 00:00:00');
+
+                    while (fechaActual <= fechaFin) {
+                        const y = fechaActual.getFullYear();
+                        const m = String(fechaActual.getMonth() + 1).padStart(2, '0');
+                        const d = String(fechaActual.getDate()).padStart(2, '0');
+                        const fechaISO = `${y}-${m}-${d}`;
+
+                        const t = calcularHoras(entrada, salida, null);
+                        const nuevoId = S.generarIDSeguro();
+                        idsNuevos.push(nuevoId);
+
+                        registros.push({
+                            id: nuevoId,
+                            fecha: fechaISO,
+                            entrada: entrada,
+                            salida: salida,
+                            tiempoFuera: null,
+                            horas: t?.horas || 0,
+                            minutos: t?.minutos || 0,
+                            total: t?.total || 0
+                        });
+
+                        fechaActual.setDate(fechaActual.getDate() + 1);
+                    }
+
+                    // Ordenar
+                    registros.sort((a, b) => {
+                        if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
+                        return (b.entrada || '').localeCompare(a.entrada || '');
+                    });
+
+                    HistoryManager.saveState(registros);
+                    const saved = await guardarYActualizar(true, idsNuevos);
+
+                    if (saved) {
+                        UILogic.mostrarToast('Grupo actualizado', 'success');
+                        btnGuardar.disabled = false;
+                        UILogic.cerrarEdicionGrupo();
+                    } else {
+                        btnGuardar.disabled = false;
+                    }
+                }
+
+                async function eliminarGrupoActual() {
+                    if (!grupoEnEdicion) return;
+
+                    // VALIDACIÓN DE LÍMITE
+                    if (grupoEnEdicion.registros.length > 60) {
+                        UILogic.mostrarToast(`Este grupo contiene ${grupoEnEdicion.registros.length} registros.\nMáximo permitido: 60 registros por operación.`, 'error');
+                        return;
+                    }
+
+                    const idsAEliminar = grupoEnEdicion.registros.map(r => r.id);
+                    registros = registros.filter(r => !idsAEliminar.includes(r.id));
+
+                    HistoryManager.saveState(registros);
+                    const saved = await guardarYActualizar();
+
+                    if (saved) {
+                        UILogic.mostrarToast('Grupo eliminado', 'success');
+                        UILogic.cerrarEdicionGrupo();
+                    }
+                }
+
+                function setGrupoEnEdicion(val) { grupoEnEdicion = val; }
 
                 async function cargarConVerificacion() {
                     try {
@@ -4004,6 +4239,10 @@
                     registrarVacacionesDirecto,
                     borrarPeriodoDirecto,
                     registrarDiaEspecial,
+                    editarGrupo,
+                    guardarEdicionGrupo,
+                    eliminarGrupoActual,
+                    setGrupoEnEdicion: (val) => grupoEnEdicion = val,
                     undoAction: function () {
                         const prevState = HistoryManager.undo();
                         if (prevState) {
@@ -4410,19 +4649,6 @@
                 function actualizarListaRegistros(registros, idNuevo = null) {
                     const lista = $('lista-registros');
 
-                    // 1. Guardar estado de grupos expandidos
-                    const gruposExpandidos = new Set();
-                    lista.querySelectorAll('.registro-grupo-detalle.expanded').forEach(detalle => {
-                        const container = detalle.closest('.registro-grupo-container');
-                        if (container) {
-                            const header = container.querySelector('.registro-item');
-                            const fechaTexto = header?.querySelector('.registro-horas')?.textContent;
-                            if (fechaTexto) {
-                                gruposExpandidos.add(fechaTexto.trim());
-                            }
-                        }
-                    });
-
                     // 2. Guardar estado de meses abiertos
                     const mesesExpandidos = new Set();
                     lista.querySelectorAll('.registro-mes-container').forEach(container => {
@@ -4519,7 +4745,7 @@
                                     detalleMesActual.appendChild(separador);
                                 }
 
-                                const container = crearGrupoExpandible(grupo, horasDiarias, gruposExpandidos, idNuevo);
+                                const container = crearGrupoExpandible(grupo, horasDiarias, idNuevo);
                                 detalleMesActual.appendChild(container);
 
                                 semanaAnterior = semanaActual;
@@ -4662,7 +4888,7 @@
                     lista.appendChild(fragmento);
                 }
 
-                function crearGrupoExpandible(grupo, horasDiarias, gruposExpandidos = new Set(), idResaltar = null) {
+                function crearGrupoExpandible(grupo, horasDiarias, idResaltar = null) {
                     const primerReg = grupo.registros[0];
                     const ultimoReg = grupo.registros[grupo.registros.length - 1];
 
@@ -4677,12 +4903,8 @@
                     let animarGrupo = false;
 
                     if (idResaltar) {
-                        // Convertimos a array si no lo es, para buscar fácil
                         const idsNuevos = Array.isArray(idResaltar) ? idResaltar : [idResaltar];
-
-                        // ¿Alguno de los registros de este grupo es nuevo?
                         const contieneNuevo = grupo.registros.some(r => idsNuevos.includes(r.id));
-
                         if (contieneNuevo) {
                             animarGrupo = true;
                         }
@@ -4692,7 +4914,6 @@
                         className += ' nuevo-registro-animacion';
                     }
                     header.className = className;
-                    // ---------------------------------------------------------
 
                     const info = document.createElement('div');
                     info.className = 'registro-info';
@@ -4721,48 +4942,20 @@
 
                     const totalEl = document.createElement('div');
                     totalEl.className = 'registro-total purple-text';
-
-                    // Lista expandible
-                    const listaExpandible = document.createElement('div');
-                    listaExpandible.className = 'registro-grupo-detalle';
-
-                    const estabaExpandido = gruposExpandidos.has(rangoFechas);
-                    if (estabaExpandido) {
-                        listaExpandible.classList.add('expanded'); // ← Usar clase en lugar de display
-                    }
-                    totalEl.innerHTML = estabaExpandido ?
-                        '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-cancelar"/></svg> Ocultar' :
-                        '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-list"/></svg> Ver detalles';
-
-                    grupo.registros.forEach(r => {
-                        // null aquí para que los items internos NO destellen
-                        const item = crearItemRegistroIndividual(r, horasDiarias, null);
-                        item.style.marginLeft = '1rem';
-                        listaExpandible.appendChild(item);
-                    });
-
-                    // Toggle
-                    header.onclick = (e) => {
-                        e.stopPropagation();
-                        const estaExpandido = listaExpandible.classList.contains('expanded');
-
-                        if (estaExpandido) {
-                            listaExpandible.classList.remove('expanded');
-                            totalEl.innerHTML = '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-list"/></svg> Ver detalles';
-                        } else {
-                            listaExpandible.classList.add('expanded');
-                            totalEl.innerHTML = '<svg class="icon" style="width: 1em; height: 1em;"><use href="#icon-cancelar"/></svg> Ocultar';
-                        }
-                    };
+                    totalEl.textContent = 'Justificado';
 
                     info.appendChild(fechaEl);
                     info.appendChild(horasEl);
                     info.appendChild(totalEl);
                     header.appendChild(info);
 
-                    container.appendChild(header);
-                    container.appendChild(listaExpandible);
+                    // Abrir modal de edición
+                    header.onclick = (e) => {
+                        e.stopPropagation();
+                        D.editarGrupo(grupo);
+                    };
 
+                    container.appendChild(header);
                     return container;
                 }
 
@@ -4794,6 +4987,20 @@
 
                     // Contar Compensaciones/Asuetos parciales (días con crédito válido)
                     const compensaciones = registrosMes.filter(r => r.credito && r.credito !== '00:00').length;
+
+                    // Calcular tiempo fuera total
+                    let tiempoFueraTotalMinutos = 0;
+                    registrosMes.forEach(r => {
+                        if (r.tiempoFuera && r.tiempoFuera !== '00:00') {
+                            const [h, m] = r.tiempoFuera.split(':').map(Number);
+                            if (!isNaN(h) && !isNaN(m)) {
+                                tiempoFueraTotalMinutos += (h * 60) + m;
+                            }
+                        }
+                    });
+
+                    const hTiempoFuera = Math.floor(tiempoFueraTotalMinutos / 60);
+                    const mTiempoFuera = tiempoFueraTotalMinutos % 60;
 
                     // Filtrar solo registros válidos para promedios (excluir feriados y ausencias puras)
                     const registrosValidos = registrosMes.filter(r =>
@@ -4890,6 +5097,7 @@
                         salidaPromedio: `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`,
                         diasTrabajados: registrosValidos.length,
                         promedioDiario: `${hPromedio}h ${mPromedio}m`,
+                        tiempoFueraTotal: `${hTiempoFuera}h ${mTiempoFuera}m`,
                         semanaPasada: `${hSemanaPasada}h ${mSemanaPasada}m`,
                         feriados: feriados,
                         ausencias: ausencias,
@@ -4931,6 +5139,7 @@
                     const elDias = $('stat-dias-trabajados');
                     const elPromedio = $('stat-promedio-diario');
                     const elSemanaPasada = $('stat-semana-pasada');
+                    const elTiempoFueraTotal = $('stat-tiempo-fuera-total');
                     const elFeriados = $('stat-feriados');
                     const elAusencias = $('stat-ausencias');
                     const elVacaciones = $('stat-vacaciones');
@@ -4943,6 +5152,7 @@
                     if (elDias) elDias.textContent = stats.diasTrabajados;
                     if (elPromedio) elPromedio.textContent = stats.promedioDiario;
                     if (elSemanaPasada) elSemanaPasada.textContent = stats.semanaPasada;
+                    if (elTiempoFueraTotal) elTiempoFueraTotal.textContent = stats.tiempoFueraTotal;
 
                     // Ocultar/Mostrar items según valor
                     const toggleStatItem = (element, value) => {
@@ -4964,6 +5174,18 @@
                     toggleStatItem(elEnfermedades, stats.enfermedades);
                     toggleStatItem(elAsuetosDia, stats.asuetosDiaCompleto);
                     toggleStatItem(elCompensaciones, stats.compensaciones);
+
+                    // Ocultar Tiempo Fuera si es 0
+                    if (elTiempoFueraTotal) {
+                        const statItem = elTiempoFueraTotal.closest('.stat-item');
+                        if (statItem) {
+                            if (stats.tiempoFueraTotal === '0h 0m') {
+                                statItem.style.display = 'none';
+                            } else {
+                                statItem.style.display = '';
+                            }
+                        }
+                    }
                 }
 
                 function actualizarUI(idNuevo = null, soloReloj = false) {
@@ -5242,7 +5464,15 @@
 
                             if (esDiaDeDescanso) {
                                 if (statsEl) statsEl.innerHTML = `<div style="font-size: 1.8rem;">😴 Descanso</div>`;
-                                if (mensajeEl) mensajeEl.textContent = 'Día libre';
+                                if (mensajeEl) {
+                                    // 👇 Solo ocultar si NO hay objetivo de horas
+                                    if (horasDiarias === 0) {
+                                        mensajeEl.style.display = 'none';
+                                    } else {
+                                        mensajeEl.textContent = 'Día libre';
+                                        mensajeEl.style.display = 'block';
+                                    }
+                                }
                             } else {
                                 if (statsEl) statsEl.innerHTML = `<div style="font-size: 1.8rem;">😴 Sin actividad</div>`;
                                 if (mensajeEl) {
@@ -5496,6 +5726,14 @@
                 function mostrarImportar() {
                     $('modal-config').classList.remove('show');
                     $('file-import').value = '';
+
+                    // Limpiar nombre de archivo mostrado
+                    const nombreEl = document.getElementById('nombre-archivo-seleccionado');
+                    if (nombreEl) {
+                        nombreEl.style.display = 'none';
+                        nombreEl.textContent = '';
+                    }
+
                     $('modal-importar').classList.add('show');
                     document.body.classList.add('modal-open');
                 }
@@ -6729,6 +6967,9 @@ Generado por Sistema Horarios
                         calcularHoras: D.calcularHoras,
                         registrarVacacionesDirecto: D.registrarVacacionesDirecto,
                         borrarPeriodoDirecto: D.borrarPeriodoDirecto,
+                        editarGrupo: D.editarGrupo,
+                        guardarEdicionGrupo: D.guardarEdicionGrupo,
+                        eliminarGrupoActual: D.eliminarGrupoActual,
                     };
                     window.HistoryManager = { undo: D.undoAction, redo: D.redoAction };
                     window.PWAInstaller = { instalarApp: PWAInstaller.instalarApp };
@@ -6746,7 +6987,7 @@ Generado por Sistema Horarios
                         cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
                         eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                         iniciarCambioHoras, detenerCambio, abrirConfigDesdePerfiles, alternarFechaActual, verificarBloqueoCredito,
-                        toggleCredito, init, toggleFormulario
+                        toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -6848,6 +7089,18 @@ Generado por Sistema Horarios
                     };
                     agregarListenersFecha(loteDesde);
                     agregarListenersFecha(loteHasta);
+                    // Listener para mostrar nombre de archivo seleccionado
+                    const fileInput = document.getElementById('file-import');
+                    if (fileInput) {
+                        fileInput.addEventListener('change', (e) => {
+                            const nombreEl = document.getElementById('nombre-archivo-seleccionado');
+                            if (nombreEl && e.target.files.length > 0) {
+                                const nombreArchivo = e.target.files[0].name;
+                                nombreEl.textContent = `✓ ${nombreArchivo}`;
+                                nombreEl.style.display = 'block';
+                            }
+                        });
+                    }
                 }
 
                 function mostrarFiltros() {
@@ -7006,6 +7259,44 @@ Generado por Sistema Horarios
                     }
                 }
 
+                let edicionGrupoBloqueada = true;
+
+                function setBloqueoEdicionGrupo(bloqueado) {
+                    edicionGrupoBloqueada = bloqueado;
+
+                    const btnLock = $('btn-lock-grupo-toggle');
+                    if (btnLock) {
+                        const icon = btnLock.querySelector('use');
+                        icon.setAttribute('href', bloqueado ? '#icon-lock' : '#icon-lock-open');
+                        btnLock.title = bloqueado ? "Desbloquear edición" : "Bloquear edición";
+                        btnLock.style.color = bloqueado ? 'var(--c-red)' : 'var(--text-main)';
+                    }
+
+                    const inputs = ['edit-grupo-tipo', 'edit-grupo-desde', 'edit-grupo-hasta'];
+                    inputs.forEach(id => {
+                        const el = $(id);
+                        if (el) el.disabled = bloqueado;
+                    });
+
+                    const modal = $('modal-editar-grupo');
+                    if (modal) {
+                        const botones = modal.querySelectorAll('button:not(#btn-lock-grupo-toggle):not(.btn-cancel)');
+                        botones.forEach(btn => {
+                            btn.disabled = bloqueado;
+                        });
+                    }
+                }
+
+                function toggleBloqueoEdicionGrupo() {
+                    setBloqueoEdicionGrupo(!edicionGrupoBloqueada);
+                }
+
+                function cerrarEdicionGrupo() {
+                    $('modal-editar-grupo').classList.remove('show');
+                    document.body.classList.remove('modal-open');
+                    D.setGrupoEnEdicion(null);
+                }
+
 
                 return {
                     init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, mostrarConfig, cerrarConfig,
@@ -7018,7 +7309,7 @@ Generado por Sistema Horarios
                     cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
                     eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                     iniciarCambioHoras, detenerCambio, abrirConfigDesdePerfiles, alternarFechaActual, verificarBloqueoCredito,
-                    toggleCredito
+                    toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -7051,10 +7342,10 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.87
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.91
     // ====================================================================
-    1) Se mejora la transicion de las tarjetas colapsables
-    2) Se mejora y agrega la transicion al desplegar y cerrar un gruopo de registros
+    1) Se reemplaza la lista colapsable del contenedor de registros (lote)
+    2) se agregan validaciones al editar, maximo 60 registros y control de duplicados
 
 
     -->
