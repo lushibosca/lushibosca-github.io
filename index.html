@@ -1432,7 +1432,7 @@
                         </div>
                         <div class="stats-grid" style="padding-right: 0.5rem;">
                             <div class="stat-item">
-                                <div class="stat-label">Jornadas completas</div>
+                                <div class="stat-label">Jornadas Completas</div>
                                 <div class="stat-value" id="stat-dias-trabajados">0</div>
                             </div>
                             <div class="stat-item">
@@ -1464,21 +1464,21 @@
                                 <div class="stat-value" id="stat-tiempo-fuera-total">0h 0m</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-label">Entrada promedio</div>
+                                <div class="stat-label">Entrada Promedio</div>
                                 <div class="stat-value" id="stat-entrada-promedio">--:--</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-label">Salida promedio</div>
+                                <div class="stat-label">Salida Promedio</div>
                                 <div class="stat-value" id="stat-salida-promedio">--:--</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-label">Promedio diario</div>
+                                <div class="stat-label">Promedio Diario</div>
                                 <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
                             </div>
                             <div style="grid-column: 1 / -1; height: 1px; background: var(--border); margin: 0.5rem 0;">
                             </div>
                             <div class="stat-item">
-                                <div class="stat-label">Semana pasada</div>
+                                <div class="stat-label">Semana Pasada</div>
                                 <div class="stat-value" id="stat-semana-pasada">0h 0m</div>
                             </div>
                         </div>
@@ -7136,15 +7136,15 @@ Generado por Sistema Horarios
                     console.log('Sistema iniciado correctamente v6.68');
 
                     // Listeners Lote
-                    const loteDesde = document.getElementById('lote-fecha-desde');
-                    const loteHasta = document.getElementById('lote-fecha-hasta');
-                    const agregarListenersFecha = (el) => {
-                        if (!el) return;
-                        el.addEventListener('change', () => actualizarBotonLote());
-                        el.addEventListener('input', () => actualizarBotonLote());
-                    };
-                    agregarListenersFecha(loteDesde);
-                    agregarListenersFecha(loteHasta);
+const loteDesde = document.getElementById('lote-fecha-desde');
+const loteHasta = document.getElementById('lote-fecha-hasta');
+const agregarListenersFecha = (el) => {
+    if (!el) return;
+    el.addEventListener('change', () => actualizarBotonLote());
+    el.addEventListener('input', () => actualizarBotonLote());
+};
+agregarListenersFecha(loteDesde);
+agregarListenersFecha(loteHasta);
                     // Listener para mostrar nombre de archivo seleccionado
                     const fileInput = document.getElementById('file-import');
                     if (fileInput) {
