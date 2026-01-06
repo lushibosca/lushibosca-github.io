@@ -1538,7 +1538,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.94</span>
+                <span class="version-text">v6.95</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -7076,6 +7076,36 @@ Generado por Sistema Horarios
                     if (tf) tf.addEventListener('input', formatearInput);
 
                     // ===================================
+                    // 🆕 LISTENERS PARA TECLA ENTER
+                    // ===================================
+
+                    // A) Enter en campo Entrada → Pasa a Salida
+                    const inputEntrada = document.getElementById('entrada');
+                    if (inputEntrada) {
+                        inputEntrada.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const inputSalida = document.getElementById('salida');
+                                if (inputSalida) inputSalida.focus();
+                            }
+                        });
+                    }
+
+                    // B) Enter en campo Salida → Ejecuta Registrar
+                    const inputSalida = document.getElementById('salida');
+                    if (inputSalida) {
+                        inputSalida.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const btnAgregar = document.getElementById('btn-agregar');
+                                if (btnAgregar && !btnAgregar.disabled) {
+                                    btnAgregar.click();
+                                }
+                            }
+                        });
+                    }
+
+                    // ===================================
 
                     // CARGAR CONFIGURACIÓN
                     const config = D.cargarConfiguracion();
@@ -7136,15 +7166,15 @@ Generado por Sistema Horarios
                     console.log('Sistema iniciado correctamente v6.68');
 
                     // Listeners Lote
-const loteDesde = document.getElementById('lote-fecha-desde');
-const loteHasta = document.getElementById('lote-fecha-hasta');
-const agregarListenersFecha = (el) => {
-    if (!el) return;
-    el.addEventListener('change', () => actualizarBotonLote());
-    el.addEventListener('input', () => actualizarBotonLote());
-};
-agregarListenersFecha(loteDesde);
-agregarListenersFecha(loteHasta);
+                    const loteDesde = document.getElementById('lote-fecha-desde');
+                    const loteHasta = document.getElementById('lote-fecha-hasta');
+                    const agregarListenersFecha = (el) => {
+                        if (!el) return;
+                        el.addEventListener('change', () => actualizarBotonLote());
+                        el.addEventListener('input', () => actualizarBotonLote());
+                    };
+                    agregarListenersFecha(loteDesde);
+                    agregarListenersFecha(loteHasta);
                     // Listener para mostrar nombre de archivo seleccionado
                     const fileInput = document.getElementById('file-import');
                     if (fileInput) {
@@ -7398,14 +7428,10 @@ agregarListenersFecha(loteHasta);
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.94
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.95
     // ====================================================================
-    1) Se reemplaza la funcion obtenersemanaactual para corregir el error de calculo de "esta semana"
-    2) Se simplifica la funcion borrarperiododirecto
-    3) Se unifica el estilo de los imputs y selects al estar bloqueados en los modales
-    4) Se quitan algunos placeholders de los modales editar
-
-    ********* ESTA VERSION ESTA COMPROBADA RTM ****
+    1) Se agrega listeners para el modo normal en la tarjeta registro, ahora tocar enter o ir en moviles
+    salta de "desde" - "hasta" - "registrar"
 
 
     -->
