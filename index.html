@@ -761,6 +761,10 @@
             }
         }
 
+        select:hover {
+            border-color: var(--text-muted);
+        }
+
         /* --- Colapso de formulario --- */
         .form-collapsible {
             max-height: 0;
@@ -1538,7 +1542,7 @@
                     </svg>
                     Configuración
                 </span>
-                <span class="version-text">v6.94</span>
+                <span class="version-text">v6.93</span>
             </h3>
             <div class="form-group">
                 <label>Horas diarias</label>
@@ -2662,6 +2666,7 @@
             // ====================================================================
             const DataManagement = (function (S) {
                 let registros = [], diasHabiles = [1, 2, 3, 4, 5], horasDiarias = 7, editandoId = null; let vistaActual = 'diaria';
+                let cacheSemana = { inicio: null, fin: null, calculado: null };
                 let filtroActivo = false;
                 let filtroDesde = null;
                 let filtroHasta = null;
@@ -2931,7 +2936,7 @@
 
                     if (registroExistente) {
                         UILogic.mostrarToast('Ya existe un registro para hoy', 'warning');
-                        throw new Error('Registro ya existe');
+                        return;
                     }
 
                     // Determinar valores según tipo
@@ -2940,7 +2945,7 @@
                         case 'vacaciones':
                             entrada = '12:12';
                             salida = '12:12';
-                            tipoTexto = '�️ Vacaciones';
+                            tipoTexto = '🏖️ Vacaciones';
                             break;
                         case 'ausencia':
                             entrada = '11:11';
@@ -2955,7 +2960,7 @@
                         case 'enfermedad':
                             entrada = '14:14';
                             salida = '14:14';
-                            tipoTexto = '🥼 Enfermedad';
+                            tipoTexto = '🏥 Enfermedad';
                             break;
                         case 'asueto':
                             entrada = '13:13';
@@ -2964,13 +2969,13 @@
                             break;
                         default:
                             UILogic.mostrarToast('Tipo inválido', 'error');
-                            throw new Error('Tipo inválido');
+                            return;
                     }
 
                     // Verificar límite
                     if (registros.length >= S.SECURITY_LIMITS.MAX_REGISTROS) {
                         UILogic.mostrarToast('Límite de registros alcanzado', 'error');
-                        throw new Error('Límite alcanzado');
+                        return;
                     }
 
                     // Crear registro
@@ -2998,8 +3003,6 @@
 
                     if (saved) {
                         UILogic.mostrarToast(`Registrado como ${tipoTexto}`, 'success');
-                    } else {
-                        throw new Error('Error al guardar');
                     }
                 }
 
@@ -4154,17 +4157,17 @@
                     // VALIDACIÓN DE LÍMITE
                     if (fechasARegistrar.length > 60) {
                         UILogic.mostrarToast(`El rango seleccionado contiene ${fechasARegistrar.length} días.\n Máximo permitido: 60 días por operación.`, 'error');
-                        throw new Error('Límite de días excedido');
+                        return;
                     }
 
                     const nuevosRegistros = fechasARegistrar.filter(f => !registros.some(r => r.fecha === f));
 
                     if (nuevosRegistros.length === 0) {
                         UILogic.mostrarToast('Todas las fechas ya están registradas', 'warning');
-                        throw new Error('Sin fechas nuevas');
+                        return;
                     }
 
-                    //  1: Creamos array para guardar IDs ---
+                    // --- CAMBIO CLAVE 1: Creamos array para guardar IDs ---
                     const idsNuevosParaAnimar = [];
 
                     nuevosRegistros.forEach(fecha => {
@@ -4192,7 +4195,7 @@
 
                     HistoryManager.saveState(registros);
 
-                    //  2: Enviamos el array de IDs a la UI ---
+                    // --- CAMBIO CLAVE 2: Enviamos el array de IDs a la UI ---
                     const saved = await guardarYActualizar(true, idsNuevosParaAnimar);
 
                     if (saved) {
@@ -4200,46 +4203,68 @@
                         if (UILogic.actualizarBotonLote) {
                             UILogic.actualizarBotonLote();
                         }
-                    } else {
-                        throw new Error('Error al guardar');
                     }
                 }
 
-                async function borrarPeriodoDirecto(desde, hasta) {
-                    // Solo borra registros normales (eliminamos parámetro 'tipo')
-                    const registrosAEliminar = registros.filter(r => {
-                        if (r.fecha < desde || r.fecha > hasta) return false;
+                async function borrarPeriodoDirecto(desde, hasta, tipo) {
+                    let registrosAEliminar;
 
-                        // Excluir todos los tipos especiales
-                        const esEspecial =
-                            (r.entrada === '00:00' && r.salida === '00:00') ||  // Feriado
-                            (r.entrada === '11:11' && r.salida === '11:11') ||  // Ausencia
-                            (r.entrada === '12:12' && r.salida === '12:12') ||  // Vacaciones
-                            (r.entrada === '14:14' && r.salida === '14:14') ||  // Enfermedad
-                            (r.entrada === '13:13' && r.salida === '13:13');    // Asueto
+                    if (tipo === 'normal') {
+                        // Si es tipo "normal", borrar solo registros normales (no especiales)
+                        registrosAEliminar = registros.filter(r => {
+                            const dentroDelRango = r.fecha >= desde && r.fecha <= hasta;
+                            const esFeriado = r.entrada === '00:00' && r.salida === '00:00';
+                            const esAusencia = r.entrada === '11:11' && r.salida === '11:11';
+                            const esVacaciones = r.entrada === '12:12' && r.salida === '12:12';
+                            const esEnfermedad = r.entrada === '14:14' && r.salida === '14:14';
+                            const esAsueto = r.entrada === '13:13' && r.salida === '13:13';
+                            return dentroDelRango && !esFeriado && !esAusencia && !esVacaciones &&
+                                !esEnfermedad && !esAsueto;
+                        });
+                    } else {
+                        // Para tipos específicos, borrar SOLO ese tipo
+                        const entrada = tipo === 'vacaciones' ? '12:12' :
+                            tipo === 'ausencia' ? '11:11' :
+                                tipo === 'enfermedad' ? '14:14' :
+                                    tipo === 'asueto' ? '13:13' :
+                                        '00:00';
+                        const salida = entrada;
 
-                        return !esEspecial;
-                    });
+                        registrosAEliminar = registros.filter(r =>
+                            r.fecha >= desde &&
+                            r.fecha <= hasta &&
+                            r.entrada === entrada &&
+                            r.salida === salida
+                        );
+                    }
 
                     if (registrosAEliminar.length > 60) {
-                        UILogic.mostrarToast(`Máximo 60 registros. Encontrados: ${registrosAEliminar.length}`, 'error');
-                        throw new Error('Límite excedido');
+                        UILogic.mostrarToast(`El rango seleccionado contiene ${registrosAEliminar.length} registros.\n Máximo permitido: 60 registros por operación.`, 'error');
+                        return;
                     }
 
                     if (registrosAEliminar.length === 0) {
-                        UILogic.mostrarToast('No hay registros normales en ese período', 'info');
-                        throw new Error('Sin registros');
+                        const nombreTipo = tipo === 'normal' ? 'normales' :
+                            tipo === 'feriado' ? 'Feriados' :
+                                tipo === 'ausencia' ? 'Ausencias' : 'Vacaciones';
+                        UILogic.mostrarToast(`No hay registros de ${nombreTipo} en ese período`, 'info');
+                        return;
                     }
 
                     registros = registros.filter(r => !registrosAEliminar.includes(r));
                     HistoryManager.saveState(registros);
-
                     const saved = await guardarYActualizar();
+
                     if (saved) {
-                        UILogic.mostrarToast(`${registrosAEliminar.length} registros eliminados`, 'success');
-                        UILogic.actualizarBotonLote?.();
-                    } else {
-                        throw new Error('Error al guardar');
+                        const nombreTipo = tipo === 'normal' ? 'normales' :
+                            tipo === 'feriado' ? 'Feriados' :
+                                tipo === 'ausencia' ? 'Ausencias' : 'Vacaciones';
+                        UILogic.mostrarToast(`${registrosAEliminar.length} registro(s) de ${nombreTipo} eliminados`, 'success');
+
+                        // Actualizar el botón después de borrar
+                        if (UILogic.actualizarBotonLote) {
+                            UILogic.actualizarBotonLote();
+                        }
                     }
                 }
 
@@ -4254,6 +4279,8 @@
                     setEditandoId: (id) => editandoId = id,
                     vistaActual: () => vistaActual,
                     setVistaActual: (v) => vistaActual = v,
+                    cacheSemana: () => cacheSemana,
+                    setCacheSemana: (c) => cacheSemana = c,
                     cargarConVerificacion,
                     cargarConfiguracion,
                     calcularHoras,
@@ -4378,18 +4405,26 @@
                 }
 
                 function obtenerSemanaActual() {
-                    const hoy = new Date();
-                    const diaSemana = hoy.getDay(); // 0 es domingo, 1 lunes...
-                    const diff = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1); // Ajuste para que empiece el lunes
+                    const cache = D.cacheSemana();
+                    const hoy = new Date().toDateString();
+                    if (cache.calculado === hoy) return { inicio: cache.inicio, fin: cache.fin };
 
-                    const lunes = new Date(hoy.setDate(diff));
-                    const domingo = new Date(lunes);
-                    domingo.setDate(lunes.getDate() + 6);
+                    const now = new Date();
+                    const dia = now.getDay();
+                    const offset = dia === 0 ? -6 : 1 - dia; // Calcular Lunes
 
-                    return {
-                        inicio: lunes.toISOString().split('T')[0],
-                        fin: domingo.toISOString().split('T')[0]
-                    };
+                    const lun = new Date(now);
+                    lun.setDate(now.getDate() + offset);
+                    lun.setHours(0, 0, 0, 0);
+                    const dom = new Date(lun);
+                    dom.setDate(lun.getDate() + 6);
+                    dom.setHours(23, 59, 59, 999);
+
+                    const inicio = lun.toISOString().split('T')[0];
+                    const fin = dom.toISOString().split('T')[0];
+
+                    D.setCacheSemana({ inicio, fin, calculado: hoy });
+                    return { inicio, fin };
                 }
 
                 function obtenerLunesSemana(fecha) {
@@ -5938,15 +5973,15 @@ REPORTE DE HORAS TRABAJADAS
                                 let linea = '';
 
                                 if (esFeriado) {
-                                    linea = `${fecha}  ${dia.padEnd(10)} FERIADO`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} FERIADO`; // 🔄 INTERCAMBIADO
                                 } else if (esAusencia) {
-                                    linea = `${fecha}  ${dia.padEnd(10)} AUSENCIA`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} AUSENCIA`; // 🔄 INTERCAMBIADO
                                 } else if (esVacaciones) {
-                                    linea = `${fecha}  ${dia.padEnd(10)} VACACIONES`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} VACACIONES`; // 🔄 INTERCAMBIADO
                                 } else if (esEnfermedad) {
-                                    linea = `${fecha}  ${dia.padEnd(10)} ENFERMEDAD`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} ENFERMEDAD`; // 🔄 INTERCAMBIADO
                                 } else if (esAsueto) {
-                                    linea = `${fecha}  ${dia.padEnd(10)} ASUETO`;
+                                    linea = `${fecha}  ${dia.padEnd(10)} ASUETO`; // 🔄 INTERCAMBIADO
                                 }
                                 else {
                                     const entrada = r.entrada || '--:--';
@@ -5967,7 +6002,7 @@ REPORTE DE HORAS TRABAJADAS
                                         }
                                     }
 
-                                    linea = `${fecha}  ${dia.padEnd(10)} ${entrada} → ${salida}  [${total}]${tiempoFuera}${infoAsueto} ${indicador}`; // 
+                                    linea = `${fecha}  ${dia.padEnd(10)} ${entrada} → ${salida}  [${total}]${tiempoFuera}${infoAsueto} ${indicador}`; // 🔄 INTERCAMBIADO
                                 }
 
                                 seccion += linea + '\n';
@@ -5987,13 +6022,13 @@ REPORTE DE HORAS TRABAJADAS
                                 return lunes.toISOString().split('T')[0];
                             }
 
-                            // Obtener el mes seleccionado del selector
+                            // 🆕 Obtener el mes seleccionado del selector
                             const selectMes = $('select-mes-stats');
                             const mesSeleccionado = selectMes ? selectMes.value : null;
 
                             if (!mesSeleccionado) return '';
 
-                            // Obtener límites del mes actual
+                            // 🆕 Obtener límites del mes actual
                             const [añoActual, mesActual] = mesSeleccionado.split('-').map(Number);
                             const primerDiaMes = `${añoActual}-${String(mesActual).padStart(2, '0')}-01`;
                             const ultimoDiaMes = new Date(añoActual, mesActual, 0).getDate();
@@ -6763,16 +6798,10 @@ Generado por Sistema Horarios
                             return;
                         }
 
-                        // Intentar registrar
-                        try {
-                            await DataManagement.registrarDiaEspecial(fechaHoy, tipo);
-                            // Solo limpiar si fue exitoso
-                            document.getElementById('lote-fecha-desde').value = '';
-                            document.getElementById('lote-fecha-hasta').value = '';
-                        } catch (error) {
-                            // No limpiar campos si hubo error
-                            console.error('Error al registrar:', error);
-                        }
+                        await DataManagement.registrarDiaEspecial(fechaHoy, tipo);
+                        // LIMPIAR campos después de registro exitoso
+                        document.getElementById('lote-fecha-desde').value = '';
+                        document.getElementById('lote-fecha-hasta').value = '';
                         return;
                     }
 
@@ -6790,16 +6819,10 @@ Generado por Sistema Horarios
                             return;
                         }
 
-                        // Intentar registrar
-                        try {
-                            await DataManagement.registrarDiaEspecial(desde, tipo);
-                            // Solo limpiar si fue exitoso
-                            document.getElementById('lote-fecha-desde').value = '';
-                            document.getElementById('lote-fecha-hasta').value = '';
-                        } catch (error) {
-                            // No limpiar campos si hubo error
-                            console.error('Error al registrar:', error);
-                        }
+                        await DataManagement.registrarDiaEspecial(desde, tipo);
+                        // LIMPIAR campos después de registro exitoso
+                        document.getElementById('lote-fecha-desde').value = '';
+                        document.getElementById('lote-fecha-hasta').value = '';
                         return;
                     }
 
@@ -6844,21 +6867,15 @@ Generado por Sistema Horarios
                         );
                     }
 
-                    // Intentar la operación (registrar o borrar)
-                    try {
-                        if (tipo === 'normal') {
-                            await DataManagement.borrarPeriodoDirecto(desde, hasta);
-                        } else {
-                            await DataManagement.registrarVacacionesDirecto(desde, hasta, tipo);
-                        }
-
-                        // Solo limpiar campos si la operación fue exitosa
-                        document.getElementById('lote-fecha-desde').value = '';
-                        document.getElementById('lote-fecha-hasta').value = '';
-                    } catch (error) {
-                        // No limpiar campos si hubo error
-                        console.error('Error en operación de lote:', error);
+                    if (registrosDelTipoEnRango.length > 0 || tipo === 'normal') {
+                        await DataManagement.borrarPeriodoDirecto(desde, hasta, tipo);
+                    } else {
+                        await DataManagement.registrarVacacionesDirecto(desde, hasta, tipo);
                     }
+
+                    // LIMPIAR campos después de operación exitosa (registrar o borrar)
+                    document.getElementById('lote-fecha-desde').value = '';
+                    document.getElementById('lote-fecha-hasta').value = '';
                 }
 
                 function actualizarBotonLote() {
@@ -6922,7 +6939,7 @@ Generado por Sistema Horarios
 
                         // Caso Normal: Siempre es una acción de borrado
                         if (registrosDelTipoEnRango.length > 0) {
-                            btnTexto.textContent = 'Borrar';
+                            btnTexto.textContent = 'Borrar Normales';
                             btn.style.color = 'var(--c-red)';
                         } else {
                             btnTexto.textContent = 'Borrar (Vacío)';
@@ -6945,7 +6962,14 @@ Generado por Sistema Horarios
                             r.salida === salida
                         );
 
-                        btnTexto.textContent = 'Registrar Lote';
+                        if (registrosDelTipoEnRango.length > 0) {
+                            // Si ya existen, el botón se convierte en BORRAR
+                            const cantidad = registrosDelTipoEnRango.length;
+                            btnTexto.textContent = `Borrar Lote (${cantidad})`;
+                            btn.style.color = 'var(--c-red)';
+                        } else {
+                            btnTexto.textContent = 'Registrar Lote';
+                        }
                     }
                 }
 
@@ -7380,10 +7404,10 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.94
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 6.93
     // ====================================================================
-    1) Se reemplaza la funcion obtenersemanaactual para corregir el error de calculo de "esta semana"
-    2) Se simplifica la funcion borrarperiododirecto
+    1) Se cambia etiqueta dias trabajados por jornada completa
+    
     3) Se unifica el estilo de los imputs y selects al estar bloqueados en los modales
     4) Se quitan algunos placeholders de los modales editar
 
