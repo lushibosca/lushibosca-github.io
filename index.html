@@ -1000,8 +1000,14 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
+        /* Transición suave entre meses en estadísticas */
+        #form-stats {
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, transform 0.3s ease;
+        }
+
         #modo-normal.fade-out,
-        #modo-lote.fade-out {
+        #modo-lote.fade-out,
+        #form-stats.fade-out  {
             opacity: 0;
             transform: translateY(-10px);
         }
@@ -1056,6 +1062,7 @@
             font-weight: bold;
             transform: scale(1.1);
         }
+
     </style>
 </head>
 
@@ -1333,6 +1340,7 @@
                                     <option value="vacaciones">🏖️ Vacaciones (12:12)</option>
                                     <option value="asueto">🎁 Asueto (13:13)</option>
                                     <option value="enfermedad">🏥 Enfermedad (14:14)</option>
+                                    <option value="paro">📢 Paro (15:15)</option>
                                     <option value="normal">🕒 Normales (borrar)</option>
                                 </select>
                                 <button class="time-btn" onclick="UILogic.toggleModoLote()" title="Volver a modo normal"
@@ -1391,7 +1399,7 @@
                         </div>
                         <div class="stats-grid" style="padding-right: 0.5rem;">
                             <div class="stat-item">
-                                <div class="stat-label">Jornadas Completas</div>
+                                <div class="stat-label">Jornadas</div>
                                 <div class="stat-value" id="stat-dias-trabajados">0</div>
                             </div>
                             <div class="stat-item">
@@ -1413,6 +1421,10 @@
                             <div class="stat-item">
                                 <div class="stat-label">Asuetos</div>
                                 <div class="stat-value" id="stat-asuetos-dia">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Paros</div>
+                                <div class="stat-value" id="stat-paros">0</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Salidas Temprano</div>
@@ -1497,7 +1509,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">v7.04</span>
+                <span class="version-text">v7.08</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -1548,20 +1560,18 @@
             </div>
             <div class="config-actions">
                 <label>Registros</label>
-                <button class="btn-export" onclick="UILogic.mostrarExportar()">
-                    <svg class="icon">
-                        <use href="#icon-download" />
-                    </svg>
-                    Descargar
-                </button>
-
                 <button class="btn-backup" onclick="UILogic.mostrarImportar()">
                     <svg class="icon">
                         <use href="#icon-upload" />
                     </svg>
                     Restaurar
                 </button>
-
+                <button class="btn-export" onclick="UILogic.mostrarExportar()">
+                    <svg class="icon">
+                        <use href="#icon-download" />
+                    </svg>
+                    Descargar
+                </button>
                 <button class="btn-delete" onclick="DataManagement.borrarTodoHistorial()">
                     <svg class="icon">
                         <use href="#icon-trash" />
@@ -1776,6 +1786,7 @@
                     <option value="vacaciones">🏖️ Vacaciones</option>
                     <option value="enfermedad">🏥 Enfermedades</option>
                     <option value="asueto">🎁 Asuetos</option>
+                    <option value="paro">📢 Paros</option>
                 </select>
             </div>
             <div class="btn-group">
@@ -1901,6 +1912,7 @@
                         <option value="vacaciones">🏖️ Vacaciones</option>
                         <option value="asueto">🎁 Asueto</option>
                         <option value="enfermedad">🏥 Enfermedad</option>
+                        <option value="paro">📢 Paro</option>
                     </select>
                     <button class="time-btn" id="btn-lock-grupo-toggle" onclick="UILogic.toggleBloqueoEdicionGrupo()"
                         title="Desbloquear edición">
@@ -2584,6 +2596,16 @@
                         descripcion: 'Enfermedad justificada',
                         color: 'purple',
                         contabiliza: true
+                    },
+                    PARO: {
+                        id: 'paro',
+                        codigo: '15:15',
+                        emoji: '📢',
+                        label: 'Paro',
+                        labelPlural: 'Paros',
+                        descripcion: 'Fuerza Mayor',
+                        color: 'purple',
+                        contabiliza: true
                     }
                 };
 
@@ -2987,14 +3009,11 @@
                     // Verificamos si estamos en el perfil 'default' (el principal)
                     const esPerfilDefault = window.PerfilManager && PerfilManager.obtenerPerfilActual() === 'default';
                     // 1. Guardado Legacy (Compatibilidad hacia atrás)
-                    // SOLO guardamos en la clave raíz 'registros' si estamos en el perfil default.
-                    // Esto evita que un perfil secundario sobrescriba tu backup principal.
                     if (actualizarRegistros && esPerfilDefault) {
                         saveSuccessful = await guardarConIntegridad(registros);
                     }
 
-                    // 2. Guardado del Sistema de Perfiles (El nuevo estándar)
-                    // Esto guarda SIEMPRE, sin importar qué perfil sea.
+                    // 2. Guardado del Sistema de Perfiles
                     if (window.PerfilManager) {
                         PerfilManager.guardarDatosPerfilActual();
                     }
@@ -3644,7 +3663,7 @@
                 }
 
                 function exportarJSON() {
-                    // 🆕 Generar fecha local en formato YYYY-MM-DD HH:MM:SS
+                    //  Generar fecha local en formato YYYY-MM-DD HH:MM:SS
                     const ahora = new Date();
                     const año = ahora.getFullYear();
                     const mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -3676,7 +3695,7 @@
                         }
                         const nombreSafe = nombrePerfil.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ'\-_ ]/g, '').trim().replace(/\s+/g, '_');
 
-                        // 🆕 Usar también fecha local para el nombre del archivo
+                        //  Usar también fecha local para el nombre del archivo
                         const fechaHoy = `${año}-${mes}-${dia}`;
 
                         a.download = `Horarios_${nombreSafe}_${fechaHoy}.json`;
@@ -4287,6 +4306,21 @@
             // ====================================================================
             const UILogic = (function (S, D) {
 
+                // ====================================================================
+                // FUNCIÓN DEBOUNCE REUTILIZABLE
+                // ====================================================================
+                function debounce(func, wait) {
+                    let timeout;
+                    return function executedFunction(...args) {
+                        const later = () => {
+                            clearTimeout(timeout);
+                            func(...args);
+                        };
+                        clearTimeout(timeout);
+                        timeout = setTimeout(later, wait);
+                    };
+                }
+
                 function mostrarError(inputId, errorId) {
                     const input = $(inputId);
                     const error = $(errorId);
@@ -4566,7 +4600,8 @@
                     }
 
                     item.className = className;
-                    item.onclick = () => D.editarRegistro(r.id);
+                    item.dataset.registroId = r.id;
+                    item.dataset.accion = 'editar-registro';
 
                     const info = document.createElement('div');
                     info.className = 'registro-info';
@@ -4705,7 +4740,7 @@
                         const detalleMesActual = document.createElement('div');
                         detalleMesActual.className = 'registro-mes-detalle';
 
-                        // 🆕 LÓGICA DE APERTURA CON LOCALSTORAGE
+                        //  LÓGICA DE APERTURA CON LOCALSTORAGE
                         let debeEstarExpandido = false;
 
                         try {
@@ -4766,118 +4801,9 @@
                             }
                         });
 
-                        // Evento Click del Mes
-                        (function (header, detalle, chevronIcon, contenedor) {
-                            header.onclick = (e) => {
-                                e.stopPropagation();
-                                const estaExpandido = detalle.classList.contains('expanded');
-
-                                if (estaExpandido) {
-                                    // Cerrar
-                                    detalle.classList.remove('expanded');
-                                    chevronIcon.style.transform = 'rotate(0deg)';
-
-                                    // GUARDAR ESTADO AL CERRAR
-                                    try {
-                                        localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'false');
-                                    } catch (e) { }
-                                } else {
-                                    // Abrir
-                                    const otrosMesesAbiertos = lista.querySelectorAll('.registro-mes-detalle.expanded');
-                                    const hayOtrosAbiertos = Array.from(otrosMesesAbiertos).some(otro => otro !== detalle);
-
-                                    if (hayOtrosAbiertos) {
-                                        // CALCULAR Y RESERVAR ALTURA ANTES DE CERRAR
-                                        otrosMesesAbiertos.forEach(otroDetalle => {
-                                            if (otroDetalle !== detalle) {
-                                                const alturaActual = otroDetalle.scrollHeight;
-
-                                                // Fijar altura actual como mínima temporalmente
-                                                otroDetalle.style.minHeight = `${alturaActual}px`;
-
-                                                // Cerrar visualmente
-                                                otroDetalle.classList.remove('expanded');
-                                                const otroContainer = otroDetalle.closest('.registro-mes-container');
-                                                const otroChevron = otroContainer?.querySelector('.chevron-mes');
-                                                const otroHeader = otroContainer?.querySelector('.registro-mes-header');
-
-                                                if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
-
-                                                // GUARDAR QUE SE CERRÓ
-                                                if (otroHeader && otroHeader.dataset.mesId) {
-                                                    try {
-                                                        localStorage.setItem(`mes-${otroHeader.dataset.mesId}-expandido`, 'false');
-                                                    } catch (e) { }
-                                                }
-
-                                                // LIBERAR LA ALTURA DESPUÉS DE LA ANIMACIÓN
-                                                setTimeout(() => {
-                                                    otroDetalle.style.minHeight = '';
-                                                }, 350); // 50ms después de la animación de 300ms
-                                            }
-                                        });
-
-                                        setTimeout(() => {
-                                            detalle.classList.add('expanded');
-                                            chevronIcon.style.transform = 'rotate(180deg)';
-
-                                            // GUARDAR QUE SE ABRIÓ
-                                            try {
-                                                localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
-                                            } catch (e) { }
-
-                                            setTimeout(() => {
-                                                const margenHeader = 80;
-                                                const alturaVentana = window.innerHeight;
-                                                const registros = detalle.querySelectorAll('.registro-item');
-
-                                                if (registros.length > 0) {
-                                                    const primerRegistro = registros[0];
-                                                    const rectPrimero = primerRegistro.getBoundingClientRect();
-                                                    const segundoRegistro = registros.length > 1 ? registros[1] : null;
-                                                    const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
-
-                                                    const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
-                                                    const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
-
-                                                    if (primeroCortado || segundoCortado) {
-                                                        contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                                    }
-                                                }
-                                            }, 310);
-                                        }, 300);
-                                    } else {
-                                        detalle.classList.add('expanded');
-                                        chevronIcon.style.transform = 'rotate(180deg)';
-
-                                        // GUARDAR QUE SE ABRIÓ
-                                        try {
-                                            localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
-                                        } catch (e) { }
-
-                                        setTimeout(() => {
-                                            const margenHeader = 80;
-                                            const alturaVentana = window.innerHeight;
-                                            const registros = detalle.querySelectorAll('.registro-item');
-
-                                            if (registros.length > 0) {
-                                                const primerRegistro = registros[0];
-                                                const rectPrimero = primerRegistro.getBoundingClientRect();
-                                                const segundoRegistro = registros.length > 1 ? registros[1] : null;
-                                                const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
-
-                                                const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
-                                                const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
-
-                                                if (primeroCortado || segundoCortado) {
-                                                    contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                                                }
-                                            }
-                                        }, 310);
-                                    }
-                                }
-                            };
-                        })(headerMes, detalleMesActual, chevron, contenedorMesActual);
+                        // Preparar datos para event delegation
+                        headerMes.dataset.accion = 'toggle-mes';
+                        headerMes.dataset.mesContainer = claveMes; // ID único del mes
 
                         contenedorMesActual.appendChild(headerMes);
                         contenedorMesActual.appendChild(detalleMesActual);
@@ -4940,11 +4866,12 @@
                     info.appendChild(totalEl);
                     header.appendChild(info);
 
-                    // Abrir modal de edición
-                    header.onclick = (e) => {
-                        e.stopPropagation();
-                        D.editarGrupo(grupo);
-                    };
+                    // Preparar datos para event delegation
+                    header.dataset.accion = 'editar-grupo';
+                    header.dataset.grupoData = JSON.stringify({
+                        registros: grupo.registros.map(r => r.id),
+                        subtipo: grupo.subtipo
+                    });
 
                     container.appendChild(header);
                     return container;
@@ -4981,6 +4908,7 @@
                     const vacaciones = contarPorTipo('vacaciones');
                     const enfermedades = contarPorTipo('enfermedad');
                     const asuetosDiaCompleto = contarPorTipo('asueto');
+                    const paros = contarPorTipo('paro');
 
                     // Contar Compensaciones/Asuetos parciales (días con crédito válido)
                     const compensaciones = registrosMes.filter(r => r.credito && r.credito !== '00:00').length;
@@ -5016,7 +4944,8 @@
                             vacaciones: vacaciones,
                             enfermedades: enfermedades,
                             asuetosDiaCompleto: asuetosDiaCompleto,
-                            compensaciones: compensaciones
+                            compensaciones: compensaciones,
+                            paros: paros
                         };
                     }
 
@@ -5069,35 +4998,69 @@
                     const inicioSemanaPasada = `${lunesPasado.getFullYear()}-${String(lunesPasado.getMonth() + 1).padStart(2, '0')}-${String(lunesPasado.getDate()).padStart(2, '0')}`;
                     const finSemanaPasada = `${domingoPasado.getFullYear()}-${String(domingoPasado.getMonth() + 1).padStart(2, '0')}-${String(domingoPasado.getDate()).padStart(2, '0')}`;
 
-                    // Filtrar registros de semana pasada (SOLO registros normales)
-                    const registrosSemanaPasada = D.registros().filter(r => {
+                    // Filtrar TODOS los registros de semana pasada
+                    const todosRegistrosSemanaPasada = D.registros().filter(r =>
+                        r.fecha >= inicioSemanaPasada && r.fecha <= finSemanaPasada
+                    );
+
+                    // Separar normales de especiales
+                    const normalesSemanaPasada = todosRegistrosSemanaPasada.filter(r => {
                         const esEspecial = TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
-                        const esNormal = r.entrada && r.salida && !esEspecial;
-
-                        const dentroDelRango = r.fecha >= inicioSemanaPasada && r.fecha <= finSemanaPasada;
-
-                        return dentroDelRango && esNormal;
+                        return r.entrada && r.salida && !esEspecial;
                     });
 
-                    // Sumar horas
-                    const totalSemanaPasada = registrosSemanaPasada.reduce((sum, r) => sum + r.total, 0);
+                    const especialesSemanaPasada = todosRegistrosSemanaPasada.filter(r =>
+                        TiposRegistro.esRegistroEspecial(r.entrada, r.salida)
+                    );
+
+                    // Contar tipos especiales
+                    const especialesPorTipo = {};
+                    especialesSemanaPasada.forEach(r => {
+                        const tipo = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
+                        if (tipo) {
+                            if (!especialesPorTipo[tipo.labelPlural]) {
+                                especialesPorTipo[tipo.labelPlural] = 0;
+                            }
+                            especialesPorTipo[tipo.labelPlural]++;
+                        }
+                    });
+
+                    // Sumar horas trabajadas
+                    const totalSemanaPasada = normalesSemanaPasada.reduce((sum, r) => sum + r.total, 0);
                     const hSemanaPasada = Math.floor(totalSemanaPasada);
                     const mSemanaPasada = Math.round((totalSemanaPasada - hSemanaPasada) * 60);
 
+                    // Construir texto con detalles
+                    let textoSemanaPasada = `${hSemanaPasada}h ${mSemanaPasada}m`;
 
+                    if (Object.keys(especialesPorTipo).length > 0) {
+                        const detalles = Object.entries(especialesPorTipo)
+                            .map(([tipoPlural, cant]) => {
+                                // Buscar el tipo original para obtener tanto singular como plural
+                                const tipoObj = TiposRegistro.obtenerTodosLosTipos().find(t =>
+                                    t.labelPlural.toLowerCase() === tipoPlural.toLowerCase()
+                                );
+
+                                const label = (cant === 1 && tipoObj) ? tipoObj.label : tipoPlural;
+                                return `${cant} ${label.toLowerCase()}`;
+                            })
+                            .join(', ');
+                        textoSemanaPasada += ` [${detalles}]`;
+                    }
                     return {
                         entradaPromedio: `${String(hEntrada).padStart(2, '0')}:${String(mEntrada).padStart(2, '0')}`,
                         salidaPromedio: `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`,
                         diasTrabajados: registrosValidos.length,
                         promedioDiario: `${hPromedio}h ${mPromedio}m`,
                         tiempoFueraTotal: `${hTiempoFuera}h ${mTiempoFuera}m`,
-                        semanaPasada: `${hSemanaPasada}h ${mSemanaPasada}m`,
+                        semanaPasada: textoSemanaPasada,
                         feriados: feriados,
                         ausencias: ausencias,
                         vacaciones: vacaciones,
                         enfermedades: enfermedades,
                         asuetosDiaCompleto: asuetosDiaCompleto,
-                        compensaciones: compensaciones
+                        compensaciones: compensaciones,
+                        paros: paros
                     };
                 }
 
@@ -5139,6 +5102,7 @@
                     const elEnfermedades = $('stat-enfermedades');
                     const elAsuetosDia = $('stat-asuetos-dia');
                     const elCompensaciones = $('stat-compensaciones');
+                    const elParos = $('stat-paros');
 
                     if (elEntrada) elEntrada.textContent = stats.entradaPromedio;
                     if (elSalida) elSalida.textContent = stats.salidaPromedio;
@@ -5167,6 +5131,7 @@
                     toggleStatItem(elEnfermedades, stats.enfermedades);
                     toggleStatItem(elAsuetosDia, stats.asuetosDiaCompleto);
                     toggleStatItem(elCompensaciones, stats.compensaciones);
+                    toggleStatItem(elParos, stats.paros);
 
                     // Ocultar Tiempo Fuera si es 0
                     if (elTiempoFueraTotal) {
@@ -5766,10 +5731,24 @@
 
                 function cambiarMesStats() {
                     const selectMes = $('select-mes-stats');
-                    if (!selectMes) return;
+                    const formStats = $('form-stats');
+                    const icon = $('icon-indicator-stats');
+
+                    if (!selectMes || !formStats) return;
 
                     const mesSeleccionado = selectMes.value;
-                    actualizarEstadisticas(mesSeleccionado);
+
+                    // 1. Iniciamos fade-out del contenido
+                    formStats.classList.add('fade-out');
+
+                    // 2. Esperamos a que termine la animación de fade-out (300ms)
+                    setTimeout(() => {
+                        // Actualizamos los datos mientras está invisible
+                        actualizarEstadisticas(mesSeleccionado);
+
+                        // 3. Removemos fade-out para que vuelva a aparecer
+                        formStats.classList.remove('fade-out');
+                    }, 300);
                 }
 
                 function generarReporte() {
@@ -5821,13 +5800,14 @@ REPORTE DE HORAS TRABAJADAS
 📈 RESUMEN GENERAL
 ────────────────────────────────────────────────────────────────
 
-   • Jornadas completas:     ${stats.diasTrabajados}
+   • Jornadas:               ${stats.diasTrabajados}
    • Feriados:               ${stats.feriados}
    • Ausencias:              ${stats.ausencias}
    • Vacaciones:             ${stats.vacaciones}
    • Enfermedades:           ${stats.enfermedades}
    • Asuetos:                ${stats.asuetosDiaCompleto}
    • Salidas Temprano:       ${stats.compensaciones}
+   • Paros:                  ${stats.paros}
 
    • Entrada promedio:       ${stats.entradaPromedio}
    • Salida promedio:        ${stats.salidaPromedio}
@@ -5923,7 +5903,8 @@ REPORTE DE HORAS TRABAJADAS
                                         ausencias: [],
                                         vacaciones: [],
                                         enfermedades: [],
-                                        asuetos: []
+                                        asuetos: [],
+                                        paros: []
                                     });
                                 }
 
@@ -6014,6 +5995,7 @@ REPORTE DE HORAS TRABAJADAS
                                 if (datos.vacaciones.length > 0) notasExtras.push(`${datos.vacaciones.length} vacacion(es)`);
                                 if (datos.enfermedades.length > 0) notasExtras.push(`${datos.enfermedades.length} enfermedad(es)`);
                                 if (datos.asuetos.length > 0) notasExtras.push(`${datos.asuetos.length} asueto(s)`);
+                                if (datos.paros.length > 0) notasExtras.push(`${datos.paros.length} paro(s)`);
 
                                 if (notasExtras.length > 0) {
                                     seccion += ` [${notasExtras.join(', ')}]`;
@@ -6021,13 +6003,13 @@ REPORTE DE HORAS TRABAJADAS
 
                                 seccion += '\n\n';
 
-                                // 🆕 Guardar info de semana incompleta
+                                //  Guardar info de semana incompleta
                                 if (esIncompleta && continuaEn) {
                                     semanasIncompletas.push(`* Semana ${index + 1}: ${continuaEn}`);
                                 }
                             });
 
-                            // 🆕 Agregar notas de semanas incompletas al final
+                            //  Agregar notas de semanas incompletas al final
                             if (semanasIncompletas.length > 0) {
                                 seccion += semanasIncompletas.join('\n') + '\n';
                             }
@@ -6374,7 +6356,7 @@ Generado por Sistema Horarios
 
                     const perfiles = JSON.parse(localStorage.getItem('perfiles') || '{}');
 
-                    // 🆕 VALIDACIÓN DE NOMBRE DUPLICADO (case-insensitive)
+                    //  VALIDACIÓN DE NOMBRE DUPLICADO (case-insensitive)
                     const nombreNormalizado = nombre.toLowerCase().trim();
                     const nombreExiste = Object.values(perfiles).some(perfil =>
                         perfil.nombre.toLowerCase().trim() === nombreNormalizado
@@ -7183,19 +7165,19 @@ Generado por Sistema Horarios
                         if (el) el.addEventListener('input', formatearInput);
                     });
 
-                    // B) Inputs del Modal Editar (Formato + Verificación EN VIVO)
+                    // B) Inputs del Modal Editar (Formato + Verificación OPTIMIZADA)
+                    const verificarBloqueCreditoDebounced = debounce(verificarBloqueoCredito, 200);
+
                     ['edit-entrada', 'edit-salida'].forEach(id => {
                         const el = document.getElementById(id);
                         if (el) {
-                            // Usamos un listener unificado para garantizar el orden
+                            // Input: formato inmediato + validación debounced
                             el.addEventListener('input', (e) => {
-                                // 1. Primero ponemos los dos puntos (formato)
-                                formatearInput(e);
-                                // 2. INMEDIATAMENTE verificamos si se habilita el botón
-                                verificarBloqueoCredito();
+                                formatearInput(e); // Inmediato (visual)
+                                verificarBloqueCreditoDebounced(); // Debounced (lógica)
                             });
 
-                            // Listener extra para cuando pegas texto o autocompletas
+                            // Change: validación inmediata al perder foco
                             el.addEventListener('change', verificarBloqueoCredito);
                         }
                     });
@@ -7205,7 +7187,7 @@ Generado por Sistema Horarios
                     if (tf) tf.addEventListener('input', formatearInput);
 
                     // ===================================
-                    // 🆕 LISTENERS PARA TECLA ENTER
+                    // LISTENERS PARA TECLA ENTER
                     // ===================================
 
                     // A) Enter en campo Entrada → Pasa a Salida
@@ -7294,13 +7276,177 @@ Generado por Sistema Horarios
                     setInterval(() => actualizarUI(null, true), 60000);
                     console.log('Sistema iniciado correctamente v6.68');
 
+                    // ===================================
+                    // EVENT DELEGATION - LISTA REGISTROS
+                    // ===================================
+                    const lista = document.getElementById('lista-registros');
+                    if (lista) {
+                        lista.addEventListener('click', (e) => {
+                            // Buscar el elemento clickeado o su ancestro con data-accion
+                            const target = e.target.closest('[data-accion]');
+                            if (!target) return;
+
+                            const accion = target.dataset.accion;
+
+                            if (accion === 'editar-registro') {
+                                const id = target.dataset.registroId;
+                                if (id) D.editarRegistro(id);
+                            }
+                            else if (accion === 'editar-grupo') {
+                                try {
+                                    const grupoData = JSON.parse(target.dataset.grupoData);
+                                    const registrosCompletos = D.registros().filter(r =>
+                                        grupoData.registros.includes(r.id)
+                                    );
+
+                                    D.editarGrupo({
+                                        registros: registrosCompletos,
+                                        subtipo: grupoData.subtipo
+                                    });
+                                } catch (err) {
+                                    console.error('Error al abrir grupo:', err);
+                                }
+                            }
+                        });
+                    }
+
+                    // ===================================
+                    // EVENT DELEGATION - TOGGLE MESES
+                    // ===================================
+                    lista.addEventListener('click', (e) => {
+                        const header = e.target.closest('.registro-mes-header');
+                        if (!header || header.dataset.accion !== 'toggle-mes') return;
+
+                        e.stopPropagation();
+
+                        const contenedor = header.closest('.registro-mes-container');
+                        if (!contenedor) return;
+
+                        const detalle = contenedor.querySelector('.registro-mes-detalle');
+                        const chevronIcon = header.querySelector('.chevron-mes');
+
+                        const estaExpandido = detalle.classList.contains('expanded');
+
+                        if (estaExpandido) {
+                            // CERRAR
+                            detalle.classList.remove('expanded');
+                            chevronIcon.style.transform = 'rotate(0deg)';
+
+                            // Guardar estado
+                            try {
+                                localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'false');
+                            } catch (e) { }
+
+                        } else {
+                            // ABRIR
+                            const otrosMesesAbiertos = lista.querySelectorAll('.registro-mes-detalle.expanded');
+                            const hayOtrosAbiertos = Array.from(otrosMesesAbiertos).some(otro => otro !== detalle);
+
+                            if (hayOtrosAbiertos) {
+                                // Calcular y reservar altura antes de cerrar
+                                otrosMesesAbiertos.forEach(otroDetalle => {
+                                    if (otroDetalle !== detalle) {
+                                        const alturaActual = otroDetalle.scrollHeight;
+
+                                        // Fijar altura actual como mínima temporalmente
+                                        otroDetalle.style.minHeight = `${alturaActual}px`;
+
+                                        // Cerrar visualmente
+                                        otroDetalle.classList.remove('expanded');
+                                        const otroContainer = otroDetalle.closest('.registro-mes-container');
+                                        const otroChevron = otroContainer?.querySelector('.chevron-mes');
+                                        const otroHeader = otroContainer?.querySelector('.registro-mes-header');
+
+                                        if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
+
+                                        // Guardar que se cerró
+                                        if (otroHeader && otroHeader.dataset.mesId) {
+                                            try {
+                                                localStorage.setItem(`mes-${otroHeader.dataset.mesId}-expandido`, 'false');
+                                            } catch (e) { }
+                                        }
+
+                                        // Liberar la altura después de la animación
+                                        setTimeout(() => {
+                                            otroDetalle.style.minHeight = '';
+                                        }, 350);
+                                    }
+                                });
+
+                                setTimeout(() => {
+                                    detalle.classList.add('expanded');
+                                    chevronIcon.style.transform = 'rotate(180deg)';
+
+                                    // Guardar que se abrió
+                                    try {
+                                        localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
+                                    } catch (e) { }
+
+                                    // Scroll inteligente
+                                    setTimeout(() => {
+                                        const margenHeader = 80;
+                                        const alturaVentana = window.innerHeight;
+                                        const registros = detalle.querySelectorAll('.registro-item');
+
+                                        if (registros.length > 0) {
+                                            const primerRegistro = registros[0];
+                                            const rectPrimero = primerRegistro.getBoundingClientRect();
+                                            const segundoRegistro = registros.length > 1 ? registros[1] : null;
+                                            const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
+
+                                            const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
+                                            const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
+
+                                            if (primeroCortado || segundoCortado) {
+                                                contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                            }
+                                        }
+                                    }, 310);
+                                }, 300);
+
+                            } else {
+                                // No hay otros meses abiertos
+                                detalle.classList.add('expanded');
+                                chevronIcon.style.transform = 'rotate(180deg)';
+
+                                // Guardar que se abrió
+                                try {
+                                    localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
+                                } catch (e) { }
+
+                                // Scroll inteligente
+                                setTimeout(() => {
+                                    const margenHeader = 80;
+                                    const alturaVentana = window.innerHeight;
+                                    const registros = detalle.querySelectorAll('.registro-item');
+
+                                    if (registros.length > 0) {
+                                        const primerRegistro = registros[0];
+                                        const rectPrimero = primerRegistro.getBoundingClientRect();
+                                        const segundoRegistro = registros.length > 1 ? registros[1] : null;
+                                        const rectSegundo = segundoRegistro ? segundoRegistro.getBoundingClientRect() : null;
+
+                                        const primeroCortado = rectPrimero.top < margenHeader || rectPrimero.bottom > alturaVentana;
+                                        const segundoCortado = rectSegundo && (rectSegundo.top < margenHeader || rectSegundo.bottom > alturaVentana);
+
+                                        if (primeroCortado || segundoCortado) {
+                                            contenedor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                        }
+                                    }
+                                }, 310);
+                            }
+                        }
+                    });
+
                     // Listeners Lote
                     const loteDesde = document.getElementById('lote-fecha-desde');
                     const loteHasta = document.getElementById('lote-fecha-hasta');
+                    const actualizarBotonLoteDebounced = debounce(actualizarBotonLote, 300);
+
                     const agregarListenersFecha = (el) => {
                         if (!el) return;
-                        el.addEventListener('change', () => actualizarBotonLote());
-                        el.addEventListener('input', () => actualizarBotonLote());
+                        el.addEventListener('change', () => actualizarBotonLote()); // Inmediato
+                        el.addEventListener('input', () => actualizarBotonLoteDebounced()); // Debounced
                     };
                     agregarListenersFecha(loteDesde);
                     agregarListenersFecha(loteHasta);
@@ -7321,7 +7467,7 @@ Generado por Sistema Horarios
                             const btnReemplazar = document.getElementById('btn-reemplazar');
 
                             if (e.target.files.length > 0) {
-                                // ✅ Mostrar nombre del archivo
+                                // Mostrar nombre del archivo
                                 if (nombreEl) {
                                     const nombreArchivo = e.target.files[0].name;
                                     nombreEl.textContent = `✓ ${nombreArchivo}`;
@@ -7578,9 +7724,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //             CAMBIOS REALIZADOS EN ESTA VERSION 7.04
+    //             CAMBIOS REALIZADOS EN ESTA VERSION 7.08
     // ====================================================================
-    1) Se revierte el cambio de colores en el modo oscuro
+    1) Se corrige animacion de tarjeta estadisticas
 
 
     -->
