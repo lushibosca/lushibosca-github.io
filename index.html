@@ -1527,22 +1527,25 @@
 
             <div class="form-collapsible" id="contenido-historico">
                 <div id="botones-historico" style="padding-top: 0.5rem; margin-bottom: 0.5rem;">
-                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-right: 0.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; gap: 0.5rem; padding: 0 0.5rem; margin-top: 0.5rem">
                         <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
                             <svg class="icon">
                                 <use href="#icon-filter" />
                             </svg>
                         </button>
-                        <button class="filter-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
-                            <svg class="icon">
-                                <use href="#icon-undo" />
-                            </svg>
-                        </button>
-                        <button class="filter-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
-                            <svg class="icon">
-                                <use href="#icon-redo" />
-                            </svg>
-                        </button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="filter-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
+                                <svg class="icon">
+                                    <use href="#icon-undo" />
+                                </svg>
+                            </button>
+                            <button class="filter-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
+                                <svg class="icon">
+                                    <use href="#icon-redo" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div id="lista-registros" class="custom-scroll"></div>
@@ -7928,6 +7931,7 @@ Generado por Sistema Horarios
     1) Se agrega feedback visual en los campos desde y hasta
     2) Se cambia el tiempo para el triple toggle
     3) Se aumenta el max height del historico
+    4) Se reubican el boton de filtro a la izquierda
 
 
     -->
