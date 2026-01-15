@@ -1558,7 +1558,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.12</span>
+                <span class="version-text">LUSHIBOSCA-7.11</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -7705,7 +7705,7 @@ Generado por Sistema Horarios
                         } else {
                             // ESTADO 3 → Verificar tiempo transcurrido
                             const tiempoTranscurrido = Date.now() - (tiempoExpansionBotones || 0);
-                            const han_pasado_5_segundos = tiempoTranscurrido > 1000;
+                            const han_pasado_5_segundos = tiempoTranscurrido > 750;
 
                             if (han_pasado_5_segundos) {
                                 //  MÁS DE 3 SEG: Solo ocultar botones (3 → 2)
@@ -7923,9 +7923,11 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //       CAMBIOS REALIZADOS EN SISTEMA LUSHIBOSCA VERSION 7.12
+    //       CAMBIOS REALIZADOS EN SISTEMA LUSHIBOSCA VERSION 7.11
     // ====================================================================
-    1) Se cambia el max height de la tarjeta historico
+    1) Se agrega feedback visual en los campos desde y hasta
+    2) Se cambia el tiempo para el triple toggle
+    3) Se aumenta el max height del historico
 
 
     -->
