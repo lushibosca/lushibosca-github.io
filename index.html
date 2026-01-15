@@ -234,6 +234,13 @@
             font-weight: 600;
             color: var(--text-muted);
             margin-bottom: 0.25rem;
+            transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
+            min-height: 1.2em;
+            /* Reserva altura fija */
+            line-height: 1.2;
+            /* Altura de línea consistente */
+            will-change: transform, opacity;
+            /* Optimización para animaciones */
         }
 
         input,
@@ -1062,6 +1069,47 @@
             font-weight: bold;
             transform: scale(1.1);
         }
+
+        /* Estado colapsado de botones histórico */
+        #botones-historico {
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+            padding-top: 0;
+            margin-bottom: 0;
+        }
+
+        #botones-historico.expanded {
+            max-height: 100px;
+            opacity: 1;
+            padding-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Histórico necesita más altura que las otras tarjetas */
+        #contenido-historico.expanded {
+            max-height: 3500px;
+        }
+
+        /* Animación de feedback en inputs de registro */
+        .input-agregado-animacion {
+            animation: fade-blur 0.5s ease-out forwards;
+        }
+
+        @keyframes input-feedback {
+            0% {
+                background-color: rgba(96, 172, 148, 0.3);
+            }
+
+            50% {
+                background-color: rgba(96, 172, 148, 0.2);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
     </style>
 </head>
 
@@ -1466,7 +1514,7 @@
             </div>
         </div>
         <div class="card animated-card" style="animation-delay: 0.3s;">
-            <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleBotonesHistorico()">
+            <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleHistorico()">
                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                     <svg class="icon">
                         <use href="#icon-list" />
@@ -1476,27 +1524,29 @@
                     <use href="#icon-chevron-down" />
                 </svg>
             </h2>
-            <div class="form-collapsible" id="botones-historico" style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
-                <div
-                    style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-right: 0.5rem; margin-top: 0.5rem">
-                    <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
-                        <svg class="icon">
-                            <use href="#icon-filter" />
-                        </svg>
-                    </button>
-                    <button class="filter-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
-                        <svg class="icon">
-                            <use href="#icon-undo" />
-                        </svg>
-                    </button>
-                    <button class="filter-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
-                        <svg class="icon">
-                            <use href="#icon-redo" />
-                        </svg>
-                    </button>
+
+            <div class="form-collapsible" id="contenido-historico">
+                <div id="botones-historico" style="padding-top: 0.5rem; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: flex-end; gap: 0.5rem; padding-right: 0.5rem;">
+                        <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()" title="Filtrar">
+                            <svg class="icon">
+                                <use href="#icon-filter" />
+                            </svg>
+                        </button>
+                        <button class="filter-btn" id="btn-undo" onclick="HistoryManager.undo()" title="Deshacer">
+                            <svg class="icon">
+                                <use href="#icon-undo" />
+                            </svg>
+                        </button>
+                        <button class="filter-btn" id="btn-redo" onclick="HistoryManager.redo()" title="Rehacer">
+                            <svg class="icon">
+                                <use href="#icon-redo" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
+                <div id="lista-registros" class="custom-scroll"></div>
             </div>
-            <div id="lista-registros" class="custom-scroll"></div>
         </div>
     </div>
     <div class="modal" id="modal-config">
@@ -1508,7 +1558,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.08</span>
+                <span class="version-text">LUSHIBOSCA-7.11</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -3228,6 +3278,12 @@
                         // PASAMOS EL ID DEL REGISTRO ACTUALIZADO PARA ANIMARLO
                         const saved = await guardarYActualizar(true, registroExistente.id);
                         if (saved) {
+                            // FEEDBACK VISUAL (solo salida manual)
+                            const salidaManual = !usaHoraActual;
+                            if (salidaManual) {
+                                UILogic.aplicarFeedbackRegistro(false, true); // Solo salida
+                            }
+
                             const mensaje = usaHoraActual ?
                                 `Salida registrada con hora actual \n(entrada: ${registroExistente.entrada})` :
                                 `Salida ${s} agregada \n(entrada: ${registroExistente.entrada})`;
@@ -3235,8 +3291,6 @@
                             UILogic.resetearBoton(btn);
                             $('fecha').value = UILogic.obtenerFechaHoy();
                             $('salida').value = '';
-                        } else {
-                            UILogic.resetearBoton(btn);
                         }
                         return;
                     }
@@ -3281,15 +3335,22 @@
                     const saved = await guardarYActualizar(true, nuevoId);
 
                     if (saved) {
+                        // FEEDBACK VISUAL (entrada y/o salida manual)
+                        const entradaManual = e && !usaHoraActual;
+                        const salidaManual = s && !usaHoraActual;
+
+                        if (entradaManual || salidaManual) {
+                            UILogic.aplicarFeedbackRegistro(entradaManual, salidaManual);
+                        }
+
                         const mensaje = usaHoraActual ? 'Registro agregado con hora actual' : 'Registro agregado';
                         UILogic.mostrarToast(mensaje, 'success');
                         UILogic.resetearBoton(btn);
                         $('fecha').value = UILogic.obtenerFechaHoy();
                         $('entrada').value = '';
                         $('salida').value = '';
-                    } else {
-                        UILogic.resetearBoton(btn);
                     }
+
                 }
 
                 async function eliminarRegistroActual() {
@@ -3301,7 +3362,7 @@
                         const hoy = UILogic.obtenerFechaHoy();
 
                         if (registroABorrar && registroABorrar.fecha === hoy) {
-                            // 🔧 LIMPIAR TIMER DEL PERFIL ACTUAL
+                            // LIMPIAR TIMER DEL PERFIL ACTUAL
                             const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
                             const storageKey = `breakStartTime_${perfilId}`;
                             if (localStorage.getItem(storageKey)) {
@@ -4300,14 +4361,23 @@
                 };
 
             })(SecurityAndUtils);
+
             // ====================================================================
             // UI LOGIC MODULE
             // ====================================================================
+
             const UILogic = (function (S, D) {
 
-                // ====================================================================
+                let toastTimeout = null;
+                let intervaloPulsacion = null;
+                let timeoutInicial = null;
+                let edicionBloqueada = true;
+                let edicionGrupoBloqueada = true;
+                let perfilEnEdicion = null;
+                let modoLoteActivo = false;
+                let tiempoExpansionBotones = null;
+
                 // FUNCIÓN DEBOUNCE REUTILIZABLE
-                // ====================================================================
                 function debounce(func, wait) {
                     let timeout;
                     return function executedFunction(...args) {
@@ -4333,8 +4403,6 @@
                     if (input) input.classList.remove('error');
                     if (error) error.style.display = 'none';
                 }
-
-                let toastTimeout = null;
 
                 function mostrarToast(mensaje, tipo = 'info') {
                     const toast = $('toast');
@@ -5586,10 +5654,6 @@
                     }
                 }
 
-                // Sistema de mantener presionado para incrementar/decrementar
-                let intervaloPulsacion = null;
-                let timeoutInicial = null;
-
                 function iniciarCambioHoras(incremento) {
                     // Cambio inmediato al presionar
                     cambiarHorasDiarias(incremento);
@@ -6221,9 +6285,6 @@ Generado por Sistema Horarios
                     actualizarEstadoBotonTimerMain();
                 }
 
-                // --- Lógica de Bloqueo del Modal Editar ---
-                let edicionBloqueada = true;
-
                 function setBloqueoEdicion(bloqueado) {
                     edicionBloqueada = bloqueado;
 
@@ -6332,7 +6393,6 @@ Generado por Sistema Horarios
                     });
                 }
 
-
                 function crearPerfilDesdeSelector() {
                     const input = document.getElementById('nombre-nuevo-perfil-selector');
                     if (!input) return;
@@ -6423,8 +6483,6 @@ Generado por Sistema Horarios
                         UILogic.actualizarFeedbackConfig();
                     });
                 }
-
-                let perfilEnEdicion = null;
 
                 function abrirEditorPerfil(perfilId) {
                     perfilEnEdicion = perfilId;
@@ -6595,8 +6653,6 @@ Generado por Sistema Horarios
                     }
                 }
 
-                let modoLoteActivo = false;
-
                 function toggleModoLote() {
                     const modoNormal = document.getElementById('modo-normal');
                     const modoLote = document.getElementById('modo-lote');
@@ -6673,16 +6729,38 @@ Generado por Sistema Horarios
                 }
 
                 async function registrarLoteDesdeCard() {
-                    const desde = document.getElementById('lote-fecha-desde').value;
-                    const hasta = document.getElementById('lote-fecha-hasta').value;
+                    const inputDesde = document.getElementById('lote-fecha-desde');
+                    const inputHasta = document.getElementById('lote-fecha-hasta');
                     const tipo = document.getElementById('lote-tipo').value;
+
+                    // VALIDACIÓN: Verificar si el usuario escribió algo inválido
+                    if (inputDesde.value === '' && inputDesde.validity && !inputDesde.validity.valid) {
+                        mostrarToast('Fecha inicial inválida', 'error');
+                        return;
+                    }
+
+                    if (inputHasta.value === '' && inputHasta.validity && !inputHasta.validity.valid) {
+                        mostrarToast('Fecha final inválida', 'error');
+                        return;
+                    }
+
+                    const desde = inputDesde.value;
+                    const hasta = inputHasta.value;
 
                     // --- CASO 1: Sin fechas (registrar HOY) ---
                     if (!desde && !hasta) {
+                        // Verificar que realmente estén vacíos y no inválidos
+                        if (!inputDesde.checkValidity() || !inputHasta.checkValidity()) {
+                            mostrarToast('Revisa las fechas ingresadas', 'error');
+                            return;
+                        }
+
                         if (tipo === 'normal') {
                             mostrarToast('Completa los campos Desde y Hasta.', 'info');
                             return;
                         }
+
+                        // ... resto del código del CASO 1
 
                         const fechaHoy = UILogic.obtenerFechaHoy();
                         const registroExistente = DataManagement.registros().find(r => r.fecha === fechaHoy);
@@ -7152,14 +7230,14 @@ Generado por Sistema Horarios
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
                         mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                         limpiarCampo, obtenerFechaHoy, mostrarFiltros, poblarSelectorMeses, actualizarBotonLote,
-                        cerrarFiltros, registrarLoteDesdeCard, cambiarMesStats, generarReporte, toggleBotonesHistorico, toggleStats,
+                        cerrarFiltros, registrarLoteDesdeCard, cambiarMesStats, generarReporte, toggleHistorico, toggleStats,
                         sumarMinutosAHora, toggleTimerBreakMain, actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion,
                         actualizarFeedbackConfig, poblarSelectorMeses, abrirSelectorPerfiles, actualizarBotonLote,
                         cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
                         eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                         iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
                         toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
-                        mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport,
+                        mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -7272,8 +7350,30 @@ Generado por Sistema Horarios
                     try {
                         if (localStorage.getItem('formularioExpandido') === 'true') toggleFormulario();
                         if (localStorage.getItem('statsExpandido') === 'true') toggleStats();
-                        if (localStorage.getItem('botonesHistoricoExpandido') === 'true') toggleBotonesHistorico();
-                    } catch (e) { console.warn('Error restaurando estado visual:', e); }
+
+                        // Restaurar estado de Histórico (3 estados)
+                        const estadoHistorico = localStorage.getItem('historicoExpandido');
+                        if (estadoHistorico === 'meses' || estadoHistorico === 'completo') {
+                            const contenido = $('contenido-historico');
+                            const icon = $('icon-indicator-historico');
+                            if (contenido) contenido.classList.add('expanded');
+                            if (icon) icon.classList.add('rotated');
+
+                            if (estadoHistorico === 'completo') {
+                                const botones = $('botones-historico');
+                                if (botones) {
+                                    botones.classList.add('expanded');
+                                    tiempoExpansionBotones = Date.now(); //  Iniciar timer al restaurar
+                                }
+                            }
+                        } else {
+                            // ASEGURAR que los botones estén contraídos si el estado es "cerrado" o null
+                            const botones = $('botones-historico');
+                            if (botones) botones.classList.remove('expanded');
+                        }
+                    } catch (e) {
+                        console.warn('Error restaurando estado visual:', e);
+                    }
 
                     PWAInstaller.init();
 
@@ -7577,8 +7677,53 @@ Generado por Sistema Horarios
                     }
                 }
 
-                function toggleBotonesHistorico() {
-                    toggleSeccionGen('botones-historico', 'icon-indicator-historico', 'botonesHistoricoExpandido');
+                function toggleHistorico() {
+                    const contenido = $('contenido-historico');
+                    const botones = $('botones-historico');
+                    const icon = $('icon-indicator-historico');
+
+                    if (!contenido) return;
+
+                    // Determinar estado actual
+                    const contenidoExpandido = contenido.classList.contains('expanded');
+                    const botonesExpandidos = botones.classList.contains('expanded');
+
+                    try {
+                        if (!contenidoExpandido) {
+                            // ESTADO 1 → ESTADO 2: Abrir tarjeta (solo meses, sin botones)
+                            contenido.classList.add('expanded');
+                            if (icon) icon.classList.add('rotated');
+                            localStorage.setItem('historicoExpandido', 'meses');
+                            tiempoExpansionBotones = null; // Resetear timer
+
+                        } else if (contenidoExpandido && !botonesExpandidos) {
+                            // ESTADO 2 → ESTADO 3: Mostrar botones también
+                            botones.classList.add('expanded');
+                            localStorage.setItem('historicoExpandido', 'completo');
+                            tiempoExpansionBotones = Date.now(); // ⏱INICIAR TIMER
+
+                        } else {
+                            // ESTADO 3 → Verificar tiempo transcurrido
+                            const tiempoTranscurrido = Date.now() - (tiempoExpansionBotones || 0);
+                            const han_pasado_5_segundos = tiempoTranscurrido > 1000;
+
+                            if (han_pasado_5_segundos) {
+                                //  MÁS DE 3 SEG: Solo ocultar botones (3 → 2)
+                                botones.classList.remove('expanded');
+                                localStorage.setItem('historicoExpandido', 'meses');
+                                tiempoExpansionBotones = null; // Resetear timer
+                            } else {
+                                // ⚡ MENOS DE 5 SEG: Cerrar todo (3 → 1)
+                                botones.classList.remove('expanded');
+                                contenido.classList.remove('expanded');
+                                if (icon) icon.classList.remove('rotated');
+                                localStorage.setItem('historicoExpandido', 'cerrado');
+                                tiempoExpansionBotones = null; // Resetear timer
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Error guardando estado histórico:', e);
+                    }
                 }
 
                 function toggleStats() {
@@ -7645,8 +7790,6 @@ Generado por Sistema Horarios
                     }
                 }
 
-                let edicionGrupoBloqueada = true;
-
                 function setBloqueoEdicionGrupo(bloqueado) {
                     edicionGrupoBloqueada = bloqueado;
 
@@ -7683,20 +7826,71 @@ Generado por Sistema Horarios
                     });
                 }
 
+                function aplicarFeedbackRegistro(mostrarEntrada, mostrarSalida) {
+                    const inputEntrada = $('entrada');
+                    const inputSalida = $('salida');
+
+                    const labelEntrada = inputEntrada?.closest('.form-group')?.querySelector('label');
+                    const labelSalida = inputSalida?.closest('.form-group')?.querySelector('label');
+
+                    // Guardar textos originales
+                    const textoOriginalEntrada = labelEntrada ? labelEntrada.textContent : 'Entrada';
+                    const textoOriginalSalida = labelSalida ? labelSalida.textContent : 'Salida';
+
+                    // Función helper para animar cambio de texto
+                    const cambiarTextoSuave = (label, nuevoTexto, color) => {
+                        if (!label) return;
+
+                        // Fade out
+                        label.style.opacity = '0';
+                        label.style.transform = 'translateY(-3px)';
+
+                        setTimeout(() => {
+                            label.textContent = nuevoTexto;
+                            label.style.color = color;
+                            // Fade in
+                            label.style.opacity = '1';
+                            label.style.transform = 'translateY(0)';
+                        }, 150); // Mitad del tiempo de transición
+                    };
+
+                    if (mostrarEntrada && inputEntrada && labelEntrada) {
+                        inputEntrada.classList.add('input-agregado-animacion');
+                        cambiarTextoSuave(labelEntrada, '✓ Agregado', 'var(--c-green)');
+                    }
+
+                    if (mostrarSalida && inputSalida && labelSalida) {
+                        inputSalida.classList.add('input-agregado-animacion');
+                        cambiarTextoSuave(labelSalida, '✓ Agregado', 'var(--c-green)');
+                    }
+
+                    // Remover después de 2 segundos
+                    setTimeout(() => {
+                        if (mostrarEntrada && inputEntrada && labelEntrada) {
+                            inputEntrada.classList.remove('input-agregado-animacion');
+                            cambiarTextoSuave(labelEntrada, textoOriginalEntrada, '');
+                        }
+
+                        if (mostrarSalida && inputSalida && labelSalida) {
+                            inputSalida.classList.remove('input-agregado-animacion');
+                            cambiarTextoSuave(labelSalida, textoOriginalSalida, '');
+                        }
+                    }, 2000);
+                }
 
                 return {
                     init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, cerrarConfig,
                     cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError,
                     limpiarError, resetearBoton, restaurarBotonGuardarEdicion, toggleFormulario,
                     limpiarCampo, mostrarFiltros, cerrarFiltros, registrarLoteDesdeCard,
-                    cambiarMesStats, generarReporte, toggleBotonesHistorico, toggleStats, sumarMinutosAHora,
+                    cambiarMesStats, generarReporte, toggleHistorico, toggleStats, sumarMinutosAHora,
                     toggleTimerBreakMain, actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion,
                     actualizarFeedbackConfig, poblarSelectorMeses, abrirSelectorPerfiles, actualizarBotonLote,
                     cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
                     eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                     iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
                     toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
-                    mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport,
+                    mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -7729,10 +7923,9 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //        CAMBIOS REALIZADOS EN SISTEMA LUSHIBOSCA VERSION 7.08            
+    //       CAMBIOS REALIZADOS EN SISTEMA LUSHIBOSCA VERSION 7.11
     // ====================================================================
-    1) Se corrige animación de tarjeta estadisticas
-    2) Se corrige animación de la tarjeta registrar
+    1) Se agrega feedback visual en los campos desde y hasta
 
 
     -->
