@@ -1534,7 +1534,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.13</span>
+                <span class="version-text">LUSHIBOSCA-7.14</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -5299,7 +5299,7 @@
                         const objetivoAjustado = Math.max(0, horasSemanales - horasDescontar);
                         const prog = objetivoAjustado > 0 ? Math.min((tot / objetivoAjustado) * 100, 100) : 100;
 
-                        if (statsEl) statsEl.innerHTML = `<div>${horasATexto(tot)}</div>`;
+                        if (statsEl) statsEl.textContent = horasATexto(tot);
                         if (progressEl) {
                             progressEl.style.width = prog + '%';
                             setProgressBarColor(progressEl, (horasDiarias > 0 && tot >= objetivoAjustado) ? 'green' : 'blue');
@@ -5338,7 +5338,7 @@
                             const tipoEspecialHoy = TiposRegistro.obtenerTipoPorCodigo(regHoy.entrada, regHoy.salida);
 
                             if (tipoEspecialHoy) {
-                                if (statsEl) statsEl.innerHTML = `<div>${tipoEspecialHoy.emoji} ${tipoEspecialHoy.label}</div>`;
+                                if (statsEl) statsEl.textContent = `${tipoEspecialHoy.emoji} ${tipoEspecialHoy.label}`;
                                 if (progressEl) {
                                     progressEl.style.width = '100%';
                                     setProgressBarColor(progressEl, tipoEspecialHoy.color);
@@ -5357,7 +5357,7 @@
 
                                 const prog = objetivoDiario > 0 ? Math.min((tiempoTranscurrido / objetivoDiario) * 100, 100) : 100;
 
-                                if (statsEl) statsEl.innerHTML = `<div>${horasATexto(tiempoTranscurrido)}</div>`;
+                                if (statsEl) statsEl.textContent = horasATexto(tiempoTranscurrido);
                                 if (progressEl) {
                                     progressEl.style.width = prog + '%';
                                 }
@@ -5432,7 +5432,7 @@
                             if (progressEl) { progressEl.style.width = '0%'; setProgressBarColor(progressEl, 'blue'); }
 
                             if (esDiaDeDescanso) {
-                                if (statsEl) statsEl.innerHTML = `<div style="font-size: 1.8rem;">😴 Descanso</div>`;
+                                if (statsEl) statsEl.textContent = "😴 ...";
                                 if (mensajeEl) {
                                     // 👇 Solo ocultar si NO hay objetivo de horas
                                     if (horasDiarias === 0) {
@@ -5443,7 +5443,7 @@
                                     }
                                 }
                             } else {
-                                if (statsEl) statsEl.innerHTML = `<div style="font-size: 1.8rem;">😴 Sin actividad</div>`;
+                                if (statsEl) statsEl.textContent = "😴 Sin Actividad";
                                 if (mensajeEl) {
                                     if (horasDiarias === 0) mensajeEl.style.display = 'none';
                                     else { mensajeEl.textContent = '...'; mensajeEl.style.display = 'block'; }
@@ -7943,15 +7943,12 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                    SISTEMA LUSHIBOSCA VERSION 7.13
+    //                    SISTEMA LUSHIBOSCA VERSION 7.14
     // ====================================================================
     
      - CAMBIOS:
-    1) Se unifica la animacion de la tarjeta de estado para que coincida con las
-    definidas en las otras tarjetas
-    2) varios arreglos menores en css
-    3) se agrega contexto en la tarjeta de estado cuando timer esta activo
-    4) Se baja el valor del history_toggle_timer
+    1) Se cambia la etiqueta de estado cuando no hay registro en dia laboral y no laboral
+    2) Se reemplaza innerhtml por text content en algunos lugares de la tarjeta estado
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
