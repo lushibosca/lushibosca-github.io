@@ -1534,7 +1534,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.14</span>
+                <span class="version-text">LUSHIBOSCA-7.17</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -3093,17 +3093,18 @@
                     return (hr * 60) + mn;
                 }
 
-                function calcularHoras(e, s, tf = null, cr = null) {
+                function calcularHoras(e, s, tf = null, cr = null, esCalculoTemporal = false) {
                     const tfMinutos = tf ? tiempoEnMinutos(tf) : 0;
                     const crMinutos = cr ? tiempoEnMinutos(cr) : 0;
 
-                    // Verificar si es un registro especial
-                    const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(e, s);
-                    if (tipoEspecial) {
-                        // Crear objeto de retorno dinámico
-                        const resultado = { horas: 0, minutos: 0, total: horasDiarias };
-                        resultado[`es${tipoEspecial.label}`] = true; // Ej: esFeriado, esAusencia
-                        return resultado;
+                    // 🔧 FIX: NO verificar tipo especial si es cálculo temporal (hora actual)
+                    if (!esCalculoTemporal) {
+                        const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(e, s);
+                        if (tipoEspecial) {
+                            const resultado = { horas: 0, minutos: 0, total: horasDiarias };
+                            resultado[`es${tipoEspecial.label}`] = true;
+                            return resultado;
+                        }
                     }
 
                     if (!e || !s || !e.includes(':') || !s.includes(':')) return null;
@@ -3121,12 +3122,10 @@
                     let minTotal = minutosSalida - minutosEntrada;
                     if (minTotal < 0) minTotal += 24 * 60;
 
-                    // Fórmula: (Salida - Entrada) - TiempoFuera + Crédito
                     let minNeto = (minTotal - tfMinutos) + crMinutos;
 
                     if (minNeto < 0) minNeto = 0;
 
-                    // Retornamos también el crédito usado para guardarlo si es necesario (opcional)
                     return { horas: Math.floor(minNeto / 60), minutos: minNeto % 60, total: minNeto / 60 };
                 }
 
@@ -4321,6 +4320,10 @@
                             if (window.UILogic && window.UILogic.actualizarBotonLote) {
                                 window.UILogic.actualizarBotonLote();
                             }
+                            // Iniciar timer de auto-cierre
+                            if (window.UILogic && window.UILogic.iniciarTimerAutoCierreBotones) {
+                                window.UILogic.iniciarTimerAutoCierreBotones();
+                            }
                         }
                     },
                     redoAction: function () {
@@ -4331,6 +4334,10 @@
                             UILogic.mostrarToast('Rehecho', 'info');
                             if (window.UILogic && window.UILogic.actualizarBotonLote) {
                                 window.UILogic.actualizarBotonLote();
+                            }
+                            // Iniciar timer de auto-cierre
+                            if (window.UILogic && window.UILogic.iniciarTimerAutoCierreBotones) {
+                                window.UILogic.iniciarTimerAutoCierreBotones();
                             }
                         }
                     }
@@ -4352,6 +4359,7 @@
                 let perfilEnEdicion = null;
                 let modoLoteActivo = false;
                 let tiempoExpansionBotones = null;
+                let timerAutoCierreBotones = null;
 
                 // FUNCIÓN DEBOUNCE REUTILIZABLE
                 function debounce(func, wait) {
@@ -5335,15 +5343,22 @@
                         let objetivoDiario = horasDiarias;
 
                         if (regHoy && regHoy.entrada) {
-                            const tipoEspecialHoy = TiposRegistro.obtenerTipoPorCodigo(regHoy.entrada, regHoy.salida);
+                            // 🔧 FIX: Solo detectar tipo especial si entrada Y salida existen y coinciden
+                            const tipoEspecialHoy = (regHoy.salida && regHoy.entrada === regHoy.salida)
+                                ? TiposRegistro.obtenerTipoPorCodigo(regHoy.entrada, regHoy.salida)
+                                : null;
 
                             if (tipoEspecialHoy) {
+                                // Día especial (feriado, ausencia, etc.)
                                 if (statsEl) statsEl.textContent = `${tipoEspecialHoy.emoji} ${tipoEspecialHoy.label}`;
                                 if (progressEl) {
                                     progressEl.style.width = '100%';
                                     setProgressBarColor(progressEl, tipoEspecialHoy.color);
                                 }
-                                if (mensajeEl) mensajeEl.textContent = `¡${tipoEspecialHoy.descripcion}!`;
+                                if (mensajeEl) {
+                                    mensajeEl.textContent = `¡${tipoEspecialHoy.descripcion}!`;
+                                    mensajeEl.style.display = 'block'; // 🔧 FIX Bug #2 también
+                                }
                             } else {
                                 // --- DÍA NORMAL CON REGISTRO ---
                                 if (regHoy.salida) {
@@ -5351,7 +5366,7 @@
                                 } else {
                                     const ahora = new Date();
                                     const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
-                                    const t = D.calcularHoras(regHoy.entrada, horaActual, regHoy.tiempoFuera || null);
+                                    const t = D.calcularHoras(regHoy.entrada, horaActual, regHoy.tiempoFuera || null, null, true);
                                     tiempoTranscurrido = t ? t.total : 0;
                                 }
 
@@ -5459,13 +5474,7 @@
 
                             if (regHoy && regHoy.entrada && !regHoy.salida && objetivoDiario > 0) {
                                 // Solo es especial si AMBOS (entrada Y salida) tienen el código
-                                const esEspecial = regHoy.salida && (
-                                    (regHoy.entrada === '00:00' && regHoy.salida === '00:00') ||
-                                    (regHoy.entrada === '11:11' && regHoy.salida === '11:11') ||
-                                    (regHoy.entrada === '12:12' && regHoy.salida === '12:12') ||
-                                    (regHoy.entrada === '14:14' && regHoy.salida === '14:14') ||
-                                    (regHoy.entrada === '13:13' && regHoy.salida === '13:13')
-                                );
+                                const esEspecial = TiposRegistro.esRegistroEspecial(regHoy.entrada, regHoy.salida);
 
                                 if (!esEspecial) {
                                     const [hE, mE] = regHoy.entrada.split(':').map(Number);
@@ -7229,7 +7238,8 @@ Generado por Sistema Horarios
                         eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                         iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
                         toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
-                        mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro
+                        mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
+                        iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -7685,9 +7695,12 @@ Generado por Sistema Horarios
                 }
 
                 function toggleHistorico() {
+                    cancelarTimerAutoCierreBotones();
+
                     const contenido = $('contenido-historico');
                     const botones = $('botones-historico');
                     const icon = $('icon-indicator-historico');
+
 
                     if (!contenido) return;
 
@@ -7743,6 +7756,49 @@ Generado por Sistema Horarios
                         }
                     } catch (e) {
                         console.warn('Error guardando estado histórico:', e);
+                    }
+                }
+
+                function iniciarTimerAutoCierreBotones() {
+                    // Limpiar timer anterior si existe
+                    if (timerAutoCierreBotones) {
+                        clearTimeout(timerAutoCierreBotones);
+                        timerAutoCierreBotones = null;
+                    }
+
+                    // Iniciar nuevo timer de 5 segundos
+                    timerAutoCierreBotones = setTimeout(() => {
+                        const botones = $('botones-historico');
+                        const contenido = $('contenido-historico');
+                        const icon = $('icon-indicator-historico');
+
+                        // Solo cerrar si están expandidos
+                        if (botones && botones.classList.contains('expanded')) {
+                            // ESTADO 3 → ESTADO 2 (Solo ocultar botones)
+                            botones.classList.remove('expanded');
+
+                            if (icon) {
+                                icon.style.transform = ''; // Resetear inline
+                                icon.classList.add('rotated'); // Volver a 180°
+                            }
+
+                            try {
+                                localStorage.setItem('historicoExpandido', 'meses');
+                            } catch (e) {
+                                console.warn('Error guardando estado histórico:', e);
+                            }
+
+                            tiempoExpansionBotones = null;
+                        }
+
+                        timerAutoCierreBotones = null;
+                    }, 4000); // 4 segundos timer autocierre
+                }
+
+                function cancelarTimerAutoCierreBotones() {
+                    if (timerAutoCierreBotones) {
+                        clearTimeout(timerAutoCierreBotones);
+                        timerAutoCierreBotones = null;
                     }
                 }
 
@@ -7910,7 +7966,8 @@ Generado por Sistema Horarios
                     eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                     iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
                     toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
-                    mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro
+                    mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
+                    iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones
                 };
 
             })(SecurityAndUtils, DataManagement);
@@ -7943,20 +8000,20 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                    SISTEMA LUSHIBOSCA VERSION 7.14
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.17
     // ====================================================================
     
      - CAMBIOS:
-    1) Se cambia la etiqueta de estado cuando no hay registro en dia laboral y no laboral
-    2) Se reemplaza innerhtml por text content en algunos lugares de la tarjeta estado
+    1) Se corrige el bug si la entrada actual coincide con hora actual y con el codigo de un registro especial
+    el sistema detectaba que pasaron las 7 horas.
+    2) Se corrige el bug de la etiqueta con objetivo horario 0, y toda la semana con dia especial, se 
+    borraba el 2do indicador debajo de la barra al cambiar a esta semana y volver
+    3) Se refactoriza "LÓGICA DE SALIDA ESTIMADA" para que haga uso del modulo TIPOS DE REGISTRO
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
      y tocar el timer, al rehacer la accion, el timer sigue corriendo
-     2) al tener horas objetivo en 0, y dias especiales toda la semana, en la tarjeta de
-     estado hoy, al recargar la pagina debajo de la barra de progreso describe el dia especial
-     pero al cambiar a "esta semana" y volver se quita la etiqueta
-     3) 
+      
 
 
     -->
