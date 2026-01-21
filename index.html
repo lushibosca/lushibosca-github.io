@@ -1534,7 +1534,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.17</span>
+                <span class="version-text">LUSHIBOSCA-7.21</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -3097,7 +3097,7 @@
                     const tfMinutos = tf ? tiempoEnMinutos(tf) : 0;
                     const crMinutos = cr ? tiempoEnMinutos(cr) : 0;
 
-                    // 🔧 FIX: NO verificar tipo especial si es cálculo temporal (hora actual)
+                    // NO verificar tipo especial si es cálculo temporal (hora actual)
                     if (!esCalculoTemporal) {
                         const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(e, s);
                         if (tipoEspecial) {
@@ -3241,7 +3241,9 @@
                     }
 
                     if (registroExistente && !e && s && registroExistente.entrada && !registroExistente.salida) {
-                        detenerYRegistrarTimer(registroExistente);
+                        // Capturamos si el timer fue detenido
+                        const timerDetenido = detenerYRegistrarTimer(registroExistente);
+
                         registroExistente.salida = s;
                         let t = calcularHoras(registroExistente.entrada, s, registroExistente.tiempoFuera || null);
                         registroExistente.horas = t?.horas || 0;
@@ -3259,9 +3261,20 @@
                                 UILogic.aplicarFeedbackRegistro(false, true); // Solo salida
                             }
 
-                            const mensaje = usaHoraActual ?
-                                `Salida registrada con hora actual \n(entrada: ${registroExistente.entrada})` :
-                                `Salida ${s} agregada \n(entrada: ${registroExistente.entrada})`;
+                            // Mensaje diferenciado según si había timer activo
+                            let mensaje;
+                            if (timerDetenido && usaHoraActual) {
+                                // Caso: Salida con hora actual Y timer activo
+                                const tiempoFuera = registroExistente.tiempoFuera || '00:00';
+                                mensaje = `Salida registrada con hora actual\n⏱️ Descanso finalizado: +${tiempoFuera}\n(entrada: ${registroExistente.entrada})`;
+                            } else if (usaHoraActual) {
+                                // Caso: Salida con hora actual SIN timer
+                                mensaje = `Salida registrada con hora actual\n(entrada: ${registroExistente.entrada})`;
+                            } else {
+                                // Caso: Salida manual
+                                mensaje = `Salida ${s} agregada\n(entrada: ${registroExistente.entrada})`;
+                            }
+
                             UILogic.mostrarToast(mensaje, 'success');
                             UILogic.resetearBoton(btn);
                             $('fecha').value = UILogic.obtenerFechaHoy();
@@ -4317,24 +4330,39 @@
                             registros.splice(0, registros.length, ...prevState);
                             guardarYActualizar();
                             UILogic.mostrarToast('Deshecho', 'info');
+
+                            // Solo actualizar si estamos en modo lote
                             if (window.UILogic && window.UILogic.actualizarBotonLote) {
-                                window.UILogic.actualizarBotonLote();
+                                // Verificar si el modo lote está activo
+                                const modoLote = document.getElementById('modo-lote');
+                                if (modoLote && modoLote.style.display !== 'none') {
+                                    window.UILogic.actualizarBotonLote();
+                                }
                             }
+
                             // Iniciar timer de auto-cierre
                             if (window.UILogic && window.UILogic.iniciarTimerAutoCierreBotones) {
                                 window.UILogic.iniciarTimerAutoCierreBotones();
                             }
                         }
                     },
+
                     redoAction: function () {
                         const nextState = HistoryManager.redo();
                         if (nextState) {
                             registros.splice(0, registros.length, ...nextState);
                             guardarYActualizar();
                             UILogic.mostrarToast('Rehecho', 'info');
+
+                            // Solo actualizar si estamos en modo lote
                             if (window.UILogic && window.UILogic.actualizarBotonLote) {
-                                window.UILogic.actualizarBotonLote();
+                                // Verificar si el modo lote está activo
+                                const modoLote = document.getElementById('modo-lote');
+                                if (modoLote && modoLote.style.display !== 'none') {
+                                    window.UILogic.actualizarBotonLote();
+                                }
                             }
+
                             // Iniciar timer de auto-cierre
                             if (window.UILogic && window.UILogic.iniciarTimerAutoCierreBotones) {
                                 window.UILogic.iniciarTimerAutoCierreBotones();
@@ -5449,7 +5477,7 @@
                             if (esDiaDeDescanso) {
                                 if (statsEl) statsEl.textContent = "😴 ...";
                                 if (mensajeEl) {
-                                    // 👇 Solo ocultar si NO hay objetivo de horas
+                                    // Solo ocultar si NO hay objetivo de horas
                                     if (horasDiarias === 0) {
                                         mensajeEl.style.display = 'none';
                                     } else {
@@ -5473,7 +5501,6 @@
                             let minutosTotal = 0;
 
                             if (regHoy && regHoy.entrada && !regHoy.salida && objetivoDiario > 0) {
-                                // Solo es especial si AMBOS (entrada Y salida) tienen el código
                                 const esEspecial = TiposRegistro.esRegistroEspecial(regHoy.entrada, regHoy.salida);
 
                                 if (!esEspecial) {
@@ -5505,24 +5532,28 @@
                             }
 
                             if (mostrarEstimacion) {
+                                const mostrarConBuffer = Math.abs(bufferSemanal) > 0.01;
+
                                 let textoFinal = `Salida estimada: <strong>${horaSalida}</strong>`;
 
-                                // Calcular salida considerando el buffer (positivo o negativo)
-                                const minutosBuffer = bufferSemanal * 60;
-                                const minutosConBuffer = minutosTotal - minutosBuffer;
+                                if (mostrarConBuffer) {
+                                    // Calcular salida considerando el buffer
+                                    const minutosBuffer = bufferSemanal * 60;
+                                    const minutosConBuffer = minutosTotal - minutosBuffer;
 
-                                let hSB = Math.floor(minutosConBuffer / 60);
-                                const mSB = Math.round(minutosConBuffer % 60);
-                                if (hSB >= 24) hSB = hSB % 24;
+                                    let hSB = Math.floor(minutosConBuffer / 60);
+                                    const mSB = Math.round(minutosConBuffer % 60);
+                                    if (hSB >= 24) hSB = hSB % 24;
 
-                                const horaSalidaBuffer = `${String(hSB).padStart(2, '0')}:${String(mSB).padStart(2, '0')}`;
+                                    const horaSalidaBuffer = `${String(hSB).padStart(2, '0')}:${String(mSB).padStart(2, '0')}`;
 
-                                // Color según el buffer
-                                const colorBuffer = bufferSemanal > 0 ? 'var(--c-green)' :
-                                    bufferSemanal < 0 ? 'var(--c-red)' :
-                                        'var(--text-main)';
+                                    // Color según el buffer
+                                    const colorBuffer = bufferSemanal > 0 ? 'var(--c-green)' :
+                                        bufferSemanal < 0 ? 'var(--c-red)' :
+                                            'var(--text-main)';
 
-                                textoFinal = `Salida estimada: <strong>${horaSalida}</strong> <span style="color: ${colorBuffer};">(<strong>${horaSalidaBuffer}</strong>)</span>`;
+                                    textoFinal = `Salida estimada: <strong>${horaSalida}</strong> <span style="color: ${colorBuffer};">(<strong>${horaSalidaBuffer}</strong>)</span>`;
+                                }
 
                                 hintEl.innerHTML = textoFinal;
                             } else {
@@ -6893,7 +6924,7 @@ Generado por Sistema Horarios
                         // Verificar si ya existe
                         const registroExiste = DataManagement.registros().find(r => r.fecha === desde);
                         if (registroExiste) {
-                            btnTexto.textContent = 'Ya ocupado';
+                            btnTexto.textContent = 'Registrado';
                             btn.style.color = 'var(--text-muted)';
                         } else {
                             btnTexto.textContent = 'Registrar';
@@ -6979,7 +7010,7 @@ Generado por Sistema Horarios
 
                             if (disponibles === 0 && yaRegistrados === diasTotales) {
                                 // Todos los días ya tienen este tipo
-                                btnTexto.textContent = `Ya Registrado (${diasTotales})`;
+                                btnTexto.textContent = `Registrado (${diasTotales})`;
                                 btn.style.color = 'var(--text-muted)';
                             } else if (disponibles === diasTotales) {
                                 // Todos los días están libres
@@ -7275,6 +7306,7 @@ Generado por Sistema Horarios
                     // LISTENERS PARA TECLA ENTER
                     // ===================================
 
+                    // --- TARJETA REGISTRAR ---
                     // A) Enter en campo Entrada → Pasa a Salida
                     const inputEntrada = document.getElementById('entrada');
                     if (inputEntrada) {
@@ -7287,15 +7319,58 @@ Generado por Sistema Horarios
                         });
                     }
 
-                    // B) Enter en campo Salida → Ejecuta Registrar
+                    // B) Enter en campo Salida → Ejecuta Registrar Y cierra teclado
                     const inputSalida = document.getElementById('salida');
                     if (inputSalida) {
                         inputSalida.addEventListener('keydown', (e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
+                                inputSalida.blur();
+
                                 const btnAgregar = document.getElementById('btn-agregar');
                                 if (btnAgregar && !btnAgregar.disabled) {
                                     btnAgregar.click();
+                                }
+                            }
+                        });
+                    }
+
+                    // --- MODAL EDITAR ---
+                    // C) Enter en campo Entrada (editar) → Pasa a Salida
+                    const editEntrada = document.getElementById('edit-entrada');
+                    if (editEntrada) {
+                        editEntrada.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const editSalida = document.getElementById('edit-salida');
+                                if (editSalida) editSalida.focus();
+                            }
+                        });
+                    }
+
+                    // D) Enter en campo Salida (editar) → Pasa a Tiempo Fuera
+                    const editSalida = document.getElementById('edit-salida');
+                    if (editSalida) {
+                        editSalida.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const editTiempoFuera = document.getElementById('edit-tiempo-fuera');
+                                if (editTiempoFuera) editTiempoFuera.focus();
+                            }
+                        });
+                    }
+
+                    // E) Enter en campo Tiempo Fuera (editar) → Guarda Y cierra teclado
+                    const editTiempoFuera = document.getElementById('edit-tiempo-fuera');
+                    if (editTiempoFuera) {
+                        editTiempoFuera.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                editTiempoFuera.blur(); // Cierra el teclado
+
+                                const btnGuardar = document.querySelector('#modal-editar .btn-edit');
+                                if (btnGuardar && !btnGuardar.disabled) {
+                                    btnGuardar.click(); // Ejecuta guardar
                                 }
                             }
                         });
@@ -8000,20 +8075,21 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.17
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.21
     // ====================================================================
     
      - CAMBIOS:
-    1) Se corrige el bug si la entrada actual coincide con hora actual y con el codigo de un registro especial
-    el sistema detectaba que pasaron las 7 horas.
-    2) Se corrige el bug de la etiqueta con objetivo horario 0, y toda la semana con dia especial, se 
-    borraba el 2do indicador debajo de la barra al cambiar a esta semana y volver
-    3) Se refactoriza "LÓGICA DE SALIDA ESTIMADA" para que haga uso del modulo TIPOS DE REGISTRO
+    1) Se corrige el texto de estimacion, para que tenga en cuenta si no hay registro el dia anterior
+    laboral, ahora muestra nuevamente la salida con buffer.
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
      y tocar el timer, al rehacer la accion, el timer sigue corriendo
-      
 
+     - IDEAS DESCARTADAS/REVISION:
+     1) Registro especial "ausencia sin justificar" con el parametro "contabiliza=false",
+     Se descarta ya que existe el tipo ausencia (justificada), y en caso de no registrar
+     un dia, el buffer muestra el restante equivalente al objetivo diario
+     
 
     -->
