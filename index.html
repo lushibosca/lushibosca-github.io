@@ -45,7 +45,6 @@
             --c-white: #ffffff;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             --radius: 10px;
-            --bg-progress-bar: rgba(224, 224, 224, 0.3);
         }
 
         body.dark-mode {
@@ -60,7 +59,6 @@
             --input-focus: #374151;
             --c-gray-btn: #374151;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-            --bg-progress-bar: rgba(255, 255, 255, 0.2);
         }
 
         body.modal-open {
@@ -443,11 +441,11 @@
 
         .progress-bar {
             width: 100%;
-            height: 24px;
-            background: var(--bg-progress-bar);
+            height: 4px;
+            background: transparent;
             border-radius: var(--radius);
             overflow: hidden;
-            margin: 0.5rem 0;
+            margin: 1rem 0;
         }
 
         .progress-fill {
@@ -1355,7 +1353,7 @@
                             <label>Tipo de registro</label>
                             <div class="input-with-btn">
                                 <select id="lote-tipo" onchange="UILogic.actualizarBotonLote()">
-                                    <option value="feriado">🥳 Feriados (00:00)</option>
+                                    <option value="feriado">🥳 Feriado (00:00)</option>
                                     <option value="ausencia">✈️ Ausencia/Licencia (11:11)</option>
                                     <option value="vacaciones">🏖️ Vacaciones (12:12)</option>
                                     <option value="asueto">🎁 Asueto (13:13)</option>
@@ -8080,7 +8078,8 @@ Generado por Sistema Horarios
     
      - CAMBIOS:
     1) Se corrige el texto de estimacion, para que tenga en cuenta si no hay registro el dia anterior
-    laboral, ahora muestra nuevamente la salida con buffer.
+    laboral, ahora muestra nuevamente la salida con el faltante del buffer.
+    2) Se rediseña de forma minima la barra de progreso
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
