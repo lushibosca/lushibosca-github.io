@@ -415,12 +415,13 @@
         .stats-card {
             cursor: pointer;
             transition: transform 0.15s ease-out, opacity 0.15s ease-out, box-shadow 0.3s !important;
-            border: 1px solid transparent
+            border: 1px solid transparent;
+            border-left: 4px solid transparent;
+            transition: all 0.3s ease;
         }
 
-        .stats-card.timer-running {
-            border: 1px solid var(--c-red);
-            animation: pulse-card 2s infinite;
+        #stats-card.timer-running {
+            border-left-color: var(--c-red) !important;
         }
 
         .stats-number {
@@ -437,6 +438,27 @@
         .stats-card-content.fade-out {
             opacity: 0;
             transform: translateY(-10px);
+        }
+
+        /* Estados del borde lateral */
+        .stats-card.border-blue {
+            border-left-color: var(--c-blue) !important;
+        }
+
+        .stats-card.border-green {
+            border-left-color: var(--c-green) !important;
+        }
+
+        .stats-card.border-red {
+            border-left-color: var(--c-red) !important;
+        }
+
+        .stats-card.border-purple {
+            border-left-color: var(--c-purple) !important;
+        }
+
+        .stats-card.border-transparent {
+            border-left-color: transparent !important;
         }
 
         .progress-bar {
@@ -487,7 +509,7 @@
         }
 
         .registro-item.hoy {
-            border-left: 3px solid var(--c-green);
+            border-left: 3px solid var(--text-main);
             position: relative;
         }
 
@@ -496,7 +518,7 @@
             position: absolute;
             bottom: 8px;
             right: 8px;
-            border: 2px solid var(--c-green);
+            border: 2px solid var(--text-main);
             color: var(--text-main);
             font-size: 0.75rem;
             font-weight: 700;
@@ -1532,7 +1554,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.21</span>
+                <span class="version-text">LUSHIBOSCA-7.23</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -3690,7 +3712,7 @@
 
                     if (!confirmar) return;
 
-                    // 🔧 LIMPIAR TIMER DEL PERFIL ACTUAL
+                    //  LIMPIAR TIMER DEL PERFIL ACTUAL
                     const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
                     const storageKey = `breakStartTime_${perfilId}`;
                     localStorage.removeItem(storageKey);
@@ -4017,7 +4039,7 @@
                     }
                 }
 
-                // 🔧 FUNCIÓN HELPER PARA DETENER TIMER
+                //  FUNCIÓN HELPER PARA DETENER TIMER
                 function detenerYRegistrarTimer(registro) {
                     const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
                     const storageKey = `breakStartTime_${perfilId}`;
@@ -5334,9 +5356,47 @@
                         const prog = objetivoAjustado > 0 ? Math.min((tot / objetivoAjustado) * 100, 100) : 100;
 
                         if (statsEl) statsEl.textContent = horasATexto(tot);
+
                         if (progressEl) {
                             progressEl.style.width = prog + '%';
-                            setProgressBarColor(progressEl, (horasDiarias > 0 && tot >= objetivoAjustado) ? 'green' : 'blue');
+
+                            let colorBarra = 'blue'; // Default para semana en curso
+
+                            if (horasDiarias === 0) {
+                                // Sin objetivo configurado
+                                colorBarra = 'blue';
+                            } else if (tot >= objetivoAjustado) {
+                                // Objetivo cumplido
+                                colorBarra = 'green';
+                            } else if (semanaAbierta) {
+                                // Semana aún en curso (quedan días por delante)
+                                colorBarra = 'blue';
+                            } else {
+                                // Semana cerrada y NO se cumplió el objetivo
+                                colorBarra = 'red';
+                            }
+
+                            setProgressBarColor(progressEl, colorBarra);
+                        }
+
+                        const card = document.getElementById('stats-card');
+                        if (card) {
+                            // Limpiar clases previas
+                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+
+                            if (horasDiarias === 0) {
+                                // Sin objetivo configurado
+                                card.classList.add('border-transparent');
+                            } else if (tot >= objetivoAjustado) {
+                                // Objetivo cumplido
+                                card.classList.add('border-green');
+                            } else if (semanaAbierta) {
+                                // Semana aún abierta (quedan días laborales por delante)
+                                card.classList.add('border-blue');
+                            } else {
+                                // Semana cerrada y NO se cumplió el objetivo
+                                card.classList.add('border-red');
+                            }
                         }
 
                         if (mensajeEl) {
@@ -5369,7 +5429,7 @@
                         let objetivoDiario = horasDiarias;
 
                         if (regHoy && regHoy.entrada) {
-                            // 🔧 FIX: Solo detectar tipo especial si entrada Y salida existen y coinciden
+                            //  FIX: Solo detectar tipo especial si entrada Y salida existen y coinciden
                             const tipoEspecialHoy = (regHoy.salida && regHoy.entrada === regHoy.salida)
                                 ? TiposRegistro.obtenerTipoPorCodigo(regHoy.entrada, regHoy.salida)
                                 : null;
@@ -5383,7 +5443,13 @@
                                 }
                                 if (mensajeEl) {
                                     mensajeEl.textContent = `¡${tipoEspecialHoy.descripcion}!`;
-                                    mensajeEl.style.display = 'block'; // 🔧 FIX Bug #2 también
+                                    mensajeEl.style.display = 'block';
+                                }
+
+                                const card = document.getElementById('stats-card');
+                                if (card) {
+                                    card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+                                    card.classList.add('border-purple');
                                 }
                             } else {
                                 // --- DÍA NORMAL CON REGISTRO ---
@@ -5410,9 +5476,24 @@
                                     if (objetivoDiario === 0) {
                                         setProgressBarColor(progressEl, 'blue');
                                         if (mensajeEl) mensajeEl.style.display = 'none';
+
+                                        //  Borde transparente
+                                        const card = document.getElementById('stats-card');
+                                        if (card) {
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple');
+                                            card.classList.add('border-transparent');
+                                        }
                                     } else {
                                         if (mensajeEl) mensajeEl.style.display = 'block';
                                         setProgressBarColor(progressEl, tiempoTranscurrido >= objetivoDiario ? 'green' : 'red');
+
+                                        // Borde verde o rojo
+                                        const card = document.getElementById('stats-card');
+                                        if (card) {
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+                                            card.classList.add(tiempoTranscurrido >= objetivoDiario ? 'border-green' : 'border-red');
+                                        }
+
                                         const dif = tiempoTranscurrido - objetivoDiario;
                                         if (mensajeEl) mensajeEl.textContent = dif >= 0 ? `${horasATexto(dif)} extras` : `Faltaron ${horasATexto(Math.abs(dif))}`;
                                     }
@@ -5423,6 +5504,13 @@
                                     if (objetivoDiario === 0) {
                                         setProgressBarColor(progressEl, 'blue');
                                         if (mensajeEl) mensajeEl.style.display = 'none';
+
+                                        // Borde transparente
+                                        const card = document.getElementById('stats-card');
+                                        if (card) {
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple');
+                                            card.classList.add('border-transparent');
+                                        }
                                     } else {
                                         if (mensajeEl) mensajeEl.style.display = 'block';
 
@@ -5432,6 +5520,13 @@
                                         // Barra: Verde si cumpliste, Azul si falta
                                         setProgressBarColor(progressEl, objetivoCumplido ? 'green' : 'blue');
 
+                                        // Borde verde o azul
+                                        const card = document.getElementById('stats-card');
+                                        if (card) {
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+                                            card.classList.add(objetivoCumplido ? 'border-green' : 'border-blue');
+                                        }
+
                                         const faltante = Math.max(0, objetivoDiario - tiempoTranscurrido);
 
                                         if (mensajeEl) {
@@ -5439,13 +5534,9 @@
                                                 // --- A) YA CUMPLISTE LAS HORAS DE HOY ---
                                                 const extra = tiempoTranscurrido - objetivoDiario;
 
-                                                // Chequeo opcional: ¿Debes tiempo de la semana a pesar de haber cumplido hoy?
-                                                // bufferSemanal < 0 significa deuda total. extra es lo que ganaste hoy.
-                                                // Si tu deuda es mayor a lo que ganaste hoy, aun debes.
                                                 if (bufferSemanal < 0 && Math.abs(bufferSemanal) > extra) {
                                                     mensajeEl.textContent = `Te podes ir, pero debés tiempo`;
                                                 } else {
-                                                    // Mensaje de éxito con tiempo extra
                                                     if (extra > 0) {
                                                         mensajeEl.textContent = `Te podes ir (+${horasATexto(extra)})`;
                                                     } else {
@@ -5456,8 +5547,6 @@
                                                 // --- B) FALTA PARA EL OBJETIVO DE HOY ---
                                                 const faltanteTexto = `Faltan ${horasATexto(faltante)}`;
 
-                                                // LÓGICA DEL BUFFER RECUPERADA
-                                                // Si tienes horas a favor (buffer > 0) y cubren lo que te falta hoy:
                                                 if (bufferSemanal >= faltante) {
                                                     mensajeEl.textContent = `${faltanteTexto}, pero te podés ir`;
                                                 } else {
@@ -5470,7 +5559,17 @@
                             }
                         } else {
                             // SIN REGISTRO HOY
-                            if (progressEl) { progressEl.style.width = '0%'; setProgressBarColor(progressEl, 'blue'); }
+                            if (progressEl) {
+                                progressEl.style.width = '0%';
+                                setProgressBarColor(progressEl, 'blue');
+                            }
+
+                            //  Borde transparente si no hay registro
+                            const card = document.getElementById('stats-card');
+                            if (card) {
+                                card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple');
+                                card.classList.add('border-transparent');
+                            }
 
                             if (esDiaDeDescanso) {
                                 if (statsEl) statsEl.textContent = "😴 ...";
@@ -6190,7 +6289,7 @@ Generado por Sistema Horarios
                     const hoy = obtenerFechaHoy();
                     const registroHoy = D.registros().find(r => r.fecha === hoy);
 
-                    // 🔧 CLAVE ESPECÍFICA POR PERFIL
+                    //  CLAVE ESPECÍFICA POR PERFIL
                     const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
                     const storageKey = `breakStartTime_${perfilId}`;
                     const isRunning = localStorage.getItem(storageKey) !== null;
@@ -6246,7 +6345,7 @@ Generado por Sistema Horarios
                 }
 
                 async function toggleTimerBreakMain() {
-                    // 🔧 CLAVE ESPECÍFICA POR PERFIL
+                    //  CLAVE ESPECÍFICA POR PERFIL
                     const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
                     const storageKey = `breakStartTime_${perfilId}`;
                     const storedStart = localStorage.getItem(storageKey);
@@ -8073,13 +8172,11 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.21
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.23
     // ====================================================================
     
      - CAMBIOS:
-    1) Se corrige el texto de estimacion, para que tenga en cuenta si no hay registro el dia anterior
-    laboral, ahora muestra nuevamente la salida con el faltante del buffer.
-    2) Se rediseña de forma minima la barra de progreso
+    1) Se quita la animación del boton timer break
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
