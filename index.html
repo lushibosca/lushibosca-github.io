@@ -128,7 +128,7 @@
         .modal-content {
             background: var(--bg-card);
             border-radius: var(--radius);
-            padding: 1.5rem;
+            padding: 1.5rem 1rem;
             margin-bottom: 1rem;
             box-shadow: var(--shadow);
             color: var(--text-main);
@@ -163,7 +163,6 @@
             .left-column {
                 display: flex;
                 flex-direction: column;
-                gap: 1rem;
             }
 
             .right-column {
@@ -1952,7 +1951,7 @@
                 <label>Tipo de registro</label>
                 <div class="input-with-btn">
                     <select id="edit-grupo-tipo">
-                        <option value="feriado">🥳 Feriados</option>
+                        <option value="feriado">🥳 Feriado</option>
                         <option value="ausencia">✈️ Ausencia/Licencia</option>
                         <option value="vacaciones">🏖️ Vacaciones</option>
                         <option value="asueto">🎁 Asueto</option>
@@ -6813,6 +6812,9 @@ Generado por Sistema Horarios
                             btn.style.background = '';
                             btn.style.color = '';
 
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
+
                             btnTimer.disabled = true;
                             btnTimer.style.opacity = '0.3';
 
@@ -6835,6 +6837,9 @@ Generado por Sistema Horarios
                             btnTexto.textContent = 'Registrar';
                             btn.style.background = '';
                             btn.style.color = '';
+
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
 
                             btnTimer.disabled = false;
                             btnTimer.style.opacity = '1';
@@ -7007,6 +7012,11 @@ Generado por Sistema Horarios
                     // 2. Si faltan fechas, mostramos "Registrar" estándar y salimos
                     if (!desde && !hasta) {
                         btnTexto.textContent = 'Registrar';
+
+                        // Restaurar ícono original
+                        const iconUse = btn.querySelector('svg use');
+                        if (iconUse) iconUse.setAttribute('href', '#icon-save');
+
                         return;
                     }
 
@@ -7015,6 +7025,11 @@ Generado por Sistema Horarios
                         if (tipo === 'normal') {
                             btnTexto.textContent = 'Requiere Rango';
                             btn.style.color = 'var(--c-red)';
+
+                            // Restaurar ícono
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
+
                             return;
                         }
 
@@ -7023,8 +7038,14 @@ Generado por Sistema Horarios
                         if (registroExiste) {
                             btnTexto.textContent = 'Registrado';
                             btn.style.color = 'var(--text-muted)';
+
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
                         } else {
                             btnTexto.textContent = 'Registrar';
+
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
                         }
                         return;
                     }
@@ -7040,18 +7061,30 @@ Generado por Sistema Horarios
                     if (!S.validarFechaSegura(desde)) {
                         btnTexto.textContent = 'Fecha Inicial Inválida';
                         btn.style.color = 'var(--c-red)';
+
+                        const iconUse = btn.querySelector('svg use');
+                        if (iconUse) iconUse.setAttribute('href', '#icon-save');
+
                         return;
                     }
 
                     if (!S.validarFechaSegura(hasta)) {
                         btnTexto.textContent = 'Fecha Final Inválida';
                         btn.style.color = 'var(--c-red)';
+
+                        const iconUse = btn.querySelector('svg use');
+                        if (iconUse) iconUse.setAttribute('href', '#icon-save');
+
                         return;
                     }
 
                     if (desde > hasta) {
                         btnTexto.textContent = 'Rango Inválido';
                         btn.style.color = 'var(--c-red)';
+
+                        const iconUse = btn.querySelector('svg use');
+                        if (iconUse) iconUse.setAttribute('href', '#icon-save');
+
                         return;
                     }
 
@@ -7078,11 +7111,18 @@ Generado por Sistema Horarios
                         if (cantidadRegistros > 0) {
                             btnTexto.textContent = `Borrar (${cantidadRegistros})`;
                             btn.style.color = 'var(--c-red)';
+
+                            // Cambiar icono a papelera
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-trash');
                         } else {
                             btnTexto.textContent = 'Sin Registros';
                             btn.style.color = 'var(--text-muted)';
-                        }
 
+                            // Volver al icono original (save)
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
+                        }
                     } else {
                         // Casos Especiales - Contar días OCUPADOS y días LIBRES
                         const codigosTipo = TiposRegistro.obtenerCodigosPorTipo(tipo);
@@ -7106,22 +7146,33 @@ Generado por Sistema Horarios
                             const sobreescribirOtros = diasOcupados.length - yaRegistrados;
 
                             if (disponibles === 0 && yaRegistrados === diasTotales) {
-                                // Todos los días ya tienen este tipo
                                 btnTexto.textContent = `Registrado (${diasTotales})`;
                                 btn.style.color = 'var(--text-muted)';
+
+                                const iconUse = btn.querySelector('svg use');
+                                if (iconUse) iconUse.setAttribute('href', '#icon-save');
                             } else if (disponibles === diasTotales) {
-                                // Todos los días están libres
                                 btnTexto.textContent = `Registrar (${diasTotales})`;
+
+                                const iconUse = btn.querySelector('svg use');
+                                if (iconUse) iconUse.setAttribute('href', '#icon-save');
                             } else if (sobreescribirOtros > 0) {
-                                // Hay días con otros tipos de registro
                                 btnTexto.textContent = `Registrar (${disponibles} - ${sobreescribirOtros})`;
+
+                                const iconUse = btn.querySelector('svg use');
+                                if (iconUse) iconUse.setAttribute('href', '#icon-save');
                             } else {
-                                // Combinación de libres y ya registrados
                                 btnTexto.textContent = `Registrar (${disponibles})`;
+
+                                const iconUse = btn.querySelector('svg use');
+                                if (iconUse) iconUse.setAttribute('href', '#icon-save');
                             }
                         } else {
                             registrosDelTipoEnRango = [];
                             btnTexto.textContent = 'Registrar';
+
+                            const iconUse = btn.querySelector('svg use');
+                            if (iconUse) iconUse.setAttribute('href', '#icon-save');
                         }
                     }
                 }
@@ -8177,6 +8228,7 @@ Generado por Sistema Horarios
     
      - CAMBIOS:
     1) Se quita la animación del boton timer break
+    2) ajustes menores en el margen de las tarjetas
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
