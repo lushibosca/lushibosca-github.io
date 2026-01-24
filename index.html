@@ -5561,7 +5561,7 @@
                             }
 
                             if (esDiaDeDescanso) {
-                                if (statsEl) statsEl.textContent = "😴 ...";
+                                if (statsEl) statsEl.textContent = "😴";
                                 if (mensajeEl) {
                                     // Solo ocultar si NO hay objetivo de horas
                                     if (horasDiarias === 0) {
@@ -5618,7 +5618,16 @@
                             }
 
                             if (mostrarEstimacion) {
-                                const mostrarConBuffer = Math.abs(bufferSemanal) > 0.01;
+                                // ===================================================
+                                // 🔹 VERIFICAR SI HOY ES DÍA LABORAL
+                                // ===================================================
+                                const diaActual = new Date().getDay(); // 0=Domingo, 1=Lunes...
+                                const esLaborable = diasHabilesConfig.includes(diaActual);
+
+                                // Solo mostrar buffer si:
+                                // 1) Hay diferencia significativa
+                                // 2) El día actual ES laboral
+                                const mostrarConBuffer = Math.abs(bufferSemanal) > 0.01 && esLaborable;
 
                                 let textoFinal = `Salida estimada: <strong>${horaSalida}</strong>`;
 
