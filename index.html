@@ -7450,7 +7450,7 @@ Generado por Sistema Horarios
                     if (tf) tf.addEventListener('input', formatearInput);
 
                     // ===================================
-                    // LISTENERS PARA TECLA ENTER
+                    // LISTENERS PARA TECLA ENTER MODULE
                     // ===================================
 
                     // --- TARJETA REGISTRAR ---
@@ -7518,6 +7518,37 @@ Generado por Sistema Horarios
                                 const btnGuardar = document.querySelector('#modal-editar .btn-edit');
                                 if (btnGuardar && !btnGuardar.disabled) {
                                     btnGuardar.click(); // Ejecuta guardar
+                                }
+                            }
+                        });
+                    }
+
+                    // --- PERFILES ---
+                    // F) Enter en campo "Agregar Nuevo Perfil" → Crea el perfil
+                    const inputNuevoPerfil = document.getElementById('nombre-nuevo-perfil-selector');
+                    if (inputNuevoPerfil) {
+                        inputNuevoPerfil.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                inputNuevoPerfil.blur(); // Cierra teclado
+
+                                // Ejecutar la función de crear perfil
+                                UILogic.crearPerfilDesdeSelector();
+                            }
+                        });
+                    }
+
+                    // G) Enter en campo "Editar Perfil" → Guarda cambios
+                    const inputEditarPerfil = document.getElementById('nombre-perfil-editar');
+                    if (inputEditarPerfil) {
+                        inputEditarPerfil.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                inputEditarPerfil.blur(); // Cierra teclado
+
+                                const btnGuardarPerfil = document.querySelector('#modal-editar-perfil .btn-edit');
+                                if (btnGuardarPerfil && !btnGuardarPerfil.disabled) {
+                                    btnGuardarPerfil.click(); // Ejecuta guardar perfil
                                 }
                             }
                         });
@@ -8227,7 +8258,8 @@ Generado por Sistema Horarios
     
      - CAMBIOS:
     1) optimizacion de css en general
-    2) RTM
+    2) Se agrega listener tecla enter en agregar perfil y edicion de perfil
+    3) RTM
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
