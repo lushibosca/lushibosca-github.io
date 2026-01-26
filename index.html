@@ -5026,7 +5026,9 @@
                             entradaPromedio: '--:--',
                             salidaPromedio: '--:--',
                             diasTrabajados: 0,
-                            promedioDiario: '0h 0m',
+                            promedioDiario: '--:--',
+                            tiempoFueraTotal: `--:--`,
+                            semanaPasada: '--:--',
                             feriados: feriados,
                             ausencias: ausencias,
                             vacaciones: vacaciones,
@@ -5213,6 +5215,7 @@
                         }
                     };
 
+                    toggleStatItem(elDias, stats.diasTrabajados);
                     toggleStatItem(elFeriados, stats.feriados);
                     toggleStatItem(elAusencias, stats.ausencias);
                     toggleStatItem(elVacaciones, stats.vacaciones);
@@ -5221,17 +5224,6 @@
                     toggleStatItem(elCompensaciones, stats.compensaciones);
                     toggleStatItem(elParos, stats.paros);
 
-                    // Ocultar Tiempo Fuera si es 0
-                    if (elTiempoFueraTotal) {
-                        const statItem = elTiempoFueraTotal.closest('.stat-item');
-                        if (statItem) {
-                            if (stats.tiempoFueraTotal === '0h 0m') {
-                                statItem.style.display = 'none';
-                            } else {
-                                statItem.style.display = '';
-                            }
-                        }
-                    }
                 }
 
                 function actualizarUI(idNuevo = null, soloReloj = false) {
@@ -8259,7 +8251,8 @@ Generado por Sistema Horarios
      - CAMBIOS:
     1) optimizacion de css en general
     2) Se agrega listener tecla enter en agregar perfil y edicion de perfil
-    3) RTM
+    4) Se modifica la forma de vizualicion de algunos items de estadisticas
+    4) RTM
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
