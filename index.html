@@ -481,6 +481,10 @@
             background: var(--c-purple) !important;
         }
 
+        .progress-fill.gold {
+            background: var(--c-gold) !important;
+        }
+
         /* --- Lista de Registros --- */
 
         .registro-item {
@@ -1365,7 +1369,7 @@
                             <div class="input-with-btn">
                                 <select id="lote-tipo" onchange="UILogic.actualizarBotonLote()">
                                     <option value="feriado">🥳 Feriado (00:00)</option>
-                                    <option value="ausencia">✈️ Ausencia/Licencia (11:11)</option>
+                                    <option value="ausencia">🏠 Licencia (11:11)</option>
                                     <option value="vacaciones">🏖️ Vacaciones (12:12)</option>
                                     <option value="asueto">🎁 Asueto (13:13)</option>
                                     <option value="enfermedad">🏥 Enfermedad (14:14)</option>
@@ -1436,7 +1440,7 @@
                                 <div class="stat-value" id="stat-feriados">0</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-label">Ausencias</div>
+                                <div class="stat-label">Licencias</div>
                                 <div class="stat-value" id="stat-ausencias">0</div>
                             </div>
                             <div class="stat-item">
@@ -1816,7 +1820,7 @@
                     <option value="">Todos</option>
                     <option value="normal">🕒 Normales</option>
                     <option value="feriado">🥳 Feriados</option>
-                    <option value="ausencia">✈️ Ausencias</option>
+                    <option value="ausencia">🏠 Licencias</option>
                     <option value="vacaciones">🏖️ Vacaciones</option>
                     <option value="enfermedad">🏥 Enfermedades</option>
                     <option value="asueto">🎁 Asuetos</option>
@@ -1942,7 +1946,7 @@
                 <div class="input-with-btn">
                     <select id="edit-grupo-tipo">
                         <option value="feriado">🥳 Feriado</option>
-                        <option value="ausencia">✈️ Ausencia/Licencia</option>
+                        <option value="ausencia">🏠 Licencia</option>
                         <option value="vacaciones">🏖️ Vacaciones</option>
                         <option value="asueto">🎁 Asueto</option>
                         <option value="enfermedad">🏥 Enfermedad</option>
@@ -2594,10 +2598,10 @@
                     AUSENCIA: {
                         id: 'ausencia',
                         codigo: '11:11',
-                        emoji: '✈️',
-                        label: 'Ausencia',
-                        labelPlural: 'Ausencias',
-                        descripcion: 'Licencia / Ausencia',
+                        emoji: '🏠',
+                        label: 'Licencia',
+                        labelPlural: 'Licencias',
+                        descripcion: 'Dia libre',
                         color: 'purple',
                         contabiliza: true
                     },
@@ -5973,7 +5977,7 @@ REPORTE DE HORAS TRABAJADAS
 
    • Jornadas:               ${stats.diasTrabajados}
    • Feriados:               ${stats.feriados}
-   • Ausencias:              ${stats.ausencias}
+   • Licencias:              ${stats.ausencias}
    • Vacaciones:             ${stats.vacaciones}
    • Enfermedades:           ${stats.enfermedades}
    • Asuetos:                ${stats.asuetosDiaCompleto}
@@ -8037,7 +8041,7 @@ Generado por Sistema Horarios
                         }
 
                         timerAutoCierreBotones = null;
-                    }, 4000); // 4 segundos timer autocierre
+                    }, 3000); // 3 segundos timer autocierre
                 }
 
                 function cancelarTimerAutoCierreBotones() {
@@ -8251,8 +8255,9 @@ Generado por Sistema Horarios
      - CAMBIOS:
     1) optimizacion de css en general
     2) Se agrega listener tecla enter en agregar perfil y edicion de perfil
-    4) Se modifica la forma de vizualicion de algunos items de estadisticas
-    4) RTM
+    3) Se modifica la forma de vizualicion de algunos items de estadisticas
+    4) Se reemplaza la etiqueta "ausencia / licencia" por "Licencia" en todos los lugares
+    5) RTM 
 
      - BUGS CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
