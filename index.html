@@ -501,11 +501,6 @@
             contain-intrinsic-size: 85px;
         }
 
-        .registro-item.hoy {
-            border-left: 3px solid var(--text-main);
-            position: relative;
-        }
-
         .registro-item.hoy::before {
             content: "HOY";
             position: absolute;
@@ -515,7 +510,7 @@
             color: var(--text-main);
             font-size: 0.75rem;
             font-weight: 700;
-            padding: 2px 6px;
+            padding: 0.1rem 1rem 0.1rem 1rem;
             border-radius: var(--radius);
             letter-spacing: 0.5px;
         }
@@ -536,26 +531,33 @@
         }
 
         .registro-total {
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: var(--c-gold);
             margin-top: 0.25rem;
+            color: var(--c-white);
+            display: inline-block;
+            border-radius: var(--radius);
+            padding: .1rem 1rem .1rem 1rem;
         }
 
         .registro-total.green-text {
-            color: var(--c-green);
+            background: var(--c-green);
         }
 
         .registro-total.red-text {
-            color: var(--c-red);
+            background: var(--c-red);
         }
 
         .registro-total.purple-text {
-            color: var(--c-purple);
+            background: var(--c-purple);
         }
 
         .registro-total.yellow-text {
-            color: var(--c-gold);
+            background: var(--c-gold);
+        }
+
+        .registro-total.blue-text {
+            background: var(--c-blue);
         }
 
         /* --- Modal & Utilidades --- */
@@ -1374,6 +1376,8 @@
                                     <option value="asueto">🎁 Asueto (13:13)</option>
                                     <option value="enfermedad">🏥 Enfermedad (14:14)</option>
                                     <option value="paro">📢 Paro (15:15)</option>
+                                    <option value="remoto">💻 Remoto (16:16)</option>
+                                    <option value="capacitacion">📚 Capacitación (17:17)</option>
                                     <option value="normal">🕒 Normales (borrar)</option>
                                 </select>
                                 <button class="time-btn" onclick="UILogic.toggleModoLote()" title="Volver a modo normal"
@@ -1458,6 +1462,14 @@
                             <div class="stat-item">
                                 <div class="stat-label">Paros</div>
                                 <div class="stat-value" id="stat-paros">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Remotos</div>
+                                <div class="stat-value" id="stat-remotos">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Capacitaciones</div>
+                                <div class="stat-value" id="stat-capacitaciones">0</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Salidas Temprano</div>
@@ -1547,7 +1559,7 @@
                     </svg>
                     Ajustes
                 </span>
-                <span class="version-text">LUSHIBOSCA-7.25</span>
+                <span class="version-text">LUSHIBOSCA-7.30</span>
             </h3>
             <div class="form-group">
                 <label>Horas Diarias</label>
@@ -1825,6 +1837,8 @@
                     <option value="enfermedad">🏥 Enfermedades</option>
                     <option value="asueto">🎁 Asuetos</option>
                     <option value="paro">📢 Paros</option>
+                    <option value="remoto">💻 Remotos</option>
+                    <option value="capacitacion">📚 Capacitaciones</option>
                 </select>
             </div>
             <div class="btn-group">
@@ -1951,6 +1965,8 @@
                         <option value="asueto">🎁 Asueto</option>
                         <option value="enfermedad">🏥 Enfermedad</option>
                         <option value="paro">📢 Paro</option>
+                        <option value="remoto">💻 Remoto</option>
+                        <option value="capacitacion">📚 Capacitación</option>
                     </select>
                     <button class="time-btn" id="btn-lock-grupo-toggle" onclick="UILogic.toggleBloqueoEdicionGrupo()"
                         title="Desbloquear edición">
@@ -2449,6 +2465,25 @@
             // MODAL MANAGER MODULE
             // ====================================================================
             const ModalManager = (function () {
+
+                // Función para manejar clics fuera del modal
+                function handleOutsideClick(event) {
+                    // Verificar si el clic fue en el overlay (fondo del modal)
+                    if (event.target.classList.contains('modal') && event.target.classList.contains('show')) {
+                        const modalId = event.target.id;
+
+                        // Solo los modales con estado crítico usan su función específica
+                        if (modalId === 'modal-editar') {
+                            if (window.UILogic) UILogic.cerrarEdicion();
+                        } else if (modalId === 'modal-editar-grupo') {
+                            if (window.UILogic) UILogic.cerrarEdicionGrupo();
+                        } else {
+                            // El resto se cierra directamente
+                            cerrar(modalId);
+                        }
+                    }
+                }
+
                 function abrir(modalId, callback = null) {
                     const modal = document.getElementById(modalId);
                     if (!modal) {
@@ -2458,6 +2493,11 @@
 
                     modal.classList.add('show');
                     document.body.classList.add('modal-open');
+
+                    // Agregar listener para clics fuera del modal
+                    setTimeout(() => {
+                        modal.addEventListener('click', handleOutsideClick);
+                    }, 100);
 
                     if (callback) callback();
                 }
@@ -2471,6 +2511,9 @@
 
                     modal.classList.remove('show');
                     document.body.classList.remove('modal-open');
+
+                    // Remover listener cuando se cierra
+                    modal.removeEventListener('click', handleOutsideClick);
 
                     if (callback) callback();
                 }
@@ -2525,12 +2568,15 @@
                     }
 
                     updateButtons();
+                    // Guardar en localStorage
+                    saveToLocalStorage();
                 }
 
                 function undo() {
                     if (currentIndex > 0) {
                         currentIndex--;
                         updateButtons();
+                        saveToLocalStorage(); // ← LÍNEA NUEVA
                         const estado = deepClone(history[currentIndex]);
                         return estado;
                     }
@@ -2541,6 +2587,7 @@
                     if (currentIndex < history.length - 1) {
                         currentIndex++;
                         updateButtons();
+                        saveToLocalStorage(); // ← LÍNEA NUEVA
                         const estado = deepClone(history[currentIndex]);
                         return estado;
                     }
@@ -2563,10 +2610,86 @@
                     if (redoBtn) redoBtn.disabled = !canRedo();
                 }
 
+                function saveToLocalStorage() {
+                    try {
+                        const perfilActual = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
+                        const storageKey = `history_${perfilActual}`;
+
+                        const historyData = {
+                            history: history,
+                            currentIndex: currentIndex,
+                            timestamp: Date.now()
+                        };
+
+                        localStorage.setItem(storageKey, JSON.stringify(historyData));
+                    } catch (error) {
+                        console.error('Error guardando historial:', error);
+                    }
+                }
+
+                function loadFromLocalStorage() {
+                    try {
+                        const perfilActual = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
+                        const storageKey = `history_${perfilActual}`;
+                        const stored = localStorage.getItem(storageKey);
+
+                        if (stored) {
+                            const historyData = JSON.parse(stored);
+
+                            // Verificar que el historial no tenga más de 24 horas
+                            const ahora = Date.now();
+                            const tiempoTranscurrido = ahora - (historyData.timestamp || 0);
+                            const limiteEnMs = 2 * 24 * 60 * 60 * 1000;
+
+                            if (tiempoTranscurrido < limiteEnMs) {
+                                // Historial válido - restaurar
+                                history = historyData.history || [];
+                                currentIndex = historyData.currentIndex !== undefined ? historyData.currentIndex : -1;
+
+                                console.log(`✓ Historial restaurado: ${history.length} estados, índice actual: ${currentIndex}`);
+
+                                // CRÍTICO: Si hay estados y el índice es válido, retornar TRUE
+                                return history.length > 0 && currentIndex >= 0;
+                            } else {
+                                // Historial expirado - limpiar
+                                console.log('Historial expirado (más de 24hs), limpiando...');
+                                localStorage.removeItem(storageKey);
+                                history = [];
+                                currentIndex = -1;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error cargando historial:', error);
+                        history = [];
+                        currentIndex = -1;
+                    }
+
+                    updateButtons();
+                    return false; // No se cargó historial válido
+                }
+
+                function clearStorage() {
+                    try {
+                        const perfilActual = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
+                        const storageKey = `history_${perfilActual}`;
+                        localStorage.removeItem(storageKey);
+                    } catch (error) {
+                        console.error('Error limpiando historial:', error);
+                    }
+                }
+
                 function clear() {
                     history = [];
                     currentIndex = -1;
+                    clearStorage();
                     updateButtons();
+                }
+
+                function getCurrentState() {
+                    if (currentIndex >= 0 && currentIndex < history.length) {
+                        return deepClone(history[currentIndex]);
+                    }
+                    return null;
                 }
 
                 return {
@@ -2577,6 +2700,9 @@
                     canRedo,
                     updateButtons,
                     clear,
+                    saveToLocalStorage,
+                    loadFromLocalStorage,
+                    getCurrentState
                 };
             })();
 
@@ -2642,6 +2768,26 @@
                         label: 'Paro',
                         labelPlural: 'Paros',
                         descripcion: 'Fuerza Mayor',
+                        color: 'purple',
+                        contabiliza: true
+                    },
+                    REMOTO: {
+                        id: 'remoto',
+                        codigo: '16:16',
+                        emoji: '💻',
+                        label: 'Remoto',
+                        labelPlural: 'Remotos',
+                        descripcion: 'Trabajo desde casa',
+                        color: 'purple',
+                        contabiliza: true
+                    },
+                    CAPACITACION: {
+                        id: 'capacitacion',
+                        codigo: '17:17',
+                        emoji: '📚',
+                        label: 'Capacitación',
+                        labelPlural: 'Capacitaciones',
+                        descripcion: 'Formacion profesional',
                         color: 'purple',
                         contabiliza: true
                     }
@@ -3148,9 +3294,15 @@
                     let horasDescontar = 0;
 
                     registros.forEach(r => {
-                        const esEspecial = TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
+                        const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
 
-                        if (r.fecha >= inicio && r.fecha <= fin && esEspecial) {
+                        // Solo descontar si es especial Y NO es remoto
+                        if (r.fecha >= inicio && r.fecha <= fin && tipoEspecial) {
+                            // Si es remoto, NO descontar (porque suma horas al total)
+                            if (tipoEspecial.id === 'remoto') {
+                                return; // Saltar este registro
+                            }
+
                             const fechaObj = new Date(r.fecha.replace(/-/g, '/') + ' 00:00:00');
                             const diaSemana = fechaObj.getDay();
 
@@ -4748,7 +4900,7 @@
                         const esHoy = r.fecha === hoy;
                         if (esHoy) {
                             totalText = 'En curso . . .';
-                            totalEl.classList.add('yellow-text');
+                            totalEl.classList.add('blue-text');
                         } else {
                             totalText = 'Incompleto';
                             totalEl.classList.add('yellow-text');
@@ -5001,6 +5153,8 @@
                     const enfermedades = contarPorTipo('enfermedad');
                     const asuetosDiaCompleto = contarPorTipo('asueto');
                     const paros = contarPorTipo('paro');
+                    const remotos = contarPorTipo('remoto');
+                    const capacitaciones = contarPorTipo('capacitacion');
 
                     // Contar Compensaciones/Asuetos parciales (días con crédito válido)
                     const compensaciones = registrosMes.filter(r => r.credito && r.credito !== '00:00').length;
@@ -5039,7 +5193,9 @@
                             enfermedades: enfermedades,
                             asuetosDiaCompleto: asuetosDiaCompleto,
                             compensaciones: compensaciones,
-                            paros: paros
+                            paros: paros,
+                            remotos: remotos,
+                            capacitaciones: capacitaciones
                         };
                     }
 
@@ -5119,8 +5275,17 @@
                         }
                     });
 
-                    // Sumar horas trabajadas
-                    const totalSemanaPasada = normalesSemanaPasada.reduce((sum, r) => sum + r.total, 0);
+                    // Sumar horas trabajadas (normales + remotos como objetivo diario)
+                    const horasDiariasObjetivo = D.horasDiarias();
+                    let totalSemanaPasada = normalesSemanaPasada.reduce((sum, r) => sum + r.total, 0);
+
+                    // Agregar horas de días remotos (equivalente al objetivo diario)
+                    especialesSemanaPasada.forEach(r => {
+                        const tipo = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
+                        if (tipo && tipo.id === 'remoto') {
+                            totalSemanaPasada += horasDiariasObjetivo;
+                        }
+                    });
                     const hSemanaPasada = Math.floor(totalSemanaPasada);
                     const mSemanaPasada = Math.round((totalSemanaPasada - hSemanaPasada) * 60);
 
@@ -5154,7 +5319,9 @@
                         enfermedades: enfermedades,
                         asuetosDiaCompleto: asuetosDiaCompleto,
                         compensaciones: compensaciones,
-                        paros: paros
+                        paros: paros,
+                        remotos: remotos,
+                        capacitaciones: capacitaciones
                     };
                 }
 
@@ -5197,6 +5364,8 @@
                     const elAsuetosDia = $('stat-asuetos-dia');
                     const elCompensaciones = $('stat-compensaciones');
                     const elParos = $('stat-paros');
+                    const elRemotos = $('stat-remotos');
+                    const elCapacitaciones = $('stat-capacitaciones');
 
                     if (elEntrada) elEntrada.textContent = stats.entradaPromedio;
                     if (elSalida) elSalida.textContent = stats.salidaPromedio;
@@ -5227,6 +5396,8 @@
                     toggleStatItem(elAsuetosDia, stats.asuetosDiaCompleto);
                     toggleStatItem(elCompensaciones, stats.compensaciones);
                     toggleStatItem(elParos, stats.paros);
+                    toggleStatItem(elRemotos, stats.remotos);
+                    toggleStatItem(elCapacitaciones, stats.capacitaciones);
 
                 }
 
@@ -5331,10 +5502,27 @@
                         // Solo contar hasta HOY
                         const fechaLimiteCalculo = hoy < fn ? hoy : fn;
 
-                        const tot = registros.filter(r =>
-                            r.fecha >= ini && r.fecha <= fechaLimiteCalculo &&
-                            !TiposRegistro.esRegistroEspecial(r.entrada, r.salida)
-                        ).reduce((s, r) => s + r.total, 0);
+                        // Filtrar todos los registros de la semana hasta hoy
+                        const registrosSemana = registros.filter(r =>
+                            r.fecha >= ini && r.fecha <= fechaLimiteCalculo
+                        );
+
+                        // Calcular total sumando:
+                        // 1. Horas reales de registros normales
+                        // 2. Objetivo diario por cada día remoto
+                        let tot = 0;
+                        registrosSemana.forEach(r => {
+                            const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
+
+                            if (tipoEspecial && tipoEspecial.id === 'remoto') {
+                                // Si es remoto, sumar el objetivo diario
+                                tot += horasDiarias;
+                            } else if (!tipoEspecial) {
+                                // Si es un registro normal, sumar las horas reales
+                                tot += r.total;
+                            }
+                            // Los demás tipos especiales no suman
+                        });
 
                         const horasDescontar = D.calcularHorasFeriadoEnRango(ini, fn);
                         const objetivoAjustado = Math.max(0, horasSemanales - horasDescontar);
@@ -5391,7 +5579,7 @@
                             } else {
                                 mensajeEl.style.display = 'block';
                                 if (objetivoAjustado === 0) {
-                                    mensajeEl.textContent = `Semana sin objetivo. Total: ${horasATexto(tot)}`;
+                                    mensajeEl.textContent = `${horasATexto(tot)} (Sin objetivo)`;
                                 } else {
                                     if (tot >= objetivoAjustado) {
                                         mensajeEl.textContent = `Hiciste ${horasATexto(tot - objetivoAjustado)} de más`;
@@ -5420,7 +5608,7 @@
                                 : null;
 
                             if (tipoEspecialHoy) {
-                                // Día especial (feriado, ausencia, etc.)
+                                // Día especial (feriado, licencia, etc.)
                                 if (statsEl) statsEl.textContent = `${tipoEspecialHoy.emoji} ${tipoEspecialHoy.label}`;
                                 if (progressEl) {
                                     progressEl.style.width = '100%';
@@ -5945,10 +6133,17 @@
                         return aReg === año && mReg === mes;
                     });
 
-                    // Calcular total de horas del mes (excluir registros especiales)
-                    const totalHoras = registrosMes
-                        .filter(r => !TiposRegistro.esRegistroEspecial(r.entrada, r.salida))
-                        .reduce((sum, r) => sum + r.total, 0);
+                    // Calcular total de horas del mes (incluir remotos como objetivo diario)
+                    let totalHoras = 0;
+                    registrosMes.forEach(r => {
+                        const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
+
+                        if (tipoEspecial && tipoEspecial.id === 'remoto') {
+                            totalHoras += D.horasDiarias();
+                        } else if (!tipoEspecial) {
+                            totalHoras += r.total;
+                        }
+                    });
 
                     const horasTotales = Math.floor(totalHoras);
                     const minutosTotales = Math.round((totalHoras - horasTotales) * 60);
@@ -5983,6 +6178,8 @@ REPORTE DE HORAS TRABAJADAS
    • Asuetos:                ${stats.asuetosDiaCompleto}
    • Salidas Temprano:       ${stats.compensaciones}
    • Paros:                  ${stats.paros}
+   • Remotos:                ${stats.remotos}
+   • Capacitaciones:         ${stats.capacitaciones}
 
    • Entrada promedio:       ${stats.entradaPromedio}
    • Salida promedio:        ${stats.salidaPromedio}
@@ -6035,7 +6232,7 @@ REPORTE DE HORAS TRABAJADAS
                                         }
                                     }
 
-                                    linea = `${fecha}  ${dia.padEnd(10)} ${entrada} → ${salida}  [${total}]${tiempoFuera}${infoAsueto} ${indicador}`; // 
+                                    linea = `${fecha}  ${dia.padEnd(10)} ${entrada} → ${salida}  [${total}]${tiempoFuera}${infoAsueto} ${indicador}`;
                                 }
 
                                 seccion += linea + '\n';
@@ -6054,6 +6251,8 @@ REPORTE DE HORAS TRABAJADAS
                                 lunes.setDate(date.getDate() + offset);
                                 return lunes.toISOString().split('T')[0];
                             }
+
+                            const horasDiariasObjetivo = D.horasDiarias(); // Definir aquí dentro de esta función
 
                             // Obtener el mes seleccionado del selector
                             const selectMes = $('select-mes-stats');
@@ -6079,7 +6278,9 @@ REPORTE DE HORAS TRABAJADAS
                                         vacaciones: [],
                                         enfermedades: [],
                                         asuetos: [],
-                                        paros: []
+                                        paros: [],
+                                        remotos: [],
+                                        capacitaciones: []
                                     });
                                 }
 
@@ -6088,7 +6289,7 @@ REPORTE DE HORAS TRABAJADAS
 
                                 if (tipoEspecial) {
                                     // Agregar a la categoría correspondiente
-                                    const categoria = tipoEspecial.id + 's'; // 'feriado' -> 'feriados'
+                                    const categoria = tipoEspecial.id + 's';
                                     if (semana[categoria]) {
                                         semana[categoria].push(r);
                                     }
@@ -6115,11 +6316,17 @@ REPORTE DE HORAS TRABAJADAS
 
 `;
 
-                            // Array para almacenar semanas incompletas
                             const semanasIncompletas = [];
 
                             semanasOrdenadas.forEach(([lunes, datos], index) => {
-                                const totalSemanal = datos.trabajados.reduce((sum, r) => sum + r.total, 0);
+                                // Calcular total semanal (trabajados + remotos)
+                                let totalSemanal = datos.trabajados.reduce((sum, r) => sum + r.total, 0);
+
+                                // Agregar horas de días remotos
+                                if (datos.remotos && datos.remotos.length > 0) {
+                                    totalSemanal += datos.remotos.length * horasDiariasObjetivo;
+                                }
+
                                 const horasSem = Math.floor(totalSemanal);
                                 const minutosSem = Math.round((totalSemanal - horasSem) * 60);
 
@@ -6128,7 +6335,6 @@ REPORTE DE HORAS TRABAJADAS
                                 fechaDomingo.setDate(fechaLunes.getDate() + 6);
                                 const domingo = fechaDomingo.toISOString().split('T')[0];
 
-                                // Detectar si la semana sale del mes
                                 let fechaFin = domingo;
                                 let esIncompleta = false;
                                 let continuaEn = '';
@@ -6137,7 +6343,6 @@ REPORTE DE HORAS TRABAJADAS
                                     fechaFin = ultimaFechaMes;
                                     esIncompleta = true;
 
-                                    // Calcular en qué mes continúa
                                     const mesSiguiente = mesActual === 12 ? 1 : mesActual + 1;
                                     const añoSiguiente = mesActual === 12 ? añoActual + 1 : añoActual;
                                     const fechaSiguiente = new Date(añoSiguiente, mesSiguiente - 1, 1);
@@ -6146,7 +6351,6 @@ REPORTE DE HORAS TRABAJADAS
                                 }
 
                                 if (lunes < primerDiaMes) {
-                                    const fechaInicioReal = new Date(primerDiaMes.replace(/-/g, '/') + ' 00:00:00');
                                     lunes = primerDiaMes;
                                     esIncompleta = true;
                                     const mesAnterior = mesActual === 1 ? 12 : mesActual - 1;
@@ -6171,6 +6375,8 @@ REPORTE DE HORAS TRABAJADAS
                                 if (datos.enfermedades.length > 0) notasExtras.push(`${datos.enfermedades.length} enfermedad(es)`);
                                 if (datos.asuetos.length > 0) notasExtras.push(`${datos.asuetos.length} asueto(s)`);
                                 if (datos.paros.length > 0) notasExtras.push(`${datos.paros.length} paro(s)`);
+                                if (datos.remotos.length > 0) notasExtras.push(`${datos.remotos.length} remoto(s)`);
+                                if (datos.capacitaciones.length > 0) notasExtras.push(`${datos.capacitaciones.length} capacitacion(es)`);
 
                                 if (notasExtras.length > 0) {
                                     seccion += ` [${notasExtras.join(', ')}]`;
@@ -6178,13 +6384,11 @@ REPORTE DE HORAS TRABAJADAS
 
                                 seccion += '\n\n';
 
-                                //  Guardar info de semana incompleta
                                 if (esIncompleta && continuaEn) {
                                     semanasIncompletas.push(`* Semana ${index + 1}: ${continuaEn}`);
                                 }
                             });
 
-                            //  Agregar notas de semanas incompletas al final
                             if (semanasIncompletas.length > 0) {
                                 seccion += semanasIncompletas.join('\n') + '\n';
                             }
@@ -6244,7 +6448,6 @@ Generado por Sistema Horarios
                         mostrarToast('Error al generar reporte', 'error');
                     }
                 }
-
                 // Función auxiliar para sumar minutos a un formato HH:MM
                 function sumarMinutosAHora(horaString, minutosASumar) {
                     let totalMinutos = minutosASumar;
@@ -7575,8 +7778,22 @@ Generado por Sistema Horarios
                     const registrosCargados = perfilActual.registros || [];
                     D.registros().splice(0, D.registros().length, ...registrosCargados);
 
-                    HistoryManager.clear();
-                    HistoryManager.saveState(D.registros());
+                    // Cargar historial guardado (si existe y es válido)
+                    const historialCargado = HistoryManager.loadFromLocalStorage();
+
+                    if (historialCargado) {
+                        // Si se cargó historial válido, restaurar el estado actual de ese historial
+                        const estadoActual = HistoryManager.getCurrentState();
+                        if (estadoActual && estadoActual.length > 0) {
+                            D.registros().splice(0, D.registros().length, ...estadoActual);
+                            console.log('✓ Registros restaurados desde historial');
+                        }
+                    } else {
+                        // Si no hay historial válido, guardar el estado inicial
+                        HistoryManager.saveState(D.registros());
+                        console.log('✓ Nuevo historial inicializado');
+                    }
+
                     HistoryManager.updateButtons();
 
                     // TEMA
@@ -7645,7 +7862,7 @@ Generado por Sistema Horarios
 
                     actualizarUI();
                     setInterval(() => actualizarUI(null, true), 60000);
-                    console.log('Sistema iniciado correctamente v6.68');
+                    console.log('Sistema iniciado correctamente');
 
                     // ===================================
                     // EVENT DELEGATION - LISTA REGISTROS
@@ -8249,27 +8466,24 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.25
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.30
     // ====================================================================
     
      - CAMBIOS:
-    1) optimizacion de css en general
-    2) Se agrega listener tecla enter en agregar perfil y edicion de perfil
-    3) Se modifica la forma de vizualicion de algunos items de estadisticas
-    4) Se reemplaza la etiqueta "ausencia / licencia" por "Licencia" en todos los lugares
-    5) RTM 
+    1) Se rediseña registro-item, para mejor visualización
+    2) Se corrige bug en history manager
 
-     - BUGS CONOCIDOS:
+     - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
      y tocar el timer, al rehacer la accion, el timer sigue corriendo
      2) al borrar un lote el boton detecta muy rapido los cambios produciendo un cambio
      repentino del estado en la etiqueta pasando de por ejemplo borrar - sin registros - registrar,
-     el glujo correcto seria borrar - registrar luego de ejecutar la accion
+     el flujo correcto seria borrar - registrar luego de ejecutar la accion
+     3) pulsar deliberadamente undo y redo de forma reiterada mas de 20 veces aproximadamente,
+     la interfaz deja de mostrar los cambios hasta que se actualiza la pagina
 
      - IDEAS DESCARTADAS/REVISION:
-     1) Registro especial "ausencia sin justificar" con el parametro "contabiliza=false",
-     Se descarta ya que existe el tipo ausencia (justificada), y en caso de no registrar
-     un dia, el buffer muestra el restante equivalente al objetivo diario
+     1) Registro especial "ausencia sin justificar" a revisar
      
 
     -->
