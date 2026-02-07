@@ -22,18 +22,20 @@
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="no-referrer">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="./icons/icon-192.png">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxuc
-    z0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8ZGVmcz4K
-    ICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZEgiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwM
-    CUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMGVhNWU5O3N0b3Atb3BhY2
-    l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMzYjgyZjY7c3R
-    vcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KICAKICA8cmVjdCB3aWR0
-    aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjEwMCIgZmlsbD0idXJsKCNncmFkSCkiIC8+CiAgCiAgPHBhdGggZD
-    0iTTI1NiA4MCBMNDYwIDQzMCBMNTIgNDMwIFoiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuMSIgLz4K
-    ICAKICA8cGF0aCBkPSJNIDE4MCAxNTAgTCAxODAgMzYyIE0gMzMyIDE1MCBMIDMzMiAzNjIgTSAxODAgMjU2IE
-    wgMzMyIDI1NiIgCiAgICAgICAgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI1MCIgc3Ryb2tlLWxpbmVj
-    YXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSJub25lIiAvPgo8L3N2Zz4K">
+    <link rel="icon" type="image/svg+xml" href="./icon.svg">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2Z
+    yB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyI
+    j4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZEgiIHgxPSIwJSIgeTE9IjAlI
+    iB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3Rvc
+    C1jb2xvcjojMDAwMDAwO3N0b3Atb3BhY2l0eToxIiAvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEwM
+    CUiIHN0eWxlPSJzdG9wLWNvbG9yOiMwMDAwMDA7c3RvcC1vcGFjaXR5OjEiIC8+CiAgICA8L2xpbm
+    VhckdyYWRpZW50PgogIDwvZGVmcz4KICAKICA8cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiI
+    gcng9IjEwMCIgZmlsbD0idXJsKCNncmFkSCkiIC8+CiAgCiAgPHBhdGggZD0iTTI1NiA4MCBMNDYw
+    IDQzMCBMNTIgNDMwIFoiIGZpbGw9IndoaXRlIiBmaWxsLW9wYWNpdHk9IjAuMSIgLz4KICAKICA8c
+    GF0aCBkPSJNIDE4MCAxNTAgTCAxODAgMzYyIE0gMzMyIDE1MCBMIDMzMiAzNjIgTSAxODAgMjU2IE
+    wgMzMyIDI1NiIgCiAgICAgICAgc3Ryb2tlPSJ3aGl0ZSIgc3Ryb2tlLXdpZHRoPSI1MCIgc3Ryb2t
+    lLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBmaWxsPSJub25lIiAvPgo8
+    L3N2Zz4K">
     <title>Horarios</title>
     <style>
         :root {
@@ -62,7 +64,7 @@
             /* --- Variables de Color (Tema Oscuro) --- */
             --bg-body: #000000;
             --bg-card: #0f141b;
-            --bg-header: rgba(17, 24, 39, 0.800);
+            --bg-header: rgba(0, 0, 0, 0.5);
             --text-main: #f9fafb;
             --text-muted: #d1d5db;
             --border: #1f2836;
@@ -81,6 +83,7 @@
             padding: 0;
             box-sizing: border-box;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html {
@@ -8570,14 +8573,11 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.32
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.33
     // ====================================================================
     
      - CAMBIOS:
-    1) Se agrega deteccion si los dias laborables estan registrados com registros 
-    especiales
-    2) Modificacion en los mensajes de eliminación
-    3) Se cambia el tema oscuro, ahora es mas oscuro que nunca
+    1) Se cambia el icono de la app //ACTUALIZAR SW Y MANIFEST// 
 
 
      - BUGS MENORES CONOCIDOS:
