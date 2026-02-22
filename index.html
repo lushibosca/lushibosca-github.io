@@ -2954,7 +2954,7 @@
 
                     if (diffDays > 60) {
                         UILogic.mostrarToast(
-                            `El rango contiene ${diffDays} días.\nMáximo: 60 días por operación.`,
+                            `El rango contiene ${diffDays} días.\n Máximo: 60 días por operación.`,
                             'error'
                         );
                         btnGuardar.disabled = false;
@@ -3006,7 +3006,7 @@
                             .join(', ');
 
                         UILogic.mostrarToast(
-                            `Conflicto en día(s): ${diasConflicto}\nYa existen registros en esas fechas.`,
+                            `Conflicto en día(s): ${diasConflicto}\n Ya existen registros en esas fechas.`,
                             'error'
                         );
                         btnGuardar.disabled = false;
@@ -6813,7 +6813,7 @@ Generado por Sistema Horarios
                     const regexSeguro = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\-_ ]+$/;
 
                     if (!regexSeguro.test(nombre)) {
-                        mostrarToast('El nombre contiene caracteres no válidos.\nSolo letras, números y espacios.', 'error');
+                        mostrarToast('El nombre contiene caracteres no válidos.\n Solo letras, números y espacios.', 'error');
                         return;
                     }
 
