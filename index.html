@@ -46,7 +46,7 @@
             --c-white: #ffffff;
             --hover: #989ca0;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-            --radius: 10px;
+            --radius: 20px;
         }
 
         body.dark-mode {
@@ -154,21 +154,25 @@
             overflow-x: hidden;
         }
 
-        .custom-scroll::-webkit-scrollbar {
+        .custom-scroll::-webkit-scrollbar,
+        .perfil-list-container::-webkit-scrollbar {
             width: 8px;
         }
 
-        .custom-scroll::-webkit-scrollbar-track {
+        .custom-scroll::-webkit-scrollbar-track,
+        .perfil-list-container::-webkit-scrollbar-track {
             background: var(--bg-body);
             border-radius: var(--radius);
         }
 
-        .custom-scroll::-webkit-scrollbar-thumb {
+        .custom-scroll::-webkit-scrollbar-thumb,
+        .perfil-list-container::-webkit-scrollbar-thumb {
             background: var(--border);
             border-radius: var(--radius);
         }
 
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
+        .custom-scroll::-webkit-scrollbar-thumb:hover,
+        .perfil-list-container::-webkit-scrollbar-thumb:hover {
             background: var(--text-muted);
         }
 
@@ -197,7 +201,7 @@
             font-size: 0.875rem;
             font-weight: 600;
             color: var(--text-muted);
-            margin-bottom: 0.25rem;
+            margin: 0 0 0.25rem 0.5rem;
             transition: opacity 0.3s ease, transform 0.3s ease, color 0.3s ease;
             min-height: 1.2em;
             line-height: 1.2;
@@ -303,7 +307,7 @@
         /* Variantes de botones */
 
         .btn-register {
-            width: 70%;
+            width: auto;
             padding: 17px;
             margin: -17px;
             background: transparent;
@@ -866,25 +870,6 @@
             padding: 5px;
         }
 
-        /* estilos personalizados de scrollbar en selector perfil */
-        .perfil-list-container::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .perfil-list-container::-webkit-scrollbar-track {
-            background: var(--bg-body);
-            border-radius: var(--radius);
-        }
-
-        .perfil-list-container::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: var(--radius);
-        }
-
-        .perfil-list-container::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
         .btn-perfil-select {
             background: var(--input-bg);
             border: 1px solid var(--border);
@@ -1073,7 +1058,7 @@
             .container {
                 display: grid;
                 grid-template-columns: minmax(350px, 1fr) minmax(400px, 1fr);
-                gap: 1rem;
+                gap: 1.5rem;
                 align-items: start;
                 padding: 1.5rem;
             }
@@ -1091,13 +1076,13 @@
             #lista-registros {
                 max-height: 1100px;
                 overflow-y: auto;
-                padding: 0.5rem;
+                padding-right: 0.5rem;
                 scrollbar-gutter: stable;
             }
 
             .card,
             .modal-content {
-                padding: 1rem;
+                padding: 1.5rem 1rem 1.5rem 1rem;
             }
         }
     </style>
@@ -1457,7 +1442,7 @@
                             <label>Período</label>
                             <select id="select-mes-stats" onchange="UILogic.cambiarMesStats()"></select>
                         </div>
-                        <div class="stats-grid" style="padding-right: 0.5rem;">
+                        <div class="stats-grid">
                             <div class="stat-item">
                                 <div class="stat-label">Jornadas</div>
                                 <div class="stat-value" id="stat-dias-trabajados">0</div>
@@ -1661,8 +1646,8 @@
 
                 <button class="btn-delete" onclick="UILogic.cerrarConfig()">
                     <svg class="icon">
-                        <use href="#icon-cancelar" />
-                    </svg> Cancelar
+                        <use href="#icon-undo" />
+                    </svg> Volver
                 </button>
             </div>
         </div>
@@ -3452,10 +3437,10 @@
                             if (timerDetenido && usaHoraActual) {
                                 // Caso: Salida con hora actual Y timer activo
                                 const tiempoFuera = registroExistente.tiempoFuera || '00:00';
-                                mensaje = `Salida registrada con hora actual\n⏱️ Descanso finalizado: +${tiempoFuera}\n(entrada: ${registroExistente.entrada})`;
+                                mensaje = `Salida registrada con hora actual \n⏱️ Descanso finalizado: +${tiempoFuera} \n(entrada: ${registroExistente.entrada})`;
                             } else if (usaHoraActual) {
                                 // Caso: Salida con hora actual SIN timer
-                                mensaje = `Salida registrada con hora actual\n(entrada: ${registroExistente.entrada})`;
+                                mensaje = `Salida registrada con hora actual \n(entrada: ${registroExistente.entrada})`;
                             } else {
                                 // Caso: Salida manual
                                 mensaje = `Salida ${s} agregada\n(entrada: ${registroExistente.entrada})`;
@@ -5322,7 +5307,8 @@
                                 );
 
                                 const label = (cant === 1 && tipoObj) ? tipoObj.label : tipoPlural;
-                                return `${cant} ${label.toLowerCase()}`;
+                                const diasTexto = cant === 1 ? 'dia de' : 'dias de';
+                                return `${cant} ${diasTexto} ${label.toLowerCase()}`;
                             })
                             .join(', ');
                         textoSemanaPasada += ` [${detalles}]`;
@@ -6075,7 +6061,9 @@
                 }
 
                 function cerrarConfig() {
-                    ModalManager.cerrar('modal-config');
+                    ModalManager.cerrar('modal-config', () => {
+                        UILogic.abrirSelectorPerfiles();
+                    });
                 }
 
                 function cerrarEdicion() {
@@ -8558,6 +8546,7 @@ Generado por Sistema Horarios
     
      - CAMBIOS:
     1) Se cambia la paleta de colores
+    2) minima refactorizacion en scroollbar
 
 
      - BUGS MENORES CONOCIDOS:
