@@ -190,6 +190,7 @@
         /* --- Formularios --- */
         .form-group {
             margin-bottom: 1rem;
+
         }
 
         label {
@@ -353,6 +354,10 @@
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
+        }
+
+        .config-actions>label {
+            margin-bottom: -0.5rem;
         }
 
         /* --- Stats & Progreso --- */
@@ -1085,8 +1090,8 @@
             }
 
             .week-selector {
-            gap: 5px;
-         }
+                gap: 5px;
+            }
         }
     </style>
 </head>
@@ -1487,6 +1492,10 @@
                                 <div class="stat-value" id="stat-compensaciones">0</div>
                             </div>
                             <div class="stat-item">
+                                <div class="stat-label">Tiempo Total</div>
+                                <div class="stat-value" id="stat-tiempo-total">0h 0m</div>
+                            </div>
+                            <div class="stat-item">
                                 <div class="stat-label">Tiempo Fuera</div>
                                 <div class="stat-value" id="stat-tiempo-fuera-total">0h 0m</div>
                             </div>
@@ -1504,7 +1513,7 @@
                             </div>
                             <div style="grid-column: 1 / -1; height: 1px; background: var(--border); margin: 0.5rem 0;">
                             </div>
-                            <div class="stat-item">
+                            <div class="stat-item" style="grid-column: 1 / -1">
                                 <div class="stat-label">Semana Pasada</div>
                                 <div class="stat-value" id="stat-semana-pasada">0h 0m</div>
                             </div>
@@ -1618,6 +1627,18 @@
                     </label>
                 </div>
                 <div id="config-total-feedback" class="config-hint-text">(Total semanal: --hs)</div>
+            </div>
+            <div class="form-group">
+                <label>Agregar Nuevo Perfil</label>
+                <div class="input-with-btn">
+                    <input type="text" id="nombre-nuevo-perfil-selector" placeholder="Nombre del perfil..."
+                        maxlength="30" />
+                    <button class="time-btn" onclick="UILogic.crearPerfilDesdeSelector()" title="Crear perfil">
+                        <svg class="icon">
+                            <use href="#icon-plus" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="config-actions">
                 <label>Registros</label>
@@ -1876,18 +1897,7 @@
             </h3>
             <div id="lista-perfiles-botones" class="perfil-list-container">
             </div>
-            <div class="form-group" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
-                <label>Agregar Nuevo Perfil</label>
-                <div class="input-with-btn">
-                    <input type="text" id="nombre-nuevo-perfil-selector" placeholder="Nombre del perfil..."
-                        maxlength="30" />
-                    <button class="time-btn" onclick="UILogic.crearPerfilDesdeSelector()" title="Crear perfil">
-                        <svg class="icon">
-                            <use href="#icon-plus" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+
             <div class="btn-group">
                 <button class="btn-edit" onclick="UILogic.mostrarconfig()" style="flex: 1;">
                     <svg class="icon">
@@ -5195,6 +5205,7 @@
                             diasTrabajados: 0,
                             promedioDiario: '--:--',
                             tiempoFueraTotal: `--:--`,
+                            tiempoTotal: '0h 0m',
                             semanaPasada: '--:--',
                             feriados: feriados,
                             ausencias: ausencias,
@@ -5316,12 +5327,16 @@
                             .join(', ');
                         textoSemanaPasada += ` [${detalles}]`;
                     }
+                    const hTotal = Math.floor(totalHoras);
+                    const mTotal = Math.round((totalHoras - hTotal) * 60);
+
                     return {
                         entradaPromedio: `${String(hEntrada).padStart(2, '0')}:${String(mEntrada).padStart(2, '0')}`,
                         salidaPromedio: `${String(hSalida).padStart(2, '0')}:${String(mSalida).padStart(2, '0')}`,
                         diasTrabajados: registrosValidos.length,
                         promedioDiario: `${hPromedio}h ${mPromedio}m`,
                         tiempoFueraTotal: `${hTiempoFuera}h ${mTiempoFuera}m`,
+                        tiempoTotal: `${hTotal}h ${mTotal}m`,
                         semanaPasada: textoSemanaPasada,
                         feriados: feriados,
                         ausencias: ausencias,
@@ -5367,6 +5382,7 @@
                     const elPromedio = $('stat-promedio-diario');
                     const elSemanaPasada = $('stat-semana-pasada');
                     const elTiempoFueraTotal = $('stat-tiempo-fuera-total');
+                    const elTiempoTotal = $('stat-tiempo-total');
                     const elFeriados = $('stat-feriados');
                     const elAusencias = $('stat-ausencias');
                     const elVacaciones = $('stat-vacaciones');
@@ -5383,6 +5399,7 @@
                     if (elPromedio) elPromedio.textContent = stats.promedioDiario;
                     if (elSemanaPasada) elSemanaPasada.textContent = stats.semanaPasada;
                     if (elTiempoFueraTotal) elTiempoFueraTotal.textContent = stats.tiempoFueraTotal;
+                    if (elTiempoTotal) elTiempoTotal.textContent = stats.tiempoTotal;
 
                     // Ocultar/Mostrar items según valor
                     const toggleStatItem = (element, value) => {
@@ -6096,6 +6113,8 @@
                             btnReemplazar.disabled = true;
                             btnReemplazar.style.opacity = '0.5';
                         }
+                        // Abrir selector de archivo automáticamente al abrir el modal
+                        setTimeout(() => $('file-import').click(), 50);
                     });
                 }
 
@@ -8548,7 +8567,9 @@ Generado por Sistema Horarios
     // ====================================================================
     
      - CAMBIOS:
-    1) Mejoras de diseño
+    1) Se agrega stat-item tiempo total
+    2) modificacion del grid de "semana pasada"
+    3) al tocar el boton importar o restaurar, abre directamente el selector de archivo
 
 
      - BUGS MENORES CONOCIDOS:
