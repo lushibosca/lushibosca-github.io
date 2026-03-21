@@ -486,17 +486,26 @@
         .progress-fill.shimmer::after {
             content: '';
             position: absolute;
-            top: 0; left: -60%;
+            top: 0;
+            left: -60%;
             width: 50%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
             animation: shimmer 5s ease-in-out infinite;
         }
 
         @keyframes shimmer {
-            0%   { left: -80%; }
-            20%  { left: 130%; }
-            100% { left: 130%; }
+            0% {
+                left: -80%;
+            }
+
+            20% {
+                left: 130%;
+            }
+
+            100% {
+                left: 130%;
+            }
         }
 
         /* --- Lista de Registros --- */
@@ -1871,7 +1880,9 @@
                             <span id="hint-gist-backup">—</span>
                         </button>
                         <button id="btn-toggle-gist-merge" onclick="UILogic.toggleGistMerge()">
-                            <svg class="icon" id="icon-gist-merge"><use href="#icon-replace-swap"/></svg>
+                            <svg class="icon" id="icon-gist-merge">
+                                <use href="#icon-replace-swap" />
+                            </svg>
                             <span id="hint-gist-merge">Reemplazar</span>
                         </button>
                     </div>
@@ -4191,9 +4202,6 @@
 
                             // --- MODO REEMPLAZAR ---
                             if (modo === 'replace') {
-                                const confirmMsg = `⚠️ ATENCIÓN\n\nSe borrarán tus datos actuales y se reemplazarán por ${registrosImportados.length} registros del archivo.\n\n¿Estás seguro?`;
-                                if (!confirm(confirmMsg)) return;
-
                                 registros = registrosImportados;
 
                                 // Validar diasHabiles (formato array)
@@ -9302,16 +9310,16 @@ Generado por Sistema Horarios
                         if (!modal) return;
                         e.preventDefault();
                         const acciones = {
-                            'modal-gist':          () => cerrarModalGist(),
-                            'modal-gist-merge':    () => gistMergeCancelar(),
-                            'modal-config':        () => UILogic.cerrarConfig(),
+                            'modal-gist': () => cerrarModalGist(),
+                            'modal-gist-merge': () => gistMergeCancelar(),
+                            'modal-config': () => UILogic.cerrarConfig(),
                             'modal-selector-perfiles': () => UILogic.cerrarSelectorPerfiles(),
-                            'modal-editar':        () => UILogic.cerrarEdicion(),
-                            'modal-importar':      () => UILogic.cerrarImportar(),
-                            'modal-exportar':      () => UILogic.cerrarExportar(),
-                            'modal-filtros':       () => UILogic.cerrarFiltros(),
+                            'modal-editar': () => UILogic.cerrarEdicion(),
+                            'modal-importar': () => UILogic.cerrarImportar(),
+                            'modal-exportar': () => UILogic.cerrarExportar(),
+                            'modal-filtros': () => UILogic.cerrarFiltros(),
                             'modal-editar-perfil': () => UILogic.cerrarEditorPerfil(),
-                            'modal-editar-grupo':  () => UILogic.cerrarEdicionGrupo(),
+                            'modal-editar-grupo': () => UILogic.cerrarEdicionGrupo(),
                         };
                         const accion = acciones[modal.id];
                         if (accion) accion();
