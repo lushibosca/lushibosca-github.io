@@ -11,7 +11,7 @@
                  style-src 'self' 'unsafe-inline'; 
                  img-src 'self' data: https:; 
                  font-src 'self' data:; 
-                 connect-src 'self'; 
+                 connect-src 'self' https://api.github.com; 
                  object-src 'none'; 
                  base-uri 'self'; 
                  form-action 'self'; 
@@ -316,6 +316,18 @@
             transform-origin: bottom;
         }
 
+        #btn-toggle-ignorar-tf,
+        #btn-toggle-fondo,
+        #btn-toggle-gist-backup,
+        #btn-toggle-gist-merge {
+            justify-content: center;
+            padding: 0.875rem 1rem;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+            flex: 1;
+        }
+
         .icon-btn,
         .time-btn,
         .btn-increment,
@@ -447,6 +459,8 @@
             height: 100%;
             background: var(--bg-card);
             transition: width 0.5s;
+            position: relative;
+            overflow: hidden;
         }
 
         .progress-fill.blue {
@@ -467,6 +481,22 @@
 
         .progress-fill.gold {
             background: var(--c-gold) !important;
+        }
+
+        .progress-fill.shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -60%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            animation: shimmer 5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%   { left: -80%; }
+            20%  { left: 130%; }
+            100% { left: 130%; }
         }
 
         /* --- Lista de Registros --- */
@@ -570,8 +600,16 @@
         }
 
         .modal-content {
+            transform: translateY(24px) scale(0.96);
+            transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+            opacity: 0;
             max-width: 450px;
             width: 100%;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0) scale(1);
+            opacity: 1;
         }
 
         /* Modal config scrollable con header y footer sticky */
@@ -709,37 +747,6 @@
             to {
                 opacity: 1;
                 filter: blur(0);
-            }
-        }
-
-        @keyframes fade-blur-out {
-            from {
-                opacity: 1;
-                filter: blur(0);
-                transform: scale(1);
-                background-color: var(--c-red)
-            }
-
-            to {
-                opacity: 0;
-                filter: blur(10px);
-                transform: scale(0.8);
-            }
-        }
-
-        /* Animación de pulso específica para la tarjeta (más suave) */
-        @keyframes pulse-card {
-            0% {
-                box-shadow: 0 0 0 0 rgba(192, 93, 118, 0.4);
-            }
-
-            70% {
-                box-shadow: 0 0 0 15px rgba(192, 93, 118, 0);
-                /* Expansión de la sombra */
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(192, 93, 118, 0);
             }
         }
 
@@ -951,7 +958,7 @@
 
         .btn-perfil-badge {
             font-size: 0.8rem;
-            color: var(--c-green);
+            color: var(--text-muted);
         }
 
         .btn-perfil-edit {
@@ -1108,6 +1115,10 @@
             .btn-export:hover:not(:disabled),
             .btn-backup:hover:not(:disabled),
             .btn-edit:hover:not(:disabled),
+            #btn-toggle-fondo:hover:not(:disabled),
+            #btn-toggle-gist-backup:hover:not(:disabled),
+            #btn-toggle-gist-merge:hover:not(:disabled),
+            #btn-toggle-ignorar-tf:hover:not(:disabled),
             .registro-item:hover,
             .header-profile-btn:hover,
             .btn-perfil-select:hover,
@@ -1196,21 +1207,6 @@
             <polyline points="7 20 3 16 7 12"></polyline>
             <line x1="21" y1="16" x2="3" y2="16"></line>
         </symbol>
-        <symbol id="icon-replace-overwrite" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <rect x="4" y="8" width="16" height="8" rx="2"></rect>
-            <line x1="12" y1="2" x2="12" y2="8"></line>
-            <polyline points="9 5 12 8 15 5"></polyline>
-            <line x1="12" y1="16" x2="12" y2="22"></line>
-            <polyline points="9 19 12 22 15 19"></polyline>
-        </symbol>
-        <symbol id="icon-replace-cycle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 10c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
-            <polyline points="4 6 4 10 8 10"></polyline>
-            <path d="M20 14c0 4.4-3.6 8-8 8s-8-3.6-8-8"></path>
-            <polyline points="20 18 20 14 16 14"></polyline>
-        </symbol>
         <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path
@@ -1292,6 +1288,13 @@
             <path d="M7 11V7a5 5 0 0 1 10 0v4" class="icon-line" stroke="currentColor"></path>
             <line x1="12" y1="16" x2="12" y2="16.01" class="icon-line" stroke-width="3" stroke="currentColor"></line>
         </symbol>
+        <symbol id="icon-landscape" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="17" cy="6" r="2" />
+            <polyline points="1,20 7,10 11,15" />
+            <polyline points="9,20 14,9 19,20" />
+            <line x1="1" y1="20" x2="23" y2="20" />
+        </symbol>
         <symbol id="icon-stats" viewBox="0 0 24 24">
             <line x1="18" y1="20" x2="18" y2="10" class="icon-line" stroke="currentColor"></line>
             <line x1="12" y1="20" x2="12" y2="4" class="icon-line" stroke="currentColor"></line>
@@ -1328,6 +1331,24 @@
             <line x1="12" y1="22" x2="12" y2="7"></line>
             <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
             <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+        </symbol>
+        <symbol id="icon-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+        </symbol>
+        <symbol id="icon-cloud-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M12 2C9.5 2 7.3 3.4 6.2 5.5C4.9 5.2 3 6.3 3 8.5C3 10.4 4.6 12 6.5 12H17.5C19.4 12 21 10.4 21 8.5C21 6.5 19.3 5 17.5 5C17.1 3.3 15.7 2 14 2" />
+            <polyline points="16 16 12 12 8 16" />
+            <line x1="12" y1="12" x2="12" y2="21" />
+        </symbol>
+        <symbol id="icon-cloud-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M12 2C9.5 2 7.3 3.4 6.2 5.5C4.9 5.2 3 6.3 3 8.5C3 10.4 4.6 12 6.5 12H17.5C19.4 12 21 10.4 21 8.5C21 6.5 19.3 5 17.5 5C17.1 3.3 15.7 2 14 2" />
+            <polyline points="8 17 12 21 16 17" />
+            <line x1="12" y1="12" x2="12" y2="21" />
         </symbol>
         <symbol id="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -1446,7 +1467,7 @@
                             <label>Tipo de registro</label>
                             <div class="input-with-btn">
                                 <select id="lote-tipo" onchange="UILogic.actualizarBotonLote()">
-                                    <option value="feriado">🥳 Feriado (00:00)</option>
+                                    <option value="feriado">🎉 Feriado (00:00)</option>
                                     <option value="ausencia">🏠 Licencia (11:11)</option>
                                     <option value="vacaciones">🏖️ Vacaciones (12:12)</option>
                                     <option value="asueto">🎁 Asueto (13:13)</option>
@@ -1635,12 +1656,14 @@
                                     <use href="#icon-filter" />
                                 </svg>
                             </button>
-                            <button class="filter-btn" onclick="UILogic.mostrarImportar(true)" title="Restaurar">
+                            <button class="filter-btn" id="btn-hist-restaurar" onclick="UILogic.mostrarImportar(true)"
+                                title="Restaurar">
                                 <svg class="icon">
                                     <use href="#icon-upload" />
                                 </svg>
                             </button>
-                            <button class="filter-btn" onclick="UILogic.mostrarExportar(true)" title="Respaldar">
+                            <button class="filter-btn" id="btn-hist-respaldar" onclick="UILogic.mostrarExportar(true)"
+                                title="Respaldar">
                                 <svg class="icon">
                                     <use href="#icon-download" />
                                 </svg>
@@ -1674,7 +1697,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-7.52</span>
+                    <span class="version-text">LUSHIBOSCA-7.68</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -1727,17 +1750,29 @@
                 </div>
                 <div class="form-group">
                     <label>Fondo</label>
-                    <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()"
-                        style="justify-content:space-between; padding:0.75rem 1rem; border:1px solid var(--border); color:var(--text-muted); font-weight:600; transition: background 0.2s, color 0.2s, border-color 0.2s;">
+                    <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()">
+                        <svg class="icon">
+                            <use href="#icon-landscape" />
+                        </svg>
                         <span id="hint-fondo-label">Golden Gate</span>
                     </button>
                 </div>
                 <div class="form-group">
                     <label>Tiempo Fuera</label>
-                    <button id="btn-toggle-ignorar-tf" onclick="UILogic.toggleIgnorarTiempoFuera()"
-                        style="justify-content:space-between; padding:0.75rem 1rem; border:1px solid var(--border); color:var(--text-muted); font-weight:600; transition: background 0.2s, color 0.2s, border-color 0.2s;">
-                        <span>Ignorar calculo de Tiempo Fuera</span>
-                        <span id="hint-ignorar-tf" style="font-size:0.9rem;">No</span>
+                    <button id="btn-toggle-ignorar-tf" onclick="UILogic.toggleIgnorarTiempoFuera()">
+                        <svg class="icon">
+                            <use href="#icon-exit" />
+                        </svg>
+                        <span>Ignorar calculo TF</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Sincronización</label>
+                    <button class="btn-edit" onclick="UILogic.abrirModalGist()">
+                        <svg class="icon">
+                            <use href="#icon-cloud" />
+                        </svg>
+                        GitHub Gist
                     </button>
                 </div>
                 <div class="config-actions">
@@ -1771,6 +1806,147 @@
                     </button>
                 </div>
             </div><!-- /modal-config-footer -->
+        </div>
+    </div>
+
+    <div class="modal" id="modal-gist">
+        <div class="modal-content">
+            <div class="modal-config-header">
+                <h3 style="margin-bottom:1rem">
+                    <span class="modal-title-block">
+                        <svg class="icon">
+                            <use href="#icon-cloud" />
+                        </svg>
+                        GitHub Gist
+                    </span>
+                </h3>
+            </div>
+            <div class="modal-config-body custom-scroll">
+                <div class="form-group">
+                    <label>Personal Access Token</label>
+                    <div class="input-with-btn">
+                        <input type="password" id="gist-token" placeholder="ghp_xxxxxxxxxxxx" maxlength="100"
+                            oninput="UILogic.actualizarEstadoBotonesGist()" autocomplete="off" />
+                        <button class="time-btn" id="btn-toggle-token" onclick="UILogic.toggleVerToken()"
+                            title="Mostrar/ocultar token">
+                            <svg class="icon">
+                                <use href="#icon-lock-open" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Gist ID</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="gist-id" placeholder="Dejar vacío para crear uno nuevo" maxlength="40"
+                            autocomplete="off" oninput="UILogic.actualizarEstadoBotonesGist()" />
+                        <button class="time-btn" onclick="UILogic.abrirGistEnBrowser()" title="Abrir en GitHub">
+                            <svg class="icon">
+                                <use href="#icon-help" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="config-actions">
+                    <label>Acciones</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn-export" id="btn-gist-subir" onclick="UILogic.gistSubir()" style="flex:1">
+                            <svg class="icon">
+                                <use href="#icon-cloud-upload" />
+                            </svg> Subir
+                        </button>
+                        <button class="btn-backup" id="btn-gist-bajar" onclick="UILogic.gistBajar()" style="flex:1">
+                            <svg class="icon">
+                                <use href="#icon-cloud-download" />
+                            </svg> Bajar
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top:0.5rem">
+                    <label>Automatización</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button id="btn-toggle-gist-backup" onclick="UILogic.toggleGistBackup()" style="flex:1">
+                            <span id="label-gist-backup">Sin automatizar</span>
+                            <span id="hint-gist-backup">—</span>
+                        </button>
+                        <button id="btn-toggle-gist-merge" onclick="UILogic.toggleGistMerge()">
+                            <svg class="icon" id="icon-gist-merge"><use href="#icon-replace-swap"/></svg>
+                            <span id="hint-gist-merge">Reemplazar</span>
+                        </button>
+                    </div>
+                    <div id="gist-rango-horario"
+                        style="max-height:0; overflow:hidden; transition:max-height 0.3s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem; gap:0.5rem; align-items:center; display:flex;">
+                        <span style="font-size:0.85rem; color:var(--text-muted)">Desde</span>
+                        <input type="time" id="gist-rango-desde"
+                            style=" background:var(--bg-input); color:var(--text-main); font-size:0.9rem;" />
+                        <span style="font-size:0.85rem; color:var(--text-muted)">Hasta</span>
+                        <input type="time" id="gist-rango-hasta"
+                            style=" background:var(--bg-input); color:var(--text-main); font-size:0.9rem;" />
+                    </div>
+                </div>
+                <div class="config-hint-text" id="gist-ultima-sync">Sin sincronizar</div>
+            </div>
+            <div class="modal-config-footer">
+                <div class="btn-group">
+                    <button class="btn-export" onclick="UILogic.guardarConfigGist()">
+                        <svg class="icon">
+                            <use href="#icon-save" />
+                        </svg>
+                        Guardar
+                    </button>
+                    <button class="btn-delete" onclick="UILogic.cerrarModalGist()">
+                        <svg class="icon">
+                            <use href="#icon-undo" />
+                        </svg>
+                        Volver
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal-gist-merge">
+        <div class="modal-content">
+            <div class="modal-config-header">
+                <h3 style="margin-bottom:0.5rem">
+                    <span class="modal-title-block">
+                        <svg class="icon">
+                            <use href="#icon-cloud-download" />
+                        </svg>
+                        Resumen de datos
+                    </span>
+                </h3>
+            </div>
+            <div class="modal-config-body custom-scroll">
+                <div id="gist-merge-resumen" style="font-size:0.9rem; color:var(--text-muted); line-height:1.8;"></div>
+            </div>
+            <div class="modal-config-footer">
+                <div class="btn-group">
+                    <button class="btn-backup" id="btn-gist-merge-combinar" onclick="UILogic.gistMergeAplicar('merge')">
+                        <svg class="icon">
+                            <use href="#icon-combine" />
+                        </svg>
+                        Combinar
+                    </button>
+                    <button class="btn-export" id="btn-gist-merge-reemplazar"
+                        onclick="UILogic.gistMergeAplicar('replace')">
+                        <svg class="icon">
+                            <use href="#icon-replace-swap" />
+                        </svg>
+                        Reemplazar
+                    </button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-delete" onclick="UILogic.gistMergeCancelar()">
+                        <svg class="icon">
+                            <use href="#icon-cancelar" />
+                        </svg>
+                        Cancelar
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1878,7 +2054,7 @@
                     <svg class="icon">
                         <use href="#icon-replace-swap" />
                     </svg>
-                    Sobrescribir
+                    Reemplazar
                 </button>
                 <button class="btn-cancel" id="btn-volver-importar" onclick="UILogic.cerrarImportar()">
                     <svg class="icon">
@@ -1908,7 +2084,8 @@
             </div>
 
             <!-- Campos de rango (ocultos por defecto) -->
-            <div id="campos-rango-exportar" style="display: none;">
+            <div id="campos-rango-exportar"
+                style="max-height:0; overflow:hidden; transition:max-height 0.3s ease, opacity 0.3s ease; opacity:0; display:block;">
                 <div class="form-group">
                     <label>Desde</label>
                     <input type="date" id="export-fecha-desde" />
@@ -1958,7 +2135,7 @@
                 <select id="filtro-tipo">
                     <option value="">Todos</option>
                     <option value="normal">🕒 Normales</option>
-                    <option value="feriado">🥳 Feriados</option>
+                    <option value="feriado">🎉 Feriados</option>
                     <option value="ausencia">🏠 Licencias</option>
                     <option value="vacaciones">🏖️ Vacaciones</option>
                     <option value="enfermedad">🏥 Enfermedades</option>
@@ -2085,7 +2262,7 @@
                 <label>Tipo de registro</label>
                 <div class="input-with-btn">
                     <select id="edit-grupo-tipo">
-                        <option value="feriado">🥳 Feriado</option>
+                        <option value="feriado">🎉 Feriado</option>
                         <option value="ausencia">🏠 Licencia</option>
                         <option value="vacaciones">🏖️ Vacaciones</option>
                         <option value="asueto">🎁 Asueto</option>
@@ -2303,23 +2480,6 @@
                     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
                 }
 
-                function constantTimeCompare(a, b) {
-                    // Convertir a strings si no lo son
-                    const strA = String(a);
-                    const strB = String(b);
-
-                    const maxLength = Math.max(strA.length, strB.length);
-                    let result = strA.length === strB.length ? 0 : 1;
-
-                    for (let i = 0; i < maxLength; i++) {
-                        const charA = i < strA.length ? strA.charCodeAt(i) : 0;
-                        const charB = i < strB.length ? strB.charCodeAt(i) : 0;
-                        result |= charA ^ charB;
-                    }
-
-                    return result === 0;
-                }
-
                 function validarRegistroSeguro(r) {
                     if (!r || typeof r !== 'object') return false;
                     if (Array.isArray(r) || r instanceof Date) return false;
@@ -2351,6 +2511,12 @@
 
                     return true;
                 }
+                function fechaLocalISO() {
+                    const d = new Date();
+                    const pad = n => String(n).padStart(2, '0');
+                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                }
+
                 return {
                     SECURITY_LIMITS,
                     REGEX_PATTERNS,
@@ -2359,8 +2525,8 @@
                     validarHoraSegura,
                     generarIDSeguro,
                     calcularHashSHA256,
-                    constantTimeCompare,
-                    validarRegistroSeguro
+                    validarRegistroSeguro,
+                    fechaLocalISO
                 };
             })();
 
@@ -2433,14 +2599,26 @@
                 }
 
                 function guardarDatosPerfilActual() {
-                    if (!window.DataManagement) return;
+                    if (!window.DataManagement) return false;
+                    const actual = perfiles[perfilActual];
                     perfiles[perfilActual] = {
-                        nombre: perfiles[perfilActual].nombre,
+                        nombre: actual.nombre,
                         registros: [...window.DataManagement.registros()],
                         diasHabiles: window.DataManagement.diasHabiles(),
-                        horasDiarias: window.DataManagement.horasDiarias()
+                        horasDiarias: window.DataManagement.horasDiarias(),
+                        // Preservar datos de Gist si existen
+                        ...(actual.gistId && { gistId: actual.gistId }),
+                        ...(actual.gistLastSync && { gistLastSync: actual.gistLastSync }),
+                        ...(actual.gistAutoSync != null && { gistAutoSync: actual.gistAutoSync }),
+                        ...(actual.gistRangoDesde && { gistRangoDesde: actual.gistRangoDesde }),
+                        ...(actual.gistRangoHasta && { gistRangoHasta: actual.gistRangoHasta }),
+                        ...(actual.gistSyncFecha_subir && { gistSyncFecha_subir: actual.gistSyncFecha_subir }),
+                        ...(actual.gistSyncCount_subir != null && { gistSyncCount_subir: actual.gistSyncCount_subir }),
+                        ...(actual.gistSyncFecha_bajar && { gistSyncFecha_bajar: actual.gistSyncFecha_bajar }),
+                        ...(actual.gistSyncCount_bajar != null && { gistSyncCount_bajar: actual.gistSyncCount_bajar }),
+                        ...(actual.gistMergeBehavior && { gistMergeBehavior: actual.gistMergeBehavior })
                     };
-                    guardarPerfiles();
+                    return guardarPerfiles();
                 }
 
                 function cargarDatosPerfilActual() { return perfiles[perfilActual]; }
@@ -2457,7 +2635,8 @@
                     return Object.entries(perfiles).map(([id, perfil]) => ({
                         id: id,
                         nombre: perfil.nombre,
-                        esActual: id === perfilActual
+                        esActual: id === perfilActual,
+                        totalRegistros: Array.isArray(perfil.registros) ? perfil.registros.length : 0
                     })).sort((a, b) => {
                         if (a.id === 'default') return -1;
                         if (b.id === 'default') return 1;
@@ -2489,7 +2668,8 @@
 
                 return {
                     inicializar, cambiarPerfil, guardarDatosPerfilActual, cargarDatosPerfilActual,
-                    obtenerPerfilActual, obtenerDatosPerfil, obtenerListaPerfiles, obtenerTodosPerfiles
+                    obtenerPerfilActual, obtenerDatosPerfil, obtenerListaPerfiles, obtenerTodosPerfiles,
+                    guardarPerfiles
                 };
 
             })(SecurityAndUtils);
@@ -2573,7 +2753,7 @@
             const HistoryManager = (function () {
                 let history = [];
                 let currentIndex = -1;
-                const MAX_HISTORY = 50;
+                const MAX_HISTORY = 20;
 
                 function deepClone(obj) {
                     if (obj === null || obj === undefined) return obj;
@@ -2680,7 +2860,7 @@
                             // Verificar que el historial no tenga más de 24 horas
                             const ahora = Date.now();
                             const tiempoTranscurrido = ahora - (historyData.timestamp || 0);
-                            const limiteEnMs = 2 * 24 * 60 * 60 * 1000;
+                            const limiteEnMs = 24 * 60 * 60 * 1000;
 
                             if (tiempoTranscurrido < limiteEnMs) {
                                 // Historial válido - restaurar
@@ -2755,7 +2935,7 @@
                     FERIADO: {
                         id: 'feriado',
                         codigo: '00:00',
-                        emoji: '🥳',
+                        emoji: '🎉',
                         label: 'Feriado',
                         labelPlural: 'Feriados',
                         descripcion: 'Día no laboral',
@@ -3170,14 +3350,23 @@
 
 
                 async function guardarYActualizar(idNuevo = null) {
-                    let saveSuccessful = true;
+                    let saveSuccessful = false;
 
-                    if (window.PerfilManager) {
-                        PerfilManager.guardarDatosPerfilActual();
+                    try {
+                        if (window.PerfilManager) {
+                            saveSuccessful = PerfilManager.guardarDatosPerfilActual();
+                        } else {
+                            saveSuccessful = true;
+                        }
+                    } catch (e) {
+                        console.error('Error crítico al guardar:', e);
+                        saveSuccessful = false;
                     }
 
                     if (saveSuccessful) {
                         UILogic.actualizarUI(idNuevo);
+                    } else {
+                        UILogic.mostrarToast('Error al guardar. Almacenamiento lleno o bloqueado.', 'error');
                     }
                     return saveSuccessful;
                 }
@@ -3778,34 +3967,36 @@
                     localStorage.removeItem(`fondoCard_${perfilId}`);
                     localStorage.removeItem(`ignorarTiempoFuera_${perfilId}`);
 
+                    // Limpiar gistId y lastSync del perfil activo
+                    if (window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            delete perfil.gistId;
+                            delete perfil.gistLastSync;
+                            delete perfil.gistAutoSync;
+                            delete perfil.gistRangoDesde;
+                            delete perfil.gistRangoHasta;
+                            delete perfil.gistSyncFecha_subir;
+                            delete perfil.gistSyncCount_subir;
+                            delete perfil.gistSyncFecha_bajar;
+                            delete perfil.gistSyncCount_bajar;
+                            delete perfil.gistMergeBehavior;
+                        }
+                    }
+
                     HistoryManager.saveState(registros);
 
                     if (await guardarYActualizar()) {
-                        UILogic.setFondoCard('golden-gate');
-                        UILogic.actualizarEstadoBotonIgnorarTF();
-                        UILogic.actualizarUI();
-                        UILogic.mostrarToast('Perfil restablecido a valores por defecto', 'success');
-                        ModalManager.cerrarTodos();
+                        location.reload();
                     }
                 }
 
                 async function exportarJSON() {
-                    //  Generar fecha local en formato YYYY-MM-DD HH:MM:SS
-                    const ahora = new Date();
-                    const año = ahora.getFullYear();
-                    const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-                    const dia = String(ahora.getDate()).padStart(2, '0');
-                    const hora = String(ahora.getHours()).padStart(2, '0');
-                    const minuto = String(ahora.getMinutes()).padStart(2, '0');
-                    const segundo = String(ahora.getSeconds()).padStart(2, '0');
-
-                    const fechaLocal = `${año}-${mes}-${dia} ${hora}:${minuto}:${segundo}`;
-
                     const data = {
                         registros,
                         diasHabiles,
                         horasDiarias,
-                        fecha: fechaLocal,
+                        fecha: S.fechaLocalISO(),
                         version: S.SECURITY_LIMITS.SCHEMA_VERSION,
                         hash: await S.calcularHashSHA256(registros),
                         timestamp: Date.now()
@@ -3824,8 +4015,7 @@
                         }
                         const nombreSafe = nombrePerfil.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ'\-_ ]/g, '').trim().replace(/\s+/g, '_');
 
-                        const fechaHoy = `${año}-${mes}-${dia}`;
-
+                        const fechaHoy = S.fechaLocalISO().slice(0, 10);
                         a.download = `Horarios_${nombreSafe}_${fechaHoy}.json`;
 
                         document.body.appendChild(a);
@@ -4006,26 +4196,12 @@
 
                                 registros = registrosImportados;
 
-                                // VALIDACIÓN MEJORADA DE diasHabiles (SOPORTA AMBOS FORMATOS)
-                                if (data.diasHabiles !== undefined) {
-                                    if (Array.isArray(data.diasHabiles)) {
-                                        // Formato nuevo (v6.63+)
-                                        const diasValidos = data.diasHabiles.filter(d =>
-                                            Number.isInteger(d) && d >= 0 && d <= 6
-                                        );
-                                        if (diasValidos.length > 0) {
-                                            diasHabiles = diasValidos;
-                                        }
-                                    } else {
-                                        // Formato antiguo (número)
-                                        const diasParsed = parseFloat(data.diasHabiles);
-                                        if (Number.isFinite(diasParsed) && diasParsed >= 1 && diasParsed <= 7) {
-                                            const diasArray = [];
-                                            for (let i = 1; i <= diasParsed; i++) diasArray.push(i);
-                                            if (diasParsed === 7) diasArray.push(0);
-                                            diasHabiles = diasArray;
-                                        }
-                                    }
+                                // Validar diasHabiles (formato array)
+                                if (Array.isArray(data.diasHabiles)) {
+                                    const diasValidos = data.diasHabiles.filter(d =>
+                                        Number.isInteger(d) && d >= 0 && d <= 6
+                                    );
+                                    if (diasValidos.length > 0) diasHabiles = diasValidos;
                                 }
 
                                 // VALIDACIÓN DE horasDiarias
@@ -4495,12 +4671,271 @@
             })(SecurityAndUtils);
 
             // ====================================================================
-            // UI LOGIC MODULE
+            //                     MÓDULO GIST SYNC
             // ====================================================================
+            const GistSync = (function (S) {
 
-            const UILogic = (function (S, D) {
+                const GIST_FILENAME = 'horarios_backup.json';
+                const KEY_TOKEN = 'gistToken'; // Global del dispositivo
+
+                const GIST_ID_REGEX = /^[a-f0-9]{20,40}$/i;
+
+                function esGistIdValido(id) {
+                    return id && GIST_ID_REGEX.test(id.trim());
+                }
+
+                // Token: global del dispositivo
+                function getToken() { return localStorage.getItem(KEY_TOKEN) || ''; }
+
+                // Gist ID y lastSync: por perfil activo
+                function getGistId() {
+                    const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
+                    return perfil?.gistId || '';
+                }
+
+                function getLastSync() {
+                    const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
+                    return perfil?.gistLastSync || null;
+                }
+
+                // 0 = sin automatizar, 1 = restaurar al inicio, 2 = respaldo automático
+                function getMergeBehavior() {
+                    const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
+                    return perfil?.gistMergeBehavior || 'replace';
+                }
+
+                function setMergeBehavior(valor) {
+                    if (window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            perfil.gistMergeBehavior = valor;
+                            PerfilManager.guardarPerfiles();
+                        }
+                    }
+                }
+
+                function getAutoSync() {
+                    const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
+                    const val = perfil?.gistAutoSync;
+                    if (val === 1 || val === 2) return val;
+                    // Migración: si era true (estado anterior), mapear a 1
+                    if (val === true) return 1;
+                    return 0;
+                }
+
+                function setAutoSync(valor) {
+                    if (window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            perfil.gistAutoSync = valor;
+                            PerfilManager.guardarPerfiles();
+                        }
+                    }
+                }
+
+                function getRangoHorario() {
+                    const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
+                    return {
+                        desde: perfil?.gistRangoDesde || '16:00',
+                        hasta: perfil?.gistRangoHasta || '22:00'
+                    };
+                }
+
+                function setRangoHorario(desde, hasta) {
+                    if (window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            perfil.gistRangoDesde = desde;
+                            perfil.gistRangoHasta = hasta;
+                            PerfilManager.guardarPerfiles();
+                        }
+                    }
+                }
+
+                function _claveHoraActual() {
+                    const ahora = new Date();
+                    return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')} ${String(ahora.getHours()).padStart(2, '0')}`;
+                }
+
+                // tipo: 'subir' | 'bajar', limite: max intentos por hora
+                function getSyncCount(tipo) {
+                    const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
+                    const key = `gistSyncCount_${tipo}`;
+                    const keyFecha = `gistSyncFecha_${tipo}`;
+                    if (!perfil?.[keyFecha] || perfil[keyFecha] !== _claveHoraActual()) return 0;
+                    return perfil?.[key] || 0;
+                }
+
+                function marcarSync(tipo) {
+                    if (window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            const key = `gistSyncCount_${tipo}`;
+                            const keyFecha = `gistSyncFecha_${tipo}`;
+                            const clave = _claveHoraActual();
+                            const esNuevaHora = perfil[keyFecha] !== clave;
+                            perfil[keyFecha] = clave;
+                            perfil[key] = esNuevaHora ? 1 : (perfil[key] || 0) + 1;
+                            PerfilManager.guardarPerfiles();
+                        }
+                    }
+                }
+
+                function superaLimite(tipo, limite) {
+                    return getSyncCount(tipo) >= limite;
+                }
+
+                function dentroDelRangoHorario() {
+                    const { desde, hasta } = getRangoHorario();
+                    const ahora = new Date();
+                    const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
+                    // Si desde <= hasta: rango normal (ej. 09:00 - 17:00)
+                    // Si desde > hasta: rango cruza medianoche (ej. 21:00 - 01:00)
+                    if (desde <= hasta) {
+                        return horaActual >= desde && horaActual <= hasta;
+                    } else {
+                        return horaActual >= desde || horaActual <= hasta;
+                    }
+                }
+
+
+
+                function saveCredentials(token, gistId) {
+                    try {
+                        // Token: global
+                        if (token) {
+                            localStorage.setItem(KEY_TOKEN, S.sanitizeString(token.trim()));
+                        } else {
+                            localStorage.removeItem(KEY_TOKEN);
+                        }
+                        // Gist ID: en el perfil activo — guardarPerfiles() directamente
+                        // para no depender de window.DataManagement (que puede no existir aún)
+                        if (window.PerfilManager) {
+                            const perfil = PerfilManager.obtenerDatosPerfil();
+                            if (perfil) {
+                                if (gistId && esGistIdValido(gistId)) {
+                                    perfil.gistId = gistId.trim();
+                                } else if (gistId === '') {
+                                    delete perfil.gistId;
+                                }
+                                PerfilManager.guardarPerfiles();
+                            }
+                        }
+                    } catch (e) { console.error('Error guardando credenciales:', e); }
+                }
+
+                function saveLastSync(gistId) {
+                    const ahora = new Date().toLocaleString('es-AR');
+                    if (window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            perfil.gistLastSync = ahora;
+                            if (gistId && esGistIdValido(gistId)) perfil.gistId = gistId;
+                            PerfilManager.guardarPerfiles();
+                        }
+                    }
+                }
+
+                async function subir(registros, diasHabiles, horasDiarias) {
+                    const token = getToken();
+                    if (!token) throw new Error('Falta el token de GitHub');
+
+                    const hash = await S.calcularHashSHA256(registros);
+                    const data = {
+                        registros,
+                        diasHabiles,
+                        horasDiarias,
+                        fecha: S.fechaLocalISO(),
+                        version: S.SECURITY_LIMITS.SCHEMA_VERSION,
+                        hash,
+                        timestamp: Date.now()
+                    };
+
+                    const gistId = getGistId();
+                    const gistIdValido = esGistIdValido(gistId);
+                    const url = gistIdValido
+                        ? `https://api.github.com/gists/${gistId}`
+                        : 'https://api.github.com/gists';
+                    const method = gistIdValido ? 'PATCH' : 'POST';
+
+                    const body = {
+                        description: 'Horarios PWA - Backup automático',
+                        public: false,
+                        files: {
+                            [GIST_FILENAME]: { content: JSON.stringify(data, null, 2) }
+                        }
+                    };
+
+                    const response = await fetch(url, {
+                        method,
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                            'X-GitHub-Api-Version': '2022-11-28'
+                        },
+                        body: JSON.stringify(body)
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({}));
+                        throw new Error(err.message || `Error ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    saveLastSync(result.id);
+                    return result.id;
+                }
+
+                async function bajar() {
+                    const token = getToken();
+                    const gistId = getGistId();
+                    if (!token) throw new Error('Falta el token de GitHub');
+                    if (!gistId || !esGistIdValido(gistId)) throw new Error('Gist ID inválido — dejá el campo vacío y subí primero para crear uno');
+
+                    const response = await fetch(`https://api.github.com/gists/${gistId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'X-GitHub-Api-Version': '2022-11-28'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json().catch(() => ({}));
+                        throw new Error(err.message || `Error ${response.status}`);
+                    }
+
+                    const gist = await response.json();
+                    const file = gist.files[GIST_FILENAME];
+                    if (!file) throw new Error(`Archivo ${GIST_FILENAME} no encontrado en el Gist`);
+
+                    const data = JSON.parse(file.content, (key, value) => {
+                        if (['__proto__', 'constructor', 'prototype'].includes(key)) return undefined;
+                        return value;
+                    });
+
+                    // Verificar integridad
+                    if (data.hash) {
+                        const hashCalculado = await S.calcularHashSHA256(data.registros);
+                        if (hashCalculado !== data.hash) {
+                            throw new Error('Hash de integridad no coincide — el Gist puede estar corrupto');
+                        }
+                    }
+
+                    saveLastSync(gistId);
+                    return data;
+                }
+
+                return { getToken, getGistId, getLastSync, getMergeBehavior, setMergeBehavior, getAutoSync, setAutoSync, getRangoHorario, setRangoHorario, getSyncCount, marcarSync, superaLimite, dentroDelRangoHorario, saveCredentials, esGistIdValido, subir, bajar };
+
+            })(SecurityAndUtils);
+
+            window.GistSync = GistSync;
+
+            const UILogic = (function (S, D, GistSync) {
 
                 let toastTimeout = null;
+                let _toastQueue = [];
+                let _toastRunning = false;
                 let intervaloPulsacion = null;
                 let timeoutInicial = null;
                 let edicionBloqueada = true;
@@ -4540,30 +4975,36 @@
                 }
 
                 function mostrarToast(mensaje, tipo = 'info') {
-                    const toast = $('toast');
                     const textoLimpio = S.sanitizeString(mensaje, 200);
+                    const ultimo = _toastQueue[_toastQueue.length - 1];
+                    const actual = _toastRunning ? $('toast')?.textContent : null;
+                    if ((ultimo && ultimo.mensaje === textoLimpio) || actual === textoLimpio) return;
+                    _toastQueue.push({ mensaje: textoLimpio, tipo });
+                    if (!_toastRunning) _procesarToastQueue();
+                }
 
-                    // Limpiar timeouts anteriores
-                    if (toastTimeout) {
-                        clearTimeout(toastTimeout);
-                        toastTimeout = null;
+                function _procesarToastQueue() {
+                    if (_toastQueue.length === 0) {
+                        _toastRunning = false;
+                        return;
                     }
+                    _toastRunning = true;
+                    const { mensaje, tipo } = _toastQueue.shift();
+                    const toast = $('toast');
 
-                    // Remover clase show si existe (para reset de animación)
                     toast.classList.remove('show');
-
-                    // Actualizar contenido y tipo
-                    toast.textContent = textoLimpio;
+                    toast.textContent = mensaje;
                     toast.className = `toast ${tipo}`;
 
-                    // Mostrar toast después de un pequeño delay (para permitir reset)
-                    setTimeout(() => toast.classList.add('show'), 10);
-
-                    // Programar ocultación
-                    toastTimeout = setTimeout(() => {
-                        toast.classList.remove('show');
-                        toastTimeout = null;
-                    }, 3000);
+                    setTimeout(() => {
+                        toast.classList.add('show');
+                        toastTimeout = setTimeout(() => {
+                            toast.classList.remove('show');
+                            toastTimeout = null;
+                            // Esperar a que termine la animación de salida antes del siguiente
+                            setTimeout(() => _procesarToastQueue(), 350);
+                        }, 2000);
+                    }, 10);
                 }
 
                 function resetearBoton(btn) {
@@ -4880,6 +5321,7 @@
                     if (!progressEl) return;
                     progressEl.className = 'progress-fill';
                     progressEl.classList.add(status);
+                    if (status === 'blue') progressEl.classList.add('shimmer');
                 }
 
                 function crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy) {
@@ -5463,11 +5905,13 @@
                 }
 
                 function toggleFondoCard() {
-                    _fondoCard = _fondoCard === 'golden-gate' ? 'obelisco' : 'golden-gate';
+                    if (_fondoCard === 'golden-gate') _fondoCard = 'obelisco';
+                    else if (_fondoCard === 'obelisco') _fondoCard = 'ninguno';
+                    else _fondoCard = 'golden-gate';
                     localStorage.setItem(_perfilKey('fondoCard'), _fondoCard);
                     const btn = $('hint-fondo-label');
-                    if (btn) btn.textContent = _fondoCard === 'golden-gate' ? 'Golden Gate' : 'Skyline BA';
-                    // Redibujar con el último estado conocido
+                    const labels = { 'golden-gate': 'Golden Gate', 'obelisco': 'Skyline BA', 'ninguno': 'Sin fondo' };
+                    if (btn) btn.textContent = labels[_fondoCard];
                     const bg = $('stats-card-bg');
                     if (bg && bg.dataset.estado) actualizarFondoCard(bg.dataset.estado);
                 }
@@ -5516,7 +5960,11 @@
 
                     const color = colores[estado] || colores.esperando;
 
-                    bg.innerHTML = _fondoCard === 'obelisco' ? _svgSkylineBA(color) : _svgGoldenGate(color);
+                    if (_fondoCard === 'ninguno') {
+                        bg.innerHTML = '';
+                    } else {
+                        bg.innerHTML = _fondoCard === 'obelisco' ? _svgSkylineBA(color) : _svgGoldenGate(color);
+                    }
                 }
 
                 function actualizarUI(idNuevo = null, soloReloj = false) {
@@ -5704,7 +6152,8 @@
                         if (statsEl) {
                             // Si todos los días laborables tienen registros especiales, mostrar mensaje alternativo
                             if (todosLosDiasLaborablesTienenEspecial) {
-                                statsEl.textContent = "😎 Sin Jornadas";
+                                statsEl.textContent = "🌞";
+
                             } else {
                                 statsEl.textContent = horasATexto(tot);
                             }
@@ -6227,7 +6676,6 @@
 
                 function actualizarEstadoBotonIgnorarTF() {
                     const btn = document.getElementById('btn-toggle-ignorar-tf');
-                    const hint = document.getElementById('hint-ignorar-tf');
                     const activo = D.getIgnorarTiempoFuera();
                     if (!btn) return;
                     if (activo) {
@@ -6235,13 +6683,11 @@
                         btn.style.color = 'var(--c-green)';
                         btn.style.borderColor = 'var(--c-green)';
                         btn.style.fontWeight = 'bold';
-                        if (hint) { hint.textContent = 'Sí'; hint.style.color = 'var(--c-green)'; }
                     } else {
                         btn.style.background = '';
-                        btn.style.color = 'var(--text-muted)';
+                        btn.style.color = 'var(--text-main)';
                         btn.style.borderColor = 'var(--border)';
                         btn.style.fontWeight = '600';
-                        if (hint) { hint.textContent = 'No'; hint.style.color = 'var(--text-muted)'; }
                     }
                 }
 
@@ -6404,6 +6850,9 @@
                     const selectAnio = $('select-anio-stats');
                     if (!selectAnio) return;
 
+                    // Guardar año seleccionado actual
+                    const anioActualmenteSeleccionado = selectAnio.value;
+
                     const aniosUnicos = new Set();
                     D.registros().forEach(r => aniosUnicos.add(r.fecha.substring(0, 4)));
                     const aniosOrdenados = Array.from(aniosUnicos).sort().reverse();
@@ -6418,7 +6867,16 @@
                     }
 
                     const anioActual = String(new Date().getFullYear());
-                    const anioASeleccionar = aniosOrdenados.includes(anioActual) ? anioActual : aniosOrdenados[0];
+
+                    // Si había un año seleccionado y aún existe, mantenerlo
+                    let anioASeleccionar;
+                    if (anioActualmenteSeleccionado && aniosOrdenados.includes(anioActualmenteSeleccionado)) {
+                        anioASeleccionar = anioActualmenteSeleccionado;
+                    } else if (aniosOrdenados.includes(anioActual)) {
+                        anioASeleccionar = anioActual;
+                    } else {
+                        anioASeleccionar = aniosOrdenados[0];
+                    }
 
                     aniosOrdenados.forEach(anio => {
                         const opt = document.createElement('option');
@@ -7021,7 +7479,8 @@ Generado por Sistema Horarios
                             const contexto = vistaActual === 'semana' ? 'Esta Semana' : 'Hoy';
 
                             if (titulo) {
-                                titulo.innerHTML = `${icono} ${contexto} - <svg class="icon"><use href="#icon-exit"/></svg> Tiempo fuera`;
+                                titulo.innerHTML = `${icono} ${contexto} - <svg class="icon"><use href="#icon-exit"/></svg> Tiempo fuera <span id="break-counter" style="font-size:0.8em; font-weight:500; color:var(--c-red); margin-left:0.3em;"></span>`;
+                                _iniciarContadorBreak(storageKey);
                             }
                         }
 
@@ -7033,6 +7492,38 @@ Generado por Sistema Horarios
                         icon.setAttribute('href', '#icon-exit');
 
                         if (card) card.classList.remove('timer-running');
+                        _detenerContadorBreak();
+                    }
+                }
+
+                // --- Contador visual de tiempo fuera en curso ---
+                let _breakCounterInterval = null;
+
+                function _iniciarContadorBreak(storageKey) {
+                    _detenerContadorBreak();
+                    function _actualizarContador() {
+                        const el = document.getElementById('break-counter');
+                        if (!el) { _detenerContadorBreak(); return; }
+                        const start = parseInt(localStorage.getItem(storageKey));
+                        if (isNaN(start)) { el.textContent = ''; _detenerContadorBreak(); return; }
+                        const totalSeg = Math.floor((Date.now() - start) / 1000);
+                        const mins = Math.floor(totalSeg / 60);
+                        const horas = Math.floor(mins / 60);
+                        const minsResto = mins % 60;
+                        if (horas > 0) {
+                            el.textContent = `${horas}h ${minsResto}m`;
+                        } else {
+                            el.textContent = `${mins}m`;
+                        }
+                    }
+                    _actualizarContador();
+                    _breakCounterInterval = setInterval(_actualizarContador, 1000);
+                }
+
+                function _detenerContadorBreak() {
+                    if (_breakCounterInterval) {
+                        clearInterval(_breakCounterInterval);
+                        _breakCounterInterval = null;
                     }
                 }
 
@@ -7161,12 +7652,12 @@ Generado por Sistema Horarios
 
                         infoSection.appendChild(nombreSpan);
 
-                        if (p.esActual) {
-                            const badge = document.createElement('div');
-                            badge.className = 'btn-perfil-badge';
-                            badge.textContent = '✓ Activo';
-                            infoSection.appendChild(badge);
-                        }
+                        const badge = document.createElement('div');
+                        badge.className = 'btn-perfil-badge';
+                        badge.style.color = p.esActual ? 'var(--c-green)' : '';
+                        const countText = `${p.totalRegistros} registro${p.totalRegistros !== 1 ? 's' : ''}`;
+                        badge.textContent = p.esActual ? `${countText} · Activo` : countText;
+                        infoSection.appendChild(badge);
 
                         const editBtn = document.createElement('button');
                         editBtn.className = 'btn-perfil-edit';
@@ -7311,7 +7802,8 @@ Generado por Sistema Horarios
                         UILogic.actualizarFeedbackConfig();
                         actualizarEstadoBotonIgnorarTF();
                         const lbl = $('hint-fondo-label');
-                        if (lbl) lbl.textContent = _fondoCard === 'golden-gate' ? 'Golden Gate' : 'Skyline BA';
+                        const _labels = { 'golden-gate': 'Golden Gate', 'obelisco': 'Skyline BA', 'ninguno': 'Sin fondo' };
+                        if (lbl) lbl.textContent = _labels[_fondoCard] || 'Golden Gate';
                     });
                 }
 
@@ -7899,7 +8391,7 @@ Generado por Sistema Horarios
 
                         // Ocultar campos de rango
                         const camposRango = document.getElementById('campos-rango-exportar');
-                        if (camposRango) camposRango.style.display = 'none';
+                        if (camposRango) { camposRango.style.maxHeight = '0'; camposRango.style.opacity = '0'; }
 
                         // Limpiar fechas
                         document.getElementById('export-fecha-desde').value = '';
@@ -7923,9 +8415,11 @@ Generado por Sistema Horarios
                     const camposRango = document.getElementById('campos-rango-exportar');
 
                     if (tipo === 'rango') {
-                        camposRango.style.display = 'block';
+                        camposRango.style.maxHeight = '200px';
+                        camposRango.style.opacity = '1';
                     } else {
-                        camposRango.style.display = 'none';
+                        camposRango.style.maxHeight = '0';
+                        camposRango.style.opacity = '0';
                     }
                 }
 
@@ -8101,6 +8595,422 @@ Generado por Sistema Horarios
                     window.PWAInstaller = { instalarApp: PWAInstaller.instalarApp };
                     window.PerfilManager = PerfilManager;
 
+                    let _gistModalPadre = null;
+                    let _gistAutoSyncTemp = null;
+
+                    function actualizarEstadoBotonesGist() {
+                        const token = document.getElementById('gist-token')?.value.trim() || '';
+                        const gistId = document.getElementById('gist-id')?.value.trim() || '';
+                        const soloToken = token !== '';
+                        const ambosCompletos = token !== '' && gistId.length > 10;
+
+                        // Subir: solo requiere token (el ID se genera solo si está vacío)
+                        const btnSubir = document.getElementById('btn-gist-subir');
+                        if (btnSubir) {
+                            btnSubir.disabled = !soloToken;
+                            btnSubir.style.opacity = soloToken ? '1' : '0.4';
+                            btnSubir.style.cursor = soloToken ? '' : 'not-allowed';
+                        }
+
+                        // Bajar y Automatización: requieren ambos
+                        ['btn-gist-bajar', 'btn-toggle-gist-backup'].forEach(id => {
+                            const btn = document.getElementById(id);
+                            if (!btn) return;
+                            btn.disabled = !ambosCompletos;
+                            btn.style.opacity = ambosCompletos ? '1' : '0.4';
+                            btn.style.cursor = ambosCompletos ? '' : 'not-allowed';
+                        });
+
+                        // Comportamiento (merge): requiere ambos completos Y que esté en modo Restaurar (estado 1)
+                        const btnMerge = document.getElementById('btn-toggle-gist-merge');
+                        if (btnMerge) {
+                            const estadoBackup = parseInt(_gistAutoSyncTemp ?? GistSync.getAutoSync());
+                            const habilitarMerge = ambosCompletos && estadoBackup === 1;
+                            btnMerge.disabled = !habilitarMerge;
+                            btnMerge.style.opacity = habilitarMerge ? '1' : '0.4';
+                            btnMerge.style.cursor = habilitarMerge ? '' : 'not-allowed';
+                        }
+                    }
+
+                    function abrirModalGist() {
+                        // Recordar qué modal está abierto para volver al cerrar
+                        const modalAbierto = document.querySelector('.modal.show');
+                        _gistModalPadre = modalAbierto ? modalAbierto.id : null;
+
+                        const tokenInput = document.getElementById('gist-token');
+                        const gistIdInput = document.getElementById('gist-id');
+                        const lastSyncEl = document.getElementById('gist-ultima-sync');
+
+                        if (tokenInput) tokenInput.value = GistSync.getToken();
+                        if (gistIdInput) gistIdInput.value = GistSync.getGistId();
+                        if (lastSyncEl) {
+                            const last = GistSync.getLastSync();
+                            lastSyncEl.textContent = last ? `Sincronizado: ${last}` : 'No sincronizado';
+                        }
+
+                        // Cargar rango horario
+                        const rango = GistSync.getRangoHorario();
+                        const desdeEl = document.getElementById('gist-rango-desde');
+                        const hastaEl = document.getElementById('gist-rango-hasta');
+                        if (desdeEl) desdeEl.value = rango.desde;
+                        if (hastaEl) hastaEl.value = rango.hasta;
+
+                        _gistAutoSyncTemp = GistSync.getAutoSync();
+                        gistSetStatus('');
+                        actualizarBotonGistBackup();
+                        actualizarBotonGistMerge();
+                        actualizarEstadoBotonesGist();
+                        ModalManager.cerrarTodos();
+                        ModalManager.abrir('modal-gist');
+                    }
+
+                    function actualizarBotonesHistorico() {
+                        const btnRespaldar = document.getElementById('btn-hist-respaldar');
+                        const btnRestaurar = document.getElementById('btn-hist-restaurar');
+                        if (!btnRespaldar || !btnRestaurar) return;
+
+                        const tieneGist = GistSync.esGistIdValido(GistSync.getGistId());
+
+                        if (tieneGist) {
+                            btnRespaldar.title = 'Subir a Gist';
+                            btnRespaldar.onclick = () => gistSubir();
+                            btnRespaldar.querySelector('use').setAttribute('href', '#icon-cloud-upload');
+
+                            btnRestaurar.title = 'Bajar de Gist';
+                            btnRestaurar.onclick = () => gistBajar();
+                            btnRestaurar.querySelector('use').setAttribute('href', '#icon-cloud-download');
+                        } else {
+                            btnRespaldar.title = 'Respaldar';
+                            btnRespaldar.onclick = () => mostrarExportar(true);
+                            btnRespaldar.querySelector('use').setAttribute('href', '#icon-download');
+
+                            btnRestaurar.title = 'Restaurar';
+                            btnRestaurar.onclick = () => mostrarImportar(true);
+                            btnRestaurar.querySelector('use').setAttribute('href', '#icon-upload');
+                        }
+                    }
+
+                    function guardarConfigGist() {
+                        const token = document.getElementById('gist-token')?.value.trim() || '';
+                        const gistId = document.getElementById('gist-id')?.value.trim() || '';
+                        const desde = document.getElementById('gist-rango-desde')?.value || '16:00';
+                        const hasta = document.getElementById('gist-rango-hasta')?.value || '22:00';
+
+                        const rango = GistSync.getRangoHorario();
+                        const huboCambios = token !== GistSync.getToken()
+                            || gistId !== GistSync.getGistId()
+                            || desde !== rango.desde
+                            || hasta !== rango.hasta
+                            || (_gistAutoSyncTemp !== null && _gistAutoSyncTemp !== GistSync.getAutoSync());
+
+                        if (_gistAutoSyncTemp !== null) GistSync.setAutoSync(_gistAutoSyncTemp);
+                        GistSync.saveCredentials(token, gistId);
+                        GistSync.setRangoHorario(desde, hasta);
+                        mostrarToast(huboCambios ? 'Configuración guardada' : 'Sin cambios', huboCambios ? 'success' : 'info');
+                        _gistAutoSyncTemp = null;
+                        _gistModalPadre = null;
+                        ModalManager.cerrar('modal-gist');
+                        actualizarBotonesHistorico();
+                    }
+
+                    function cerrarModalGist() {
+                        _gistAutoSyncTemp = null;
+                        ModalManager.cerrar('modal-gist');
+                        if (_gistModalPadre) ModalManager.abrir(_gistModalPadre);
+                        _gistModalPadre = null;
+                        actualizarBotonesHistorico();
+                    }
+
+                    async function gistMergeAplicar(modo, modoAutomatico = false) {
+                        if (!_gistMergeData) return;
+                        const { registrosNormalizados, soloEnGist, data } = _gistMergeData;
+                        _gistMergeData = null;
+
+                        let registrosFinales;
+                        let mensajeExito;
+
+                        if (modo === 'merge') {
+                            if (soloEnGist.length === 0) {
+                                ModalManager.cerrar('modal-gist-merge');
+                                gistSetStatus('Sin días nuevos para agregar', 'ok');
+                                mostrarToast('Sin días nuevos para agregar', 'info');
+                                return;
+                            }
+                            if (D.registros().length + soloEnGist.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
+                                mostrarToast(`Límite alcanzado`, 'error');
+                                return;
+                            }
+                            registrosFinales = [...D.registros(), ...soloEnGist];
+                            mensajeExito = soloEnGist.length === 1 ? 'Se agregó 1 día del Gist' : `Se agregaron ${soloEnGist.length} días del Gist`;
+                        } else {
+                            registrosFinales = registrosNormalizados;
+                            mensajeExito = `${registrosNormalizados.length} registros restaurados desde Gist`;
+                            if (Array.isArray(data.diasHabiles)) {
+                                const diasValidos = data.diasHabiles.filter(d => Number.isInteger(d) && d >= 0 && d <= 6);
+                                if (diasValidos.length > 0) D.setDiasHabiles(diasValidos);
+                            }
+                            if (data.horasDiarias != null) {
+                                const hd = parseFloat(data.horasDiarias);
+                                if (Number.isFinite(hd) && hd >= 0 && hd <= 24) D.setHorasDiarias(hd);
+                            }
+                        }
+
+                        D.registros().splice(0, D.registros().length, ...registrosFinales);
+                        D.registros().sort((a, b) => {
+                            if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
+                            return (b.entrada || '').localeCompare(a.entrada || '');
+                        });
+                        HistoryManager.saveState(D.registros());
+
+                        await D.guardarYActualizar();
+                        actualizarUI();
+
+                        if (!modoAutomatico) ModalManager.cerrar('modal-gist-merge');
+                        const lastSyncEl = document.getElementById('gist-ultima-sync');
+                        if (lastSyncEl) lastSyncEl.textContent = `Última sync: ${GistSync.getLastSync()}`;
+                        gistSetStatus(`✓ ${mensajeExito}`, 'ok');
+                        mostrarToast(mensajeExito, 'success');
+
+                        const btn = document.getElementById('btn-gist-bajar');
+                        if (btn) btn.disabled = false;
+                    }
+
+                    function gistMergeCancelar() {
+                        _gistMergeData = null;
+                        ModalManager.cerrar('modal-gist-merge');
+                        const btn = document.getElementById('btn-gist-bajar');
+                        if (btn) btn.disabled = false;
+                        gistSetStatus('Cancelado', '');
+                    }
+
+                    function toggleGistMerge() {
+                        const actual = GistSync.getMergeBehavior();
+                        GistSync.setMergeBehavior(actual === 'merge' ? 'replace' : 'merge');
+                        actualizarBotonGistMerge();
+                    }
+
+                    function actualizarBotonGistMerge() {
+                        const hint = document.getElementById('hint-gist-merge');
+                        const iconEl = document.getElementById('icon-gist-merge')?.querySelector('use');
+                        const esMerge = GistSync.getMergeBehavior() === 'merge';
+                        if (hint) hint.textContent = esMerge ? 'Combinar' : 'Reemplazar';
+                        if (iconEl) iconEl.setAttribute('href', esMerge ? '#icon-combine' : '#icon-replace-swap');
+                    }
+
+                    function toggleGistBackup() {
+                        const actual = parseInt(_gistAutoSyncTemp ?? GistSync.getAutoSync());
+                        _gistAutoSyncTemp = (actual + 1) % 3;
+                        actualizarBotonGistBackup();
+                        actualizarEstadoBotonesGist();
+                    }
+
+                    function actualizarBotonGistBackup() {
+                        const btn = document.getElementById('btn-toggle-gist-backup');
+                        const hint = document.getElementById('hint-gist-backup');
+                        const label = document.getElementById('label-gist-backup');
+                        const rangoEl = document.getElementById('gist-rango-horario');
+                        const estado = _gistAutoSyncTemp ?? GistSync.getAutoSync();
+                        if (!btn) return;
+
+                        const configs = [
+                            { texto: 'Sin automatizar', hint: '', bg: '', color: 'var(--text-main)', border: 'var(--border)', fw: '600' },
+                            { texto: 'Restaurar', hint: '', bg: 'rgba(96,172,148,0.1)', color: 'var(--c-green)', border: 'var(--c-green)', fw: 'bold' },
+                            { texto: 'Respaldar', hint: '', bg: 'rgba(96,172,148,0.1)', color: 'var(--c-green)', border: 'var(--c-green)', fw: 'bold' }
+                        ];
+                        const c = configs[estado];
+                        btn.style.background = c.bg;
+                        btn.style.color = c.color;
+                        btn.style.borderColor = c.border;
+                        btn.style.fontWeight = c.fw;
+                        if (label) label.textContent = c.texto;
+                        if (hint) { hint.textContent = c.hint; hint.style.color = c.color; }
+
+                        // Mostrar/ocultar inputs de rango en estado 1 y 2
+                        if (rangoEl) {
+                            const mostrar = estado === 1 || estado === 2;
+                            rangoEl.style.maxHeight = mostrar ? '60px' : '0';
+                            rangoEl.style.opacity = mostrar ? '1' : '0';
+                        }
+                    }
+
+                    function toggleVerToken() {
+                        const input = document.getElementById('gist-token');
+                        if (!input) return;
+                        input.type = input.type === 'password' ? 'text' : 'password';
+                    }
+
+                    function abrirGistEnBrowser() {
+                        const gistId = document.getElementById('gist-id')?.value.trim() || GistSync.getGistId();
+                        if (gistId) {
+                            window.open(`https://gist.github.com/${gistId}`, '_blank');
+                        } else {
+                            window.open('https://gist.github.com', '_blank');
+                        }
+                    }
+
+                    function gistSetStatus(msg, tipo = '') {
+                        const modal = document.getElementById('modal-gist');
+                        const modalAbierto = modal?.classList.contains('show');
+                        const el = document.getElementById('gist-status');
+                        if (el && modalAbierto) {
+                            el.textContent = msg;
+                            el.style.color = tipo === 'error' ? 'var(--c-red)'
+                                : tipo === 'ok' ? 'var(--c-green)'
+                                    : 'var(--text-muted)';
+                        }
+                    }
+
+                    async function gistSubir() {
+                        // Leer desde DOM solo si el modal está abierto, si no usar GistSync directamente
+                        const tokenInput = document.getElementById('gist-token');
+                        const gistIdInput = document.getElementById('gist-id');
+                        const modalAbierto = document.getElementById('modal-gist')?.classList.contains('show');
+                        if (modalAbierto) {
+                            GistSync.saveCredentials(tokenInput?.value.trim() || '', gistIdInput?.value.trim() || '');
+                        }
+
+                        const btn = document.getElementById('btn-gist-subir');
+                        if (btn) btn.disabled = true;
+                        gistSetStatus('Subiendo...');
+                        mostrarToast('Subiendo...', 'info');
+
+                        try {
+                            const nuevoId = await GistSync.subir(
+                                D.registros(),
+                                D.diasHabiles(),
+                                D.horasDiarias()
+                            );
+                            // Actualizar el campo con el ID si era nuevo
+                            const gistIdInput = document.getElementById('gist-id');
+                            if (gistIdInput) gistIdInput.value = nuevoId;
+                            // Actualizar última sync
+                            const lastSyncEl = document.getElementById('gist-ultima-sync');
+                            if (lastSyncEl) lastSyncEl.textContent = `Última sync: ${GistSync.getLastSync()}`;
+                            gistSetStatus(`✓ Subido correctamente (${D.registros().length} registros)`, 'ok');
+                            mostrarToast('Datos respaldados en Gist', 'success');
+                        } catch (e) {
+                            console.error('Gist subir error:', e);
+                            gistSetStatus(`Error: ${e.message}`, 'error');
+                            mostrarToast('Error al subir', 'error');
+                        } finally {
+                            if (btn) btn.disabled = false;
+                        }
+                    }
+
+                    let _gistMergeData = null;
+
+                    async function gistBajar(modoAutomatico = false) {
+                        const tokenInput = document.getElementById('gist-token');
+                        const gistIdInput = document.getElementById('gist-id');
+                        const modalAbierto = document.getElementById('modal-gist')?.classList.contains('show');
+                        if (modalAbierto) {
+                            GistSync.saveCredentials(tokenInput?.value.trim() || '', gistIdInput?.value.trim() || '');
+                        }
+
+                        const btn = document.getElementById('btn-gist-bajar');
+                        if (btn) btn.disabled = true;
+                        gistSetStatus('Bajando...');
+                        mostrarToast('Bajando...', 'info');
+
+                        try {
+                            const data = await GistSync.bajar();
+
+                            if (!data.registros || !Array.isArray(data.registros)) {
+                                throw new Error('Datos inválidos en el Gist');
+                            }
+
+                            gistSetStatus('');
+
+                            // Validar claves permitidas
+                            const allowedRootKeys = ['registros', 'diasHabiles', 'horasDiarias', 'fecha', 'version', 'hash', 'timestamp'];
+                            const hasInvalidKeys = Object.keys(data).some(k => !allowedRootKeys.includes(k));
+                            if (hasInvalidKeys) throw new Error('Estructura del Gist sospechosa');
+
+                            // Advertir schema futuro
+                            if (data.version && data.version > S.SECURITY_LIMITS.SCHEMA_VERSION) {
+                                mostrarToast(`Gist de versión más nueva (v${data.version}). Algunos datos pueden no importarse correctamente.`, 'warning');
+                            }
+
+                            // Filtrar, normalizar y recalcular registros (igual que importarDatos)
+                            const validarHora = (h) => h && S.REGEX_PATTERNS.HORA.test(h) ? S.sanitizeString(h, 5) : null;
+                            const registrosNormalizados = data.registros
+                                .filter(r => S.validarRegistroSeguro(r))
+                                .map(r => ({
+                                    id: (r.id && S.REGEX_PATTERNS.ID.test(r.id)) ? r.id : S.generarIDSeguro(),
+                                    fecha: S.sanitizeString(r.fecha, 10),
+                                    entrada: validarHora(r.entrada),
+                                    salida: validarHora(r.salida),
+                                    tiempoFuera: validarHora(r.tiempoFuera),
+                                    horas: Math.max(0, Math.min(24, parseFloat(r.horas) || 0)),
+                                    minutos: Math.max(0, Math.min(59, parseFloat(r.minutos) || 0)),
+                                    total: Math.max(0, Math.min(24, parseFloat(r.total) || 0)),
+                                    credito: validarHora(r.credito),
+                                }));
+
+                            if (registrosNormalizados.length === 0) throw new Error('No se encontraron registros válidos');
+                            if (registrosNormalizados.length > S.SECURITY_LIMITS.MAX_REGISTROS) throw new Error(`Máximo ${S.SECURITY_LIMITS.MAX_REGISTROS} registros permitidos`);
+
+                            // Recalcular horas para consistencia
+                            registrosNormalizados.forEach(r => {
+                                const t = D.calcularHoras(r.entrada, r.salida, r.tiempoFuera || null, r.credito || null);
+                                r.horas = t?.horas || 0;
+                                r.minutos = t?.minutos || 0;
+                                r.total = t?.total || 0;
+                            });
+
+                            // Análisis: comparar Gist vs local
+                            const fechasLocales = new Set(D.registros().map(r => r.fecha));
+                            const soloEnGist = registrosNormalizados.filter(r => !fechasLocales.has(r.fecha));
+                            const enAmbos = registrosNormalizados.filter(r => fechasLocales.has(r.fecha));
+                            const soloLocal = D.registros().filter(r => !registrosNormalizados.some(g => g.fecha === r.fecha));
+
+                            // Guardar datos para que gistMergeAplicar los use
+                            _gistMergeData = { registrosNormalizados, soloEnGist, data };
+
+                            if (modoAutomatico) {
+                                // En automático: usar el toggle configurado sin preguntar
+                                await gistMergeAplicar(GistSync.getMergeBehavior(), true);
+                            } else {
+                                // Manual: mostrar modal de análisis
+                                // Detectar cambios de configuración
+                                const configCambios = [];
+                                if (Array.isArray(data.diasHabiles)) {
+                                    const diasGist = [...data.diasHabiles].sort().join(',');
+                                    const diasLocal = [...D.diasHabiles()].sort().join(',');
+                                    if (diasGist !== diasLocal) configCambios.push('días laborales');
+                                }
+                                if (data.horasDiarias != null && parseFloat(data.horasDiarias) !== D.horasDiarias()) {
+                                    configCambios.push(`horas diarias (${D.horasDiarias()}h → ${parseFloat(data.horasDiarias)}h)`);
+                                }
+
+                                const resumenEl = document.getElementById('gist-merge-resumen');
+                                if (resumenEl) {
+                                    resumenEl.innerHTML =
+                                        `<div>` +
+                                        `<div><svg class="icon"><use href="#icon-cloud"/></svg> En Gist <strong style="color:var(--c-green)">${soloEnGist.length}</strong> registro${soloEnGist.length !== 1 ? 's' : ''} nuevos</div>` +
+                                        `<div><svg class="icon"><use href="#icon-combine"/></svg> En ambos <strong>${enAmbos.length}</strong> registro${enAmbos.length !== 1 ? 's' : ''} (por fecha)</div>` +
+                                        `<div><svg class="icon"><use href="#icon-save"/></svg> Local <strong>${soloLocal.length}</strong> registro${soloLocal.length !== 1 ? 's' : ''} no subidos</div>` +
+                                        `</div>` +
+                                        (configCambios.length > 0
+                                            ? `<svg class="icon"><use href="#icon-settings"/></svg> Reemplazar cambiará: ${configCambios.join(', ')}</div>`
+                                            : `<svg class="icon"><use href="#icon-settings"/></svg> Sin cambios de configuración</div>`) +
+                                        `<div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem">` +
+                                        `<strong>Combinar</strong>: agrega ${soloEnGist.length} nuevo(s), mantiene los locales<br>` +
+                                        `<strong>Reemplazar</strong>: usa los ${registrosNormalizados.length} registros del Gist` +
+                                        `</div>`;
+                                }
+                                ModalManager.cerrar('modal-gist');
+                                ModalManager.abrir('modal-gist-merge');
+                            }
+                        } catch (e) {
+                            console.error('Gist bajar error:', e);
+                            gistSetStatus(`Error: ${e.message}`, 'error');
+                            mostrarToast('Error al bajar', 'error');
+                        } finally {
+                            if (btn) btn.disabled = false;
+                        }
+                    }
+
                     window.UILogic = {
                         alternarTema, cerrarConfig, pegarHoraActual, alternarVista,
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
@@ -8114,7 +9024,9 @@ Generado por Sistema Horarios
                         toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
                         mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                         iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
-                        togglePeriodoStats, cambiarAnioStats, toggleFondoCard, setFondoCard
+                        togglePeriodoStats, cambiarAnioStats, toggleFondoCard, setFondoCard, toggleGistMerge, actualizarEstadoBotonesGist,
+                        abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
+                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup,
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -8355,8 +9267,55 @@ Generado por Sistema Horarios
                     PWAInstaller.init();
 
                     actualizarUI();
+                    actualizarBotonesHistorico();
+
+                    // Auto-sync al iniciar
+                    const _autoSyncEstado = GistSync.getAutoSync();
+                    const _tieneCredenciales = GistSync.getToken() && GistSync.esGistIdValido(GistSync.getGistId());
+                    if (_tieneCredenciales) {
+                        if (_autoSyncEstado === 1) {
+                            // Estado 1: restaurar al inicio si está en rango — máx 2 bajas por hora
+                            if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('bajar', 2)) {
+                                setTimeout(async () => {
+                                    await gistBajar(true);
+                                    GistSync.marcarSync('bajar');
+                                }, 2000);
+                            }
+                        } else if (_autoSyncEstado === 2) {
+                            // Estado 2: respaldo automático — máx 1 subida por hora
+                            if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('subir', 1)) {
+                                setTimeout(async () => {
+                                    await gistSubir();
+                                    GistSync.marcarSync('subir');
+                                }, 2000);
+                            }
+                        }
+                    }
+
                     setInterval(() => actualizarUI(null, true), 60000);
                     console.log('Sistema iniciado correctamente');
+
+                    // Escape cierra el modal abierto simulando su botón cerrar/volver
+                    document.addEventListener('keydown', (e) => {
+                        if (e.key !== 'Escape') return;
+                        const modal = document.querySelector('.modal.show');
+                        if (!modal) return;
+                        e.preventDefault();
+                        const acciones = {
+                            'modal-gist':          () => cerrarModalGist(),
+                            'modal-gist-merge':    () => gistMergeCancelar(),
+                            'modal-config':        () => UILogic.cerrarConfig(),
+                            'modal-selector-perfiles': () => UILogic.cerrarSelectorPerfiles(),
+                            'modal-editar':        () => UILogic.cerrarEdicion(),
+                            'modal-importar':      () => UILogic.cerrarImportar(),
+                            'modal-exportar':      () => UILogic.cerrarExportar(),
+                            'modal-filtros':       () => UILogic.cerrarFiltros(),
+                            'modal-editar-perfil': () => UILogic.cerrarEditorPerfil(),
+                            'modal-editar-grupo':  () => UILogic.cerrarEdicionGrupo(),
+                        };
+                        const accion = acciones[modal.id];
+                        if (accion) accion();
+                    });
 
                     // ===================================
                     // EVENT DELEGATION - LISTA REGISTROS
@@ -8984,7 +9943,7 @@ Generado por Sistema Horarios
                     togglePeriodoStats, cambiarAnioStats, toggleFondoCard, setFondoCard
                 };
 
-            })(SecurityAndUtils, DataManagement);
+            })(SecurityAndUtils, DataManagement, GistSync);
 
             UILogic.init();
         })();
@@ -9007,6 +9966,7 @@ Generado por Sistema Horarios
                     })
                     .catch(err => console.error('❌ Error SW:', err));
             });
+
         }
     </script>
 </body>
@@ -9014,14 +9974,20 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.52
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.68
     // ====================================================================
     
      - CAMBIOS:
-    1) 
+    1) Se agrega shimmer a la barra de progreso
+    2) limpieza de codigo en desuso
+    3) se agrega cola a la funcion mostrartoast, ahora los toast consecutivos no se pisan y esperan
+    a que termine el anterior
+    4) Se agrega listener para tecla escape para cerrar los modales
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
      y tocar el timer, al rehacer la accion, el timer sigue corriendo
+     2) en modo pwa desde una pc desktop, el boton reestablecer no funciona, hasta que se desbloquea
+     abriendo otro confirm de alguna funcion (por ejemplo: reemplazar, restaurar, etc)
      
     -->
