@@ -1701,7 +1701,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-7.72</span>
+                    <span class="version-text">LUSHIBOSCA-7.73</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -5662,7 +5662,7 @@
                 }
 
                 function _calcularEstadisticasRango(registrosRango, opciones = {}) {
-                    const {regularidadPorMes = false } = opciones;
+                    const { regularidadPorMes = false } = opciones;
 
                     const contarPorTipo = (tipoId) => {
                         const tipo = TiposRegistro.obtenerTipoPorId(tipoId);
@@ -5688,7 +5688,7 @@
                         }
                     });
                     const hTiempoFuera = Math.floor(tiempoFueraTotalMinutos / 60);
-                    const mTiempoFuera = tiempoFueraTotalMinutos % 60;                    
+                    const mTiempoFuera = tiempoFueraTotalMinutos % 60;
 
                     const registrosValidos = registrosRango.filter(r =>
                         r.entrada && r.salida && !TiposRegistro.esRegistroEspecial(r.entrada, r.salida)
@@ -5697,7 +5697,7 @@
                     const vacios = {
                         entradaPromedio: '--:--', salidaPromedio: '--:--',
                         diasTrabajados: 0, promedioDiario: '--:--',
-                        tiempoFueraTotal: '--:--', tiempoTotal: '0h 0m',                        
+                        tiempoFueraTotal: '--:--', tiempoTotal: '0h 0m',
                         feriados, ausencias, vacaciones, enfermedades,
                         asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones,
                         regularidadEntrada: '--', regularidadJornada: '--'
@@ -5753,13 +5753,13 @@
                 }
 
                 function _renderizarStats(stats, opciones = {}) {
-                    const {mostrarRegularidad = true, mostrarBtnReporte = true } = opciones;
+                    const { mostrarRegularidad = true, mostrarBtnReporte = true } = opciones;
 
                     const set = (id, val) => { const el = $(id); if (el) el.textContent = val; };
                     set('stat-entrada-promedio', stats.entradaPromedio);
                     set('stat-salida-promedio', stats.salidaPromedio);
                     set('stat-tiempo-fuera-total', stats.tiempoFueraTotal);
-                    set('stat-tiempo-total', stats.tiempoTotal);                    
+                    set('stat-tiempo-total', stats.tiempoTotal);
 
                     const toggleStatItem = (id, value) => {
                         const el = $(id); if (!el) return;
@@ -5812,7 +5812,7 @@
                         const [a, m] = r.fecha.split('-').map(Number);
                         return a === añoActual && m === mesActual + 1;
                     });
-                    return _calcularEstadisticasRango(registros, {regularidadPorMes: false });
+                    return _calcularEstadisticasRango(registros, { regularidadPorMes: false });
                 }
 
                 function actualizarEstadisticas(mesAnio = null) {
@@ -5828,7 +5828,7 @@
                         }
                     }
                     const stats = calcularEstadisticasMes(mesAnio);
-                    _renderizarStats(stats, {mostrarRegularidad: true, mostrarBtnReporte: true });
+                    _renderizarStats(stats, { mostrarRegularidad: true, mostrarBtnReporte: true });
                 }
 
                 function _perfilKey(base) {
@@ -6445,6 +6445,15 @@
                         poblarSelectorSemanas();
                         actualizarEstadisticasSemana($('select-semana-stats')?.value);
                     } else {
+                        // --- NUEVO MANEJO EXPLICITO PARA MENSUAL ---
+                        const selectAnioEl = $('select-anio-stats');
+                        const selectMesEl = $('select-mes-stats');
+                        const selectSemEl = $('select-semana-stats');
+                        if (selectAnioEl) selectAnioEl.style.display = 'none';
+                        if (selectMesEl) selectMesEl.style.display = '';
+                        if (selectSemEl) selectSemEl.style.display = 'none';
+                        const labelEl = $('label-periodo-toggle');
+                        if (labelEl) labelEl.textContent = 'Mensual';
                         poblarSelectorMeses();
                     }
                     actualizarEstadoBotonTimerMain();
@@ -6695,7 +6704,7 @@
                 function calcularEstadisticasAnio(anio) {
                     const anioNum = parseInt(anio);
                     const registros = D.registros().filter(r => parseInt(r.fecha.substring(0, 4)) === anioNum);
-                    return _calcularEstadisticasRango(registros, {regularidadPorMes: true });
+                    return _calcularEstadisticasRango(registros, { regularidadPorMes: true });
                 }
 
                 function poblarSelectorAnios() {
@@ -6715,6 +6724,7 @@
                         const opt = document.createElement('option');
                         opt.value = ''; opt.textContent = 'Sin registros';
                         selectAnio.appendChild(opt);
+                        actualizarEstadisticasAnio(null);
                         return;
                     }
 
@@ -6743,7 +6753,7 @@
 
                 function actualizarEstadisticasAnio(anio) {
                     const stats = calcularEstadisticasAnio(anio);
-                    _renderizarStats(stats, {mostrarRegularidad: true, mostrarBtnReporte: true });
+                    _renderizarStats(stats, { mostrarRegularidad: true, mostrarBtnReporte: true });
                 }
 
                 function _obtenerSemanas() {
@@ -6785,6 +6795,7 @@
                         const opt = document.createElement('option');
                         opt.value = ''; opt.textContent = 'Sin registros';
                         select.appendChild(opt);
+                        actualizarEstadisticasSemana(null);
                         return;
                     }
                     semanas.forEach(key => {
@@ -6813,15 +6824,17 @@
                     domingo.setDate(lunes.getDate() + 6);
                     const hasta = domingo.toISOString().substring(0, 10);
                     const registros = D.registros().filter(r => r.fecha >= lunesISO && r.fecha <= hasta);
-                    return _calcularEstadisticasRango(registros, {regularidadPorMes: false });
+                    return _calcularEstadisticasRango(registros, { regularidadPorMes: false });
                 }
 
                 function actualizarEstadisticasSemana(lunesISO) {
                     const select = $('select-semana-stats');
                     if (!lunesISO && select) lunesISO = select.value;
-                    if (!lunesISO) return;
+
+                    // Al quitar el return, si no hay registros calcularEstadisticasSemana devolverá 
+                    // las estadísticas vacías y _renderizarStats se encargará de ocultar los "0"
                     const stats = calcularEstadisticasSemana(lunesISO);
-                    _renderizarStats(stats, {mostrarRegularidad: false, mostrarBtnReporte: false });
+                    _renderizarStats(stats, { mostrarRegularidad: true, mostrarBtnReporte: false });
                 }
 
                 function cambiarSemanaStats() {
@@ -6850,7 +6863,7 @@
                 function togglePeriodoStats() {
                     const selectMes = $('select-mes-stats');
                     const selectAnio = $('select-anio-stats');
-                    const label = $('label-periodo-toggle');                    
+                    const label = $('label-periodo-toggle');
                     const formStats = $('form-stats');
 
                     if (modoEstadisticas === 'mensual') modoEstadisticas = 'anual';
@@ -6868,17 +6881,14 @@
                             selectAnio.style.display = '';
                             if (label) label.textContent = 'Anual';
                             poblarSelectorAnios();
-                            actualizarEstadisticasAnio($('select-anio-stats')?.value);
                         } else if (modoEstadisticas === 'semanal') {
                             if (selectSemana) selectSemana.style.display = '';
                             if (label) label.textContent = 'Semanal';
                             poblarSelectorSemanas();
-                            actualizarEstadisticasSemana($('select-semana-stats')?.value);
                         } else {
                             selectMes.style.display = '';
                             if (label) label.textContent = 'Mensual';
                             poblarSelectorMeses();
-                            actualizarEstadisticas($('select-mes-stats')?.value);
                         }
                         formStats.classList.remove('fade-out');
                     }, 200);
@@ -6910,6 +6920,7 @@
                         option.value = '';
                         option.textContent = 'Sin registros';
                         selectMes.appendChild(option);
+                        actualizarEstadisticas(null);
                         return;
                     }
 
@@ -9880,7 +9891,7 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.72
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.73
     // ====================================================================
     
      - CAMBIOS:
@@ -9888,6 +9899,7 @@ Generado por Sistema Horarios
     2) correccion de bug al agregar o modificar registros si esta en estadistica semanal
     3) agregado pregunta de hash en gist bajar
     4) se borran las referencias a semana pasada
+    5) Se corrige el bug de la tarjeta de estadisticas con items en 0 y al no tener registros
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
