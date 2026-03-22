@@ -6863,6 +6863,7 @@
                 }
 
                 function calcularEstadisticasSemana(lunesISO) {
+                    if (!lunesISO) return _calcularEstadisticasRango([], { incluirSemanaPasada: false, regularidadPorMes: false });
                     const lunes = new Date(lunesISO + 'T00:00:00');
                     const domingo = new Date(lunes);
                     domingo.setDate(lunes.getDate() + 6);
