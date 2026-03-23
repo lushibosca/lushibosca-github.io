@@ -562,15 +562,18 @@
             padding: .1rem 1rem .1rem 1rem;
         }
 
-        .registro-total.green-text {
+        .registro-total.green-text,
+        .calendario-dia.dia-normal {
             background: var(--c-green);
         }
 
-        .registro-total.red-text {
+        .registro-total.red-text,
+        .calendario-dia.dia-incompleto {
             background: var(--c-red);
         }
 
-        .registro-total.purple-text {
+        .registro-total.purple-text,
+        .calendario-dia.dia-especial {
             background: var(--c-purple);
         }
 
@@ -578,7 +581,8 @@
             background: var(--c-gold);
         }
 
-        .registro-total.blue-text {
+        .registro-total.blue-text,
+        .calendario-dia.dia-en-curso {
             background: var(--c-blue);
         }
 
@@ -802,6 +806,80 @@
         }
 
         /* --- Colapso de formulario --- */
+        /* CALENDARIO */
+        .calendario-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            margin-top: 0.75rem;
+        }
+
+        .calendario-dia-nombre {
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-main);
+            padding: 4px 0;
+            font-size: 0.9rem;
+        }
+
+        .calendario-dia {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: default;
+            position: relative;
+            transition: opacity 0.15s;
+        }
+
+        .calendario-dia.vacio {
+            visibility: hidden;
+        }
+
+        .calendario-dia.hoy {
+            outline: 2px solid var(--text-muted);
+            outline-offset: -2px;
+            font-weight: 700;
+        }
+
+        .calendario-dia.dia-sin-registro {
+            color: var(--text-muted);
+        }
+
+        .calendario-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+
+        .calendario-nav button {
+            background: none;
+            border: 1px solid transparent;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+        }
+
+        .calendario-titulo {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            text-transform: capitalize;
+            flex: 1;
+            padding-left: 1rem;
+        }
+
         .form-collapsible {
             max-height: 0;
             overflow: hidden;
@@ -823,7 +901,6 @@
         }
 
         /* Animación del boton tiempo fuera*/
-
         .timer-btn.running {
             color: var(--c-red);
             border-color: var(--c-red);
@@ -999,13 +1076,15 @@
         }
 
         /* Transición suave entre meses en estadísticas */
-        #form-stats {
+        #form-stats,
+        #calendario-grid {
             transition: max-height 0.3s ease-out, opacity 0.3s ease-out, transform 0.3s ease;
         }
 
         #modo-normal.fade-out,
         #modo-lote.fade-out,
-        #form-stats.fade-out {
+        #form-stats.fade-out,
+        #calendario-grid.fade-out {
             opacity: 0;
             transform: translateY(-10px);
         }
@@ -1134,6 +1213,10 @@
             .day-checkbox:hover span,
             .btn-perfil-edit:hover {
                 border: 1px solid var(--hover);
+            }
+
+            .calendario-nav button:hover:not(:disabled) {
+                border-color: var(--hover);
             }
         }
 
@@ -1408,7 +1491,7 @@
                     <span class="toggle-hint" id="toggle-hint">Toca para ver la Semana</span>
                 </div>
             </div>
-            <div class="card animated-card" style="animation-delay: 0.1s;">
+            <div class="card animated-card" id="card-registrar" style="animation-delay: 0.10s;">
                 <h2 class="no-margin"
                     style="display: flex; justify-content: center; align-items: center; position: relative;">
                     <button class="filter-btn timer-btn" id="btn-timer-main" onclick="UILogic.toggleTimerBreakMain()"
@@ -1523,7 +1606,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card animated-card" style="animation-delay: 0.2s;">
+            <div class="card animated-card" id="card-estadisticas" style="animation-delay: 0.15s;">
                 <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleStats()">
                     <span style="display: flex; align-items: center; gap: 0.5rem;">
                         <svg class="icon">
@@ -1562,7 +1645,7 @@
                             <div class="stat-item">
                                 <div class="stat-label">Promedio Diario</div>
                                 <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
-                            </div>                            
+                            </div>
                             <div class="stat-item">
                                 <div class="stat-label">Entrada Promedio</div>
                                 <div class="stat-value" id="stat-entrada-promedio">--:--</div>
@@ -1570,7 +1653,7 @@
                             <div class="stat-item">
                                 <div class="stat-label">Salida Promedio</div>
                                 <div class="stat-value" id="stat-salida-promedio">--:--</div>
-                            </div>                            
+                            </div>
                             <div class="stat-item">
                                 <div class="stat-label">Entrada Regular</div>
                                 <div class="stat-value" id="stat-regularidad-entrada">--</div>
@@ -1636,8 +1719,39 @@
                     </div>
                 </div>
             </div>
+            <div class="card animated-card" id="card-calendario" style="animation-delay: 0.20s;">
+                <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleCalendario()">
+                    <span style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg class="icon">
+                            <use href="#icon-calendar-simple" />
+                        </svg> Calendario
+                    </span>
+                    <svg class="icon chevron" id="icon-indicator-calendario">
+                        <use href="#icon-chevron-down" />
+                    </svg>
+                </h2>
+                <div class="form-collapsible" id="form-calendario">
+                    <div style="padding-top: 0.5rem;">
+                        <div class="calendario-nav">
+                            <span class="calendario-titulo" id="calendario-titulo-mes"></span>
+                            <button onclick="UILogic.navegarCalendario(-1)">
+                                <svg class="icon" style="transform:rotate(90deg);">
+                                    <use href="#icon-chevron-down" />
+                                </svg>
+                            </button>
+
+                            <button onclick="UILogic.navegarCalendario(1)">
+                                <svg class="icon" style="transform:rotate(-90deg);">
+                                    <use href="#icon-chevron-down" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="calendario-grid" id="calendario-grid"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card animated-card" style="animation-delay: 0.3s;">
+        <div class="card animated-card" id="card-historico" style="animation-delay: 0.25s;">
             <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleHistorico()">
                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                     <svg class="icon">
@@ -1701,7 +1815,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-7.74</span>
+                    <span class="version-text">LUSHIBOSCA-7.78</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -1768,6 +1882,30 @@
                             <use href="#icon-exit" />
                         </svg>
                         <span>Ignorar calculo TF</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Tarjetas</label>
+                    <button id="btn-toggle-card-estadisticas" onclick="UILogic.toggleVisibilidadCard('estadisticas')"
+                        >
+                        <svg class="icon">
+                            <use href="#icon-stats" />
+                        </svg>
+                        <span>Estadísticas</span>
+                    </button>
+                    <button id="btn-toggle-card-calendario" onclick="UILogic.toggleVisibilidadCard('calendario')"
+                        style="margin-top: 0.5rem;">
+                        <svg class="icon">
+                            <use href="#icon-calendar-simple" />
+                        </svg>
+                        <span>Calendario</span>
+                    </button>
+                    <button id="btn-toggle-card-historico" onclick="UILogic.toggleVisibilidadCard('historico')"
+                        style="margin-top: 0.5rem;">
+                        <svg class="icon">
+                            <use href="#icon-list" />
+                        </svg>
+                        <span>Histórico</span>
                     </button>
                 </div>
                 <div class="form-group">
@@ -2014,6 +2152,8 @@
                     </button>
                 </div>
             </div>
+            <div id="edit-hint-resumen" class="config-hint-text"
+                style="text-align: center; margin-top: 0; min-height: 1.2em;"></div>
             <div class="btn-group">
                 <button class="btn-edit" onclick="DataManagement.guardarEdicion()"><svg class="icon">
                         <use href="#icon-save" />
@@ -3824,6 +3964,9 @@
 
                     requestAnimationFrame(() => {
                         UILogic.verificarBloqueoCredito();
+                        const hintEl = document.getElementById('edit-hint-resumen');
+                        if (hintEl) hintEl.dispatchEvent ?
+                            document.getElementById('edit-entrada').dispatchEvent(new Event('input')) : null;
                     });
                 }
 
@@ -6457,6 +6600,10 @@
                         poblarSelectorMeses();
                     }
                     actualizarEstadoBotonTimerMain();
+                    // Actualizar calendario si está abierto
+                    if (document.getElementById('form-calendario')?.classList.contains('expanded')) {
+                        _renderizarCalendario();
+                    }
                 }
 
                 function alternarTema() {
@@ -6655,6 +6802,45 @@
                         btn.style.borderColor = 'var(--border)';
                         btn.style.fontWeight = '600';
                     }
+                }
+
+                function toggleVisibilidadCard(cual) {
+                    const key = 'cardVisible_' + cual;
+                    const actual = localStorage.getItem(key) !== 'false';
+                    const nuevoValor = !actual;
+                    try { localStorage.setItem(key, nuevoValor); } catch (e) { }
+                    aplicarVisibilidadCard(cual, nuevoValor);
+                    actualizarEstadoBotonCard(cual, nuevoValor);
+                    mostrarToast('Tarjeta ' + cual + (nuevoValor ? ' visible' : ' oculta'), 'info');
+                }
+
+                function aplicarVisibilidadCard(cual, visible) {
+                    const card = document.getElementById('card-' + cual);
+                    if (card) card.style.display = visible ? '' : 'none';
+                }
+
+                function actualizarEstadoBotonCard(cual, activo) {
+                    const btn = document.getElementById('btn-toggle-card-' + cual);
+                    if (!btn) return;
+                    if (activo) {
+                        btn.style.background = 'rgba(96, 172, 148, 0.1)';
+                        btn.style.color = 'var(--c-green)';
+                        btn.style.borderColor = 'var(--c-green)';
+                        btn.style.fontWeight = 'bold';
+                    } else {
+                        btn.style.background = '';
+                        btn.style.color = 'var(--text-main)';
+                        btn.style.borderColor = 'var(--border)';
+                        btn.style.fontWeight = '600';
+                    }
+                }
+
+                function aplicarVisibilidadCards() {
+                    ['estadisticas', 'calendario', 'historico'].forEach(cual => {
+                        const visible = localStorage.getItem('cardVisible_' + cual) !== 'false';
+                        aplicarVisibilidadCard(cual, visible);
+                        actualizarEstadoBotonCard(cual, visible);
+                    });
                 }
 
                 function cerrarEdicion() {
@@ -8466,6 +8652,7 @@ Generado por Sistema Horarios
                         mostrarImportar: mostrarImportar,
                         importarDatos: D.importarDatos,
                         borrarTodoHistorial: D.borrarTodoHistorial,
+                        editarRegistro: D.editarRegistro,
                         guardarEdicion: D.guardarEdicion,
                         eliminarRegistroActual: D.eliminarRegistroActual,
                         undoAction: D.undoAction,
@@ -8928,9 +9115,9 @@ Generado por Sistema Horarios
                         toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
                         mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                         iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
-                        togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleGistMerge, actualizarEstadoBotonesGist,
+                        togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleCalendario, navegarCalendario, toggleGistMerge, actualizarEstadoBotonesGist,
                         abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
-                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote,
+                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -8961,6 +9148,39 @@ Generado por Sistema Horarios
                     // C) Otros inputs
                     const tf = document.getElementById('edit-tiempo-fuera');
                     if (tf) tf.addEventListener('input', formatearInput);
+
+                    // D) Hint resumen en tiempo real
+                    function actualizarHintEdicion() {
+                        const hint = document.getElementById('edit-hint-resumen');
+                        if (!hint) return;
+                        const e = document.getElementById('edit-entrada')?.value.trim();
+                        const s = document.getElementById('edit-salida')?.value.trim();
+                        const tf = document.getElementById('edit-tiempo-fuera')?.value.trim();
+
+                        if (!e && !s) { hint.textContent = ''; return; }
+
+                        const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(e, s);
+                        if (tipoEspecial) {
+                            hint.textContent = tipoEspecial.label;
+                            return;
+                        }
+
+                        if (e?.length === 5 && s?.length === 5) {
+                            const t = D.calcularHoras(e, s, tf || null, null, false);
+                            if (t) {
+                                hint.textContent = `Total: ${t.horas}h ${t.minutos}m`;
+                            } else {
+                                hint.textContent = '';
+                            }
+                        } else {
+                            hint.textContent = '';
+                        }
+                    }
+
+                    ['edit-entrada', 'edit-salida', 'edit-tiempo-fuera'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.addEventListener('input', actualizarHintEdicion);
+                    });
 
                     // ===================================
                     // LISTENERS PARA TECLA ENTER MODULE
@@ -9075,6 +9295,7 @@ Generado por Sistema Horarios
                     D.setVistaActual(config.vistaActual);
                     D.setIgnorarTiempoFuera(config.ignorarTiempoFuera || false);
                     UILogic.actualizarEstadoBotonIgnorarTF();
+                    UILogic.aplicarVisibilidadCards();
                     UILogic.setFondoCard(config.fondoCard || 'golden-gate');
                     if (config.modoEstadisticas === 'anual') UILogic.togglePeriodoStats();
                     else if (config.modoEstadisticas === 'semanal') { UILogic.togglePeriodoStats(); UILogic.togglePeriodoStats(); }
@@ -9128,6 +9349,7 @@ Generado por Sistema Horarios
                     // RESTAURAR ESTADO VISUAL
                     try {
                         if (localStorage.getItem('formularioExpandido') === 'true') toggleFormulario();
+                        if (localStorage.getItem('calendarioExpandido') === 'true') toggleCalendario();
                         if (localStorage.getItem('statsExpandido') === 'true') toggleStats();
 
                         // Restaurar estado de Histórico (3 estados)
@@ -9676,6 +9898,91 @@ Generado por Sistema Horarios
                     }
                 }
 
+                let _calendarioMes = null; // { anio, mes } — null = mes actual
+
+                function _renderizarCalendario() {
+                    const grid = document.getElementById('calendario-grid');
+                    const titulo = document.getElementById('calendario-titulo-mes');
+                    if (!grid) return;
+
+                    const hoy = new Date();
+                    const anio = _calendarioMes ? _calendarioMes.anio : hoy.getFullYear();
+                    const mes = _calendarioMes ? _calendarioMes.mes : hoy.getMonth();
+
+                    // Título
+                    const nombresMes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+                    if (titulo) titulo.textContent = `${nombresMes[mes]} ${anio}`;
+
+                    // Registros del mes indexados por fecha
+                    const fechaStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const regsPorFecha = {};
+                    D.registros().forEach(r => { regsPorFecha[r.fecha] = r; });
+
+                    const horasDiariasObj = D.horasDiarias();
+
+                    // Determinar clase de color para un registro
+                    const claseDelDia = (fecha) => {
+                        const r = regsPorFecha[fecha];
+                        if (!r) return 'dia-sin-registro';
+                        if (TiposRegistro.esRegistroEspecial(r.entrada, r.salida)) return 'dia-especial';
+                        // En curso: tiene entrada pero salida igual a entrada (timer activo) o sin salida real
+                        if (r.entrada && (!r.salida || r.entrada === r.salida)) return 'dia-en-curso';
+                        if (r.total >= horasDiariasObj) return 'dia-normal';
+                        return 'dia-incompleto';
+                    };
+
+                    // Construir grid
+                    const diasNombre = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+                    let html = diasNombre.map(d => `<div class="calendario-dia-nombre">${d}</div>`).join('');
+
+                    const primerDia = new Date(anio, mes, 1);
+                    const ultimoDia = new Date(anio, mes + 1, 0);
+                    // getDay() 0=dom, ajustar a lunes=0
+                    let offsetInicio = primerDia.getDay();
+                    offsetInicio = offsetInicio === 0 ? 6 : offsetInicio - 1;
+
+                    for (let i = 0; i < offsetInicio; i++) {
+                        html += `<div class="calendario-dia vacio"></div>`;
+                    }
+
+                    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+                        const fecha = fechaStr(anio, mes, dia);
+                        const clase = claseDelDia(fecha);
+                        const esHoy = anio === hoy.getFullYear() && mes === hoy.getMonth() && dia === hoy.getDate();
+                        const reg = regsPorFecha[fecha];
+                        const onclick = reg ? ` onclick="DataManagement.editarRegistro('${reg.id}')" style="cursor:pointer;"` : '';
+                        html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}"${onclick}>${dia}</div>`;
+                    }
+
+                    grid.innerHTML = html;
+                }
+
+                function toggleCalendario() {
+                    toggleSeccionGen('form-calendario', 'icon-indicator-calendario', 'calendarioExpandido', () => {
+                        _renderizarCalendario();
+                    });
+                }
+
+                function navegarCalendario(delta) {
+                    const hoy = new Date();
+                    const base = _calendarioMes || { anio: hoy.getFullYear(), mes: hoy.getMonth() };
+                    let nuevoMes = base.mes + delta;
+                    let nuevoAnio = base.anio;
+                    if (nuevoMes > 11) { nuevoMes = 0; nuevoAnio++; }
+                    if (nuevoMes < 0) { nuevoMes = 11; nuevoAnio--; }
+                    _calendarioMes = { anio: nuevoAnio, mes: nuevoMes };
+                    const grid = document.getElementById('calendario-grid');
+                    if (grid) {
+                        grid.classList.add('fade-out');
+                        setTimeout(() => {
+                            _renderizarCalendario();
+                            grid.classList.remove('fade-out');
+                        }, 200);
+                    } else {
+                        _renderizarCalendario();
+                    }
+                }
+
                 function toggleStats() {
                     toggleSeccionGen('form-stats', 'icon-indicator-stats', 'statsExpandido', () => {
                         // Lógica específica de stats al abrir
@@ -9849,7 +10156,7 @@ Generado por Sistema Horarios
                     toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
                     mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
-                    togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard
+                    togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards
                 };
 
             })(SecurityAndUtils, DataManagement, GistSync);
@@ -9883,7 +10190,7 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.74
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.78
     // ====================================================================
     
      - CAMBIOS:
@@ -9895,6 +10202,10 @@ Generado por Sistema Horarios
     6) Se corrige bug de iso en estadisticas semanales
     7) Se crea funcion para obtener la fecha, y se reemplazan todos los isostring
     8) Se cambia el orden de los stats-items
+    9) Se agrega tarjeta de calendario
+    10) Se agrega listener en el modal editar para mostrar el estado segun los datos
+    11) se agrega opcion para mostrar/ocultar las tarjetas
+    12) cambios en el orden de algunos botones de ajustes
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
