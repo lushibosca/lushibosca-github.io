@@ -1701,7 +1701,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-7.73</span>
+                    <span class="version-text">LUSHIBOSCA-7.74</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -2558,6 +2558,10 @@
                     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
                 }
 
+                function formatearFechaLocal(date) {
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                }
+
                 return {
                     SECURITY_LIMITS,
                     REGEX_PATTERNS,
@@ -2567,7 +2571,8 @@
                     generarIDSeguro,
                     calcularHashSHA256,
                     validarRegistroSeguro,
-                    fechaLocalISO
+                    fechaLocalISO,
+                    formatearFechaLocal
                 };
             })();
 
@@ -4875,8 +4880,6 @@
                     }
                 }
 
-
-
                 function saveCredentials(token, gistId) {
                     try {
                         // Token: global
@@ -5149,7 +5152,7 @@
                     const offset = dia === 0 ? -6 : 1 - dia;
                     const lunes = new Date(date);
                     lunes.setDate(date.getDate() + offset);
-                    return lunes.toISOString().split('T')[0];
+                    return S.formatearFechaLocal(lunes);
                 }
 
                 function horasATexto(t) {
@@ -5241,11 +5244,8 @@
                 function esFechaConsecutiva(fechaActual, fechaSiguiente) {
                     const actual = new Date(fechaActual.replace(/-/g, '/') + ' 00:00:00');
                     const siguiente = new Date(fechaSiguiente.replace(/-/g, '/') + ' 00:00:00');
-
-                    // Sumar 1 día a la fecha actual
                     actual.setDate(actual.getDate() - 1);
-
-                    return actual.toISOString().split('T')[0] === fechaSiguiente;
+                    return S.formatearFechaLocal(actual) === fechaSiguiente;
                 }
 
                 // Función principal mejorada
@@ -6764,7 +6764,7 @@
                         const diff = (dow === 0) ? -6 : 1 - dow;
                         const lunes = new Date(d);
                         lunes.setDate(d.getDate() + diff);
-                        const key = `${lunes.getFullYear()}-${String(lunes.getMonth() + 1).padStart(2, '0')}-${String(lunes.getDate()).padStart(2, '0')}`;
+                        const key = S.formatearFechaLocal(lunes);
                         if (!semanas.has(key)) semanas.set(key, lunes);
                     });
                     return Array.from(semanas.keys()).sort().reverse();
@@ -6812,7 +6812,7 @@
                         const diff = (dow === 0) ? -6 : 1 - dow;
                         const lunes = new Date(hoy);
                         lunes.setDate(hoy.getDate() + diff);
-                        const lunesISO = `${lunes.getFullYear()}-${String(lunes.getMonth() + 1).padStart(2, '0')}-${String(lunes.getDate()).padStart(2, '0')}`;
+                        const lunesISO = S.formatearFechaLocal(lunes);
                         select.value = semanas.includes(lunesISO) ? lunesISO : semanas[0];
                     }
                     actualizarEstadisticasSemana(select.value);
@@ -6823,7 +6823,7 @@
                     const lunes = new Date(lunesISO + 'T00:00:00');
                     const domingo = new Date(lunes);
                     domingo.setDate(lunes.getDate() + 6);
-                    const hasta = domingo.toISOString().substring(0, 10);
+                    const hasta = S.formatearFechaLocal(domingo);
                     const registros = D.registros().filter(r => r.fecha >= lunesISO && r.fecha <= hasta);
                     return _calcularEstadisticasRango(registros, { regularidadPorMes: false });
                 }
@@ -7153,15 +7153,6 @@ REPORTE DE HORAS TRABAJADAS
                         totalesPorSemana: () => {
                             if (esAnual) return '';
 
-                            function obtenerLunesSemana(fecha) {
-                                const date = new Date(fecha.replace(/-/g, '/') + ' 00:00:00');
-                                const dia = date.getDay();
-                                const offset = dia === 0 ? -6 : 1 - dia;
-                                const lunes = new Date(date);
-                                lunes.setDate(date.getDate() + offset);
-                                return lunes.toISOString().split('T')[0];
-                            }
-
                             const selectMes = $('select-mes-stats');
                             const mesSeleccionado = selectMes ? selectMes.value : null;
                             if (!mesSeleccionado) return '';
@@ -7210,7 +7201,7 @@ REPORTE DE HORAS TRABAJADAS
                                 const fechaLunes = new Date(lunes.replace(/-/g, '/') + ' 00:00:00');
                                 const fechaDomingo = new Date(fechaLunes);
                                 fechaDomingo.setDate(fechaLunes.getDate() + 6);
-                                const domingo = fechaDomingo.toISOString().split('T')[0];
+                                const domingo = S.formatearFechaLocal(fechaDomingo);
 
                                 let fechaFin = domingo;
                                 let esIncompleta = false;
@@ -9892,7 +9883,7 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.73
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 7.74
     // ====================================================================
     
      - CAMBIOS:
@@ -9902,6 +9893,7 @@ Generado por Sistema Horarios
     4) se borran las referencias a semana pasada
     5) Se corrige el bug de la tarjeta de estadisticas con items en 0 y al no tener registros
     6) Se corrige bug de iso en estadisticas semanales
+    7) Se crea funcion para obtener la fecha, y se reemplazan todos los isostring
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
