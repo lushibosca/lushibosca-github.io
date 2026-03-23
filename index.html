@@ -1556,6 +1556,34 @@
                         </div>
                         <div class="stats-grid">
                             <div class="stat-item">
+                                <div class="stat-label">Tiempo Total</div>
+                                <div class="stat-value" id="stat-tiempo-total">0h 0m</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Promedio Diario</div>
+                                <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
+                            </div>                            
+                            <div class="stat-item">
+                                <div class="stat-label">Entrada Promedio</div>
+                                <div class="stat-value" id="stat-entrada-promedio">--:--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Salida Promedio</div>
+                                <div class="stat-value" id="stat-salida-promedio">--:--</div>
+                            </div>                            
+                            <div class="stat-item">
+                                <div class="stat-label">Entrada Regular</div>
+                                <div class="stat-value" id="stat-regularidad-entrada">--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Jornada Regular</div>
+                                <div class="stat-value" id="stat-regularidad-jornada">--</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Tiempo Fuera</div>
+                                <div class="stat-value" id="stat-tiempo-fuera-total">0h 0m</div>
+                            </div>
+                            <div class="stat-item">
                                 <div class="stat-label">Jornadas</div>
                                 <div class="stat-value" id="stat-dias-trabajados">0</div>
                             </div>
@@ -1594,34 +1622,6 @@
                             <div class="stat-item">
                                 <div class="stat-label">Salidas Temprano</div>
                                 <div class="stat-value" id="stat-compensaciones">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Tiempo Total</div>
-                                <div class="stat-value" id="stat-tiempo-total">0h 0m</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Tiempo Fuera</div>
-                                <div class="stat-value" id="stat-tiempo-fuera-total">0h 0m</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Entrada Promedio</div>
-                                <div class="stat-value" id="stat-entrada-promedio">--:--</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Salida Promedio</div>
-                                <div class="stat-value" id="stat-salida-promedio">--:--</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Promedio Diario</div>
-                                <div class="stat-value" id="stat-promedio-diario">0h 0m</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Entrada Regular</div>
-                                <div class="stat-value" id="stat-regularidad-entrada">--</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Jornada Regular</div>
-                                <div class="stat-value" id="stat-regularidad-jornada">--</div>
                             </div>
                         </div>
 
@@ -9894,6 +9894,7 @@ Generado por Sistema Horarios
     5) Se corrige el bug de la tarjeta de estadisticas con items en 0 y al no tener registros
     6) Se corrige bug de iso en estadisticas semanales
     7) Se crea funcion para obtener la fecha, y se reemplazan todos los isostring
+    8) Se cambia el orden de los stats-items
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
