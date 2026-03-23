@@ -6764,7 +6764,7 @@
                         const diff = (dow === 0) ? -6 : 1 - dow;
                         const lunes = new Date(d);
                         lunes.setDate(d.getDate() + diff);
-                        const key = lunes.toISOString().substring(0, 10);
+                        const key = `${lunes.getFullYear()}-${String(lunes.getMonth() + 1).padStart(2, '0')}-${String(lunes.getDate()).padStart(2, '0')}`;
                         if (!semanas.has(key)) semanas.set(key, lunes);
                     });
                     return Array.from(semanas.keys()).sort().reverse();
@@ -6812,9 +6812,10 @@
                         const diff = (dow === 0) ? -6 : 1 - dow;
                         const lunes = new Date(hoy);
                         lunes.setDate(hoy.getDate() + diff);
-                        const lunesISO = lunes.toISOString().substring(0, 10);
+                        const lunesISO = `${lunes.getFullYear()}-${String(lunes.getMonth() + 1).padStart(2, '0')}-${String(lunes.getDate()).padStart(2, '0')}`;
                         select.value = semanas.includes(lunesISO) ? lunesISO : semanas[0];
                     }
+                    actualizarEstadisticasSemana(select.value);
                 }
 
                 function calcularEstadisticasSemana(lunesISO) {
@@ -9900,6 +9901,7 @@ Generado por Sistema Horarios
     3) agregado pregunta de hash en gist bajar
     4) se borran las referencias a semana pasada
     5) Se corrige el bug de la tarjeta de estadisticas con items en 0 y al no tener registros
+    6) Se corrige bug de iso en estadisticas semanales
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
