@@ -492,7 +492,7 @@
             height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
             animation: shimmer 5s ease-in-out infinite;
-        }        
+        }
 
         /* --- Lista de Registros --- */
         .registro-item {
@@ -865,7 +865,7 @@
             gap: 0.4rem;
             pointer-events: all;
             animation: slideDownFade 0.15s ease;
-        }        
+        }
 
         .cal-popup-fecha {
             font-size: 0.78rem;
@@ -1470,7 +1470,7 @@
         <symbol id="icon-briefcase" viewBox="0 0 24 24">
             <rect x="2" y="7" width="20" height="14" rx="2" ry="2" class="icon-line" stroke="currentColor"></rect>
             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" class="icon-line" stroke="currentColor"></path>
-        </symbol>                
+        </symbol>
         <symbol id="icon-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
@@ -1862,7 +1862,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.10</span>
+                    <span class="version-text">LUSHIBOSCA-8.11</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -1914,25 +1914,7 @@
                     <div id="config-total-feedback" class="config-hint-text">(Total semanal: --hs)</div>
                 </div>
                 <div class="form-group">
-                    <label>Fondo</label>
-                    <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()">
-                        <svg class="icon">
-                            <use href="#icon-landscape" />
-                        </svg>
-                        <span id="hint-fondo-label">Golden Gate</span>
-                    </button>
-                </div>
-                <div class="form-group">
-                    <label>Tiempo Fuera</label>
-                    <button id="btn-toggle-ignorar-tf" onclick="UILogic.toggleIgnorarTiempoFuera()">
-                        <svg class="icon">
-                            <use href="#icon-exit" />
-                        </svg>
-                        <span>Ignorar calculo TF</span>
-                    </button>
-                </div>
-                <div class="form-group">
-                    <label>Tarjetas</label>
+                    <label>Mostrar tarjetas</label>
                     <button id="btn-toggle-card-estadisticas" onclick="UILogic.toggleVisibilidadCard('estadisticas')">
                         <svg class="icon">
                             <use href="#icon-stats" />
@@ -1952,6 +1934,33 @@
                             <use href="#icon-list" />
                         </svg>
                         <span>Histórico</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Apertura de tarjetas</label>
+                    <button id="btn-toggle-persistir-tarjetas" onclick="UILogic.togglePersistirTarjetas()">
+                        <svg class="icon">
+                            <use href="#icon-save" />
+                        </svg>
+                        <span>Recordar estado</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Tiempo Fuera</label>
+                    <button id="btn-toggle-ignorar-tf" onclick="UILogic.toggleIgnorarTiempoFuera()">
+                        <svg class="icon">
+                            <use href="#icon-exit" />
+                        </svg>
+                        <span>Ignorar calculo TF</span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Fondo de estado</label>
+                    <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()">
+                        <svg class="icon">
+                            <use href="#icon-landscape" />
+                        </svg>
+                        <span id="hint-fondo-label">Golden Gate</span>
                     </button>
                 </div>
                 <div class="form-group">
@@ -2338,11 +2347,6 @@
                 </select>
             </div>
             <div class="btn-group">
-                <button class="btn-edit" onclick="DataManagement.aplicarFiltros()">
-                    <svg class="icon">
-                        <use href="#icon-filter" />
-                    </svg> Aplicar
-                </button>
                 <button class="btn-cancel" onclick="UILogic.cerrarFiltros()">
                     <svg class="icon">
                         <use href="#icon-cancelar" />
@@ -4696,6 +4700,23 @@
                     document.getElementById('btn-filtro').classList.remove('filtro-activo');
                 }
 
+                function aplicarFiltrosInmediato(desde, hasta, tipo) {
+                    if (!desde && !hasta && !tipo) {
+                        filtroActivo = false;
+                        filtroDesde = null;
+                        filtroHasta = null;
+                        filtroTipo = null;
+                        document.getElementById('btn-filtro').classList.remove('filtro-activo');
+                    } else {
+                        filtroActivo = true;
+                        filtroDesde = desde || null;
+                        filtroHasta = hasta || null;
+                        filtroTipo = tipo || null;
+                        document.getElementById('btn-filtro').classList.add('filtro-activo');
+                    }
+                    guardarYActualizar();
+                }
+
                 function obtenerRegistrosFiltrados() {
                     if (!filtroActivo) return registros;
 
@@ -4869,6 +4890,7 @@
                     importarDatos,
                     calcularBufferSemanal,
                     aplicarFiltros,
+                    aplicarFiltrosInmediato,
                     limpiarFiltros,
                     obtenerRegistrosFiltrados,
                     registrarVacacionesDirecto,
@@ -6770,6 +6792,7 @@
                         } catch (e) { }
                         D.guardarYActualizar();
                     }
+                    actualizarEstadoBotonPersistir();
                 }
 
                 function iniciarCambioHoras(incremento) {
@@ -6836,6 +6859,31 @@
                 function actualizarEstadoBotonIgnorarTF() {
                     const btn = document.getElementById('btn-toggle-ignorar-tf');
                     const activo = D.getIgnorarTiempoFuera();
+                    if (!btn) return;
+                    if (activo) {
+                        btn.style.background = 'rgba(96, 172, 148, 0.1)';
+                        btn.style.color = 'var(--c-green)';
+                        btn.style.borderColor = 'var(--c-green)';
+                        btn.style.fontWeight = 'bold';
+                    } else {
+                        btn.style.background = '';
+                        btn.style.color = 'var(--text-main)';
+                        btn.style.borderColor = 'var(--border)';
+                        btn.style.fontWeight = '600';
+                    }
+                }
+
+                function togglePersistirTarjetas() {
+                    const actual = localStorage.getItem('persistirTarjetas') !== 'false';
+                    const nuevo = !actual;
+                    try { localStorage.setItem('persistirTarjetas', nuevo); } catch (e) { }
+                    actualizarEstadoBotonPersistir();
+                    mostrarToast(nuevo ? 'Estado de tarjetas guardado' : 'Tarjetas siempre cerradas al iniciar', 'info');
+                }
+
+                function actualizarEstadoBotonPersistir() {
+                    const btn = document.getElementById('btn-toggle-persistir-tarjetas');
+                    const activo = localStorage.getItem('persistirTarjetas') !== 'false';
                     if (!btn) return;
                     if (activo) {
                         btn.style.background = 'rgba(96, 172, 148, 0.1)';
@@ -8704,6 +8752,7 @@ Generado por Sistema Horarios
                         undoAction: D.undoAction,
                         redoAction: D.redoAction,
                         aplicarFiltros: D.aplicarFiltros,
+                        aplicarFiltrosInmediato: D.aplicarFiltrosInmediato,
                         limpiarFiltros: D.limpiarFiltros,
                         registrarDiaEspecial: D.registrarDiaEspecial,
                         registros: D.registros,
@@ -9161,7 +9210,8 @@ Generado por Sistema Horarios
                         toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
                         mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                         iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
-                        togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleCalendario, navegarCalendario, toggleGistMerge, actualizarEstadoBotonesGist,
+                        togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleCalendario, navegarCalendario, toggleGistMerge,
+                        actualizarEstadoBotonesGist, togglePersistirTarjetas, actualizarEstadoBotonPersistir,
                         abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
                         gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards, _popupCalendario,
                     };
@@ -9394,12 +9444,13 @@ Generado por Sistema Horarios
 
                     // RESTAURAR ESTADO VISUAL
                     try {
-                        if (localStorage.getItem('formularioExpandido') === 'true') toggleFormulario();
-                        if (localStorage.getItem('calendarioExpandido') === 'true') toggleCalendario();
-                        if (localStorage.getItem('statsExpandido') === 'true') toggleStats();
+                        const persistir = localStorage.getItem('persistirTarjetas') !== 'false';
+                        if (persistir && localStorage.getItem('formularioExpandido') === 'true') toggleFormulario();
+                        if (persistir && localStorage.getItem('calendarioExpandido') === 'true') toggleCalendario();
+                        if (persistir && localStorage.getItem('statsExpandido') === 'true') toggleStats();
 
                         // Restaurar estado de Histórico (3 estados)
-                        const estadoHistorico = localStorage.getItem('historicoExpandido');
+                        const estadoHistorico = persistir ? localStorage.getItem('historicoExpandido') : null;
                         if (estadoHistorico === 'meses' || estadoHistorico === 'completo') {
                             const contenido = $('contenido-historico');
                             const icon = $('icon-indicator-historico');
@@ -9775,6 +9826,22 @@ Generado por Sistema Horarios
 
                     // Si no hay filtro, mostrar modal
                     ModalManager.abrir('modal-filtros');
+
+                    // Aplicar cambios al instante
+                    const aplicarInmediato = () => {
+                        const desde = $('filtro-fecha-desde').value;
+                        const hasta = $('filtro-fecha-hasta').value;
+                        const tipo = $('filtro-tipo').value;
+                        D.aplicarFiltrosInmediato(desde, hasta, tipo);
+                    };
+
+                    ['filtro-fecha-desde', 'filtro-fecha-hasta', 'filtro-tipo'].forEach(id => {
+                        const el = $(id);
+                        if (el) {
+                            el.removeEventListener('change', aplicarInmediato);
+                            el.addEventListener('change', aplicarInmediato);
+                        }
+                    });
                 }
 
                 function cerrarFiltros() {
@@ -9796,7 +9863,9 @@ Generado por Sistema Horarios
                         else icon.classList.remove('rotated');
                     }
 
-                    try { localStorage.setItem(storageKey, isExpanded); } catch (e) { }
+                    if (localStorage.getItem('persistirTarjetas') !== 'false') {
+                        try { localStorage.setItem(storageKey, isExpanded); } catch (e) { }
+                    }
 
                     // Ejecutar lógica extra si es necesario (ej: cargar stats)
                     if (isExpanded && callback) callback();
@@ -10291,6 +10360,7 @@ Generado por Sistema Horarios
                     mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                     togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
+                    togglePersistirTarjetas, actualizarEstadoBotonPersistir,
                     _popupCalendario
                 };
 
@@ -10325,7 +10395,7 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.10
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.11
     // ====================================================================
     
      - CAMBIOS:
@@ -10342,6 +10412,8 @@ Generado por Sistema Horarios
     11) se agrega opcion para mostrar/ocultar las tarjetas
     12) cambios en el orden de algunos botones de ajustes
     13) Se agrega popup en calendario para mostrar resumen del dia o editar
+    14) Se agrega cambio inmediato a los filtro del historico
+    15) Se agrega opcion de persistencia al estado de las tarjetas 
 
      - BUGS MENORES CONOCIDOS:
      1) al tener un registro con entrada y luego agregar una salida, deshacer la accion
