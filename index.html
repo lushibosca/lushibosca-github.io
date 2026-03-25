@@ -824,7 +824,7 @@
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             font-weight: 500;
             cursor: default;
             position: relative;
@@ -932,7 +932,7 @@
         }
 
         .calendario-titulo {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-main);
             text-transform: capitalize;
@@ -1874,7 +1874,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.16</span>
+                    <span class="version-text">LUSHIBOSCA-8.17</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -5825,7 +5825,8 @@
                     horasEl.textContent = rangoFechas;
 
                     const totalEl = document.createElement('div');
-                    totalEl.className = 'registro-total purple-text';
+                    const colorClase = tipoConfig ? `${tipoConfig.color}-text` : 'purple-text';
+                    totalEl.className = `registro-total ${colorClase}`;
                     totalEl.textContent = 'Justificado';
 
                     info.appendChild(fechaEl);
@@ -10569,11 +10570,12 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.16
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.17
     // ====================================================================
     
      - CAMBIOS:
     1) Refactorizacion de varias funciones
+    2) Se completa el aplicado de color de tipos de registro module
 
      - BUGS MENORES CONOCIDOS:
           
