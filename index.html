@@ -1157,6 +1157,11 @@
         .fade-out {
             opacity: 0;
             transform: translateY(-10px);
+        } 
+
+        #form-stats.fade-out {
+            opacity: 0 ;
+            transform: translateY(-10px);
         }
 
         .stats-card-content.fade-out {
@@ -7244,7 +7249,7 @@
                     setTimeout(() => {
                         actualizarEstadisticasSemana(select.value);
                         formStats.classList.remove('fade-out');
-                    }, 200);
+                    }, 300);
                 }
 
                 function cambiarAnioStats() {
@@ -7256,7 +7261,7 @@
                     setTimeout(() => {
                         actualizarEstadisticasAnio(anioSeleccionado);
                         formStats.classList.remove('fade-out');
-                    }, 200);
+                    }, 300);
                 }
 
                 function togglePeriodoStats() {
@@ -7290,7 +7295,7 @@
                             poblarSelectorMeses();
                         }
                         formStats.classList.remove('fade-out');
-                    }, 200);
+                    }, 300);
                 }
 
                 function poblarSelectorMeses() {
@@ -10349,7 +10354,7 @@ Generado por Sistema Horarios
                         setTimeout(() => {
                             _renderizarCalendario();
                             grid.classList.remove('fade-out');
-                        }, 200);
+                        }, 300);
                     } else {
                         _renderizarCalendario();
                     }
