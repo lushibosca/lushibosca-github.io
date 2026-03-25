@@ -443,7 +443,7 @@
 
         .stats-card.border-transparent {
             border-left-color: transparent !important;
-        }        
+        }
 
         .progress-bar {
             width: 100%;
@@ -958,6 +958,27 @@
             transform-origin: center;
             z-index: 10;
             position: relative;
+        }
+
+        .calendario-dia.nuevo-registro-animacion {
+            animation: cal-destello 0.8s ease-out forwards;
+        }
+
+        @keyframes cal-destello {
+            0% {
+                box-shadow: 0 0 0 3px var(--c-green);
+                opacity: 0;
+            }
+
+            60% {
+                box-shadow: 0 0 0 6px rgba(76, 172, 140, 0);
+                opacity: 1;
+            }
+
+            100% {
+                box-shadow: none;
+                opacity: 1;
+            }
         }
 
         /* Animación del boton tiempo fuera*/
@@ -1797,7 +1818,7 @@
                         style="display: flex; justify-content: space-between; gap: 0.5rem; padding: 0 0.5rem; margin-top: 0.5rem">
                         <div style="display: flex; gap: 0.5rem;">
                             <button class="filter-btn" id="btn-vista-calendario"
-                                onclick="UILogic.toggleVistaHistorico()" title="Vista calendario">
+                                onclick="UILogic.toggleVistaHistorico()" title="Vista">
                                 <svg class="icon">
                                     <use href="#icon-calendar-simple" />
                                 </svg>
@@ -1865,7 +1886,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.13</span>
+                    <span class="version-text">LUSHIBOSCA-8.16</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -1917,23 +1938,39 @@
                     <div id="config-total-feedback" class="config-hint-text">(Total semanal: --hs)</div>
                 </div>
                 <div class="form-group">
-                    <label>Mostrar tarjetas</label>
-                    <button id="btn-toggle-card-estadisticas" onclick="UILogic.toggleVisibilidadCard('estadisticas')">
-                        <svg class="icon">
-                            <use href="#icon-stats" />
-                        </svg>
-                        <span>Estadísticas</span>
-                    </button>
-                    <button id="btn-toggle-card-historico" onclick="UILogic.toggleVisibilidadCard('historico')"
-                        style="margin-top: 0.5rem;">
-                        <svg class="icon">
-                            <use href="#icon-list" />
-                        </svg>
-                        <span>Histórico</span>
-                    </button>
+                    <label>Mostrar / Ordenar Tarjetas</label>
+                    <div style="display:flex;flex-direction:column;gap:0.4rem;" id="lista-orden-cards">
+                        <div class="orden-card-item" id="orden-item-registrar">
+                            <button id="btn-toggle-card-registrar" class="drag-handle" data-card="registrar"
+                                onclick="UILogic.toggleVisibilidadCard('registrar')" style="flex:1;">
+                                <svg class="icon">
+                                    <use href="#icon-save" />
+                                </svg>
+                                <span>Registrar</span>
+                            </button>
+                        </div>
+                        <div class="orden-card-item" id="orden-item-estadisticas">
+                            <button id="btn-toggle-card-estadisticas" class="drag-handle" data-card="estadisticas"
+                                onclick="UILogic.toggleVisibilidadCard('estadisticas')" style="flex:1;">
+                                <svg class="icon">
+                                    <use href="#icon-stats" />
+                                </svg>
+                                <span>Estadísticas</span>
+                            </button>
+                        </div>
+                        <div class="orden-card-item" id="orden-item-historico">
+                            <button id="btn-toggle-card-historico" class="drag-handle" data-card="historico"
+                                onclick="UILogic.toggleVisibilidadCard('historico')" style="flex:1;">
+                                <svg class="icon">
+                                    <use href="#icon-list" />
+                                </svg>
+                                <span>Histórico</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Apertura de tarjetas</label>
+                    <label>Estado de Tarjetas</label>
                     <button id="btn-toggle-persistir-tarjetas" onclick="UILogic.togglePersistirTarjetas()">
                         <svg class="icon">
                             <use href="#icon-save" />
@@ -1951,7 +1988,7 @@
                     </button>
                 </div>
                 <div class="form-group">
-                    <label>Fondo de estado</label>
+                    <label>Fondo de Estado</label>
                     <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()">
                         <svg class="icon">
                             <use href="#icon-landscape" />
@@ -4233,6 +4270,10 @@
                     localStorage.removeItem(`history_${perfilId}`);
                     localStorage.removeItem(`fondoCard_${perfilId}`);
                     localStorage.removeItem(`ignorarTiempoFuera_${perfilId}`);
+                    localStorage.removeItem(`cardVisible_registrar_${perfilId}`);
+                    localStorage.removeItem(`cardVisible_estadisticas_${perfilId}`);
+                    localStorage.removeItem(`cardVisible_historico_${perfilId}`);
+                    localStorage.removeItem(`ordenCards_${perfilId}`);
 
                     // Limpiar gistId y lastSync del perfil activo
                     if (window.PerfilManager) {
@@ -6057,19 +6098,19 @@
                     bg.dataset.estado = estado;
 
                     const coloresVar = {
-                        blue:   'rgba(76,114,172,0.12)',
-                        green:  'rgba(76,172,140,0.12)',
-                        red:    'rgba(172,90,76,0.12)',
+                        blue: 'rgba(76,114,172,0.12)',
+                        green: 'rgba(76,172,140,0.12)',
+                        red: 'rgba(172,90,76,0.12)',
                         purple: 'rgba(140,80,200,0.12)',
-                        gold:   'rgba(172,155,76,0.12)',
+                        gold: 'rgba(172,155,76,0.12)',
                     };
 
                     const colores = {
-                        esperando:      'rgba(140,150,170,0.07)',
-                        en_curso:       coloresVar.blue,
-                        finalizado_ok:  coloresVar.green,
+                        esperando: 'rgba(140,150,170,0.07)',
+                        en_curso: coloresVar.blue,
+                        finalizado_ok: coloresVar.green,
                         finalizado_fail: coloresVar.red,
-                        especial:       coloresVar.pruple
+                        especial: coloresVar.pruple
                     };
 
                     const color = colorOverride
@@ -6637,7 +6678,7 @@
                     actualizarEstadoBotonTimerMain();
                     // Actualizar calendario si está abierto
                     if (_vistaHistoricoCalendario) {
-                        _renderizarCalendario();
+                        _renderizarCalendario(idNuevo);
                     }
                 }
 
@@ -6788,20 +6829,14 @@
                 function cambiarHorasDiarias(incremento) {
                     let valorActual = parseFloat($('config-horas-diarias').value);
                     if (isNaN(valorActual)) valorActual = D.horasDiarias();
-                    let nuevoValor = valorActual + incremento;
-                    if (nuevoValor > 24) nuevoValor = 24;
-                    if (nuevoValor < 0) nuevoValor = 0;
+                    let nuevoValor = Math.min(24, Math.max(0, valorActual + incremento));
+                    if (isNaN(nuevoValor)) return;
                     $('config-horas-diarias').value = nuevoValor;
                     actualizarFeedbackConfig();
-                    aplicarHorasDiariasInmediato(nuevoValor);
-                }
-
-                function aplicarHorasDiariasInmediato(valor) {
-                    if (isNaN(valor) || valor < 0 || valor > 24) return;
-                    D.setHorasDiarias(valor);
+                    D.setHorasDiarias(nuevoValor);
                     try {
                         const esDefault = window.PerfilManager && PerfilManager.obtenerPerfilActual() === 'default';
-                        if (esDefault) localStorage.setItem('horasDiarias', valor);
+                        if (esDefault) localStorage.setItem('horasDiarias', nuevoValor);
                     } catch (e) { }
                     D.guardarYActualizar();
                 }
@@ -6823,15 +6858,14 @@
                     mostrarToast(nuevoValor ? 'Tiempo fuera ignorado en cálculos' : 'Tiempo fuera incluido en cálculos', 'info');
                 }
 
-                function actualizarEstadoBotonIgnorarTF() {
-                    const btn = document.getElementById('btn-toggle-ignorar-tf');
-                    const activo = D.getIgnorarTiempoFuera();
+                function _setBtnActivo(id, activo) {
+                    const btn = document.getElementById(id);
                     if (!btn) return;
-                    if (activo) {
-                        btn.classList.add('btn-activo');
-                    } else {
-                        btn.classList.remove('btn-activo');
-                    }
+                    btn.classList.toggle('btn-activo', activo);
+                }
+
+                function actualizarEstadoBotonIgnorarTF() {
+                    _setBtnActivo('btn-toggle-ignorar-tf', D.getIgnorarTiempoFuera());
                 }
 
                 function togglePersistirTarjetas() {
@@ -6843,18 +6877,11 @@
                 }
 
                 function actualizarEstadoBotonPersistir() {
-                    const btn = document.getElementById('btn-toggle-persistir-tarjetas');
-                    const activo = localStorage.getItem('persistirTarjetas') !== 'false';
-                    if (!btn) return;
-                    if (activo) {
-                        btn.classList.add('btn-activo');
-                    } else {
-                        btn.classList.remove('btn-activo');
-                    }
+                    _setBtnActivo('btn-toggle-persistir-tarjetas', localStorage.getItem('persistirTarjetas') !== 'false');
                 }
 
                 function toggleVisibilidadCard(cual) {
-                    const key = 'cardVisible_' + cual;
+                    const key = _perfilKey('cardVisible_' + cual);
                     const actual = localStorage.getItem(key) !== 'false';
                     const nuevoValor = !actual;
                     try { localStorage.setItem(key, nuevoValor); } catch (e) { }
@@ -6869,20 +6896,179 @@
                 }
 
                 function actualizarEstadoBotonCard(cual, activo) {
-                    const btn = document.getElementById('btn-toggle-card-' + cual);
-                    if (!btn) return;
-                    if (activo) {
-                        btn.classList.add('btn-activo');
-                    } else {
-                        btn.classList.remove('btn-activo');
-                    }
+                    _setBtnActivo('btn-toggle-card-' + cual, activo);
                 }
 
                 function aplicarVisibilidadCards() {
-                    ['estadisticas', 'historico'].forEach(cual => {
-                        const visible = localStorage.getItem('cardVisible_' + cual) !== 'false';
+                    ['registrar', 'estadisticas', 'historico'].forEach(cual => {
+                        const visible = localStorage.getItem(_perfilKey('cardVisible_' + cual)) !== 'false';
                         aplicarVisibilidadCard(cual, visible);
                         actualizarEstadoBotonCard(cual, visible);
+                    });
+                }
+
+                function obtenerOrdenCards() {
+                    try {
+                        const guardado = JSON.parse(localStorage.getItem(_perfilKey('ordenCards')));
+                        const validos = ['registrar', 'estadisticas', 'historico'];
+                        if (Array.isArray(guardado) && guardado.length === 3 && validos.every(v => guardado.includes(v))) {
+                            return guardado;
+                        }
+                    } catch (e) { }
+                    return ['registrar', 'estadisticas', 'historico'];
+                }
+
+                function aplicarOrdenCards(orden) {
+                    const statsCard = document.getElementById('stats-card');
+                    const leftColumn = statsCard ? statsCard.parentElement : null;
+                    const container = leftColumn ? leftColumn.parentElement : null;
+                    if (!leftColumn || !container) return;
+
+                    orden.forEach((cual, idx) => {
+                        const card = document.getElementById('card-' + cual);
+                        if (!card) return;
+                        const esUltima = idx === orden.length - 1;
+                        if (esUltima) {
+                            // La última va fuera de left-column (columna derecha en desktop)
+                            container.appendChild(card);
+                        } else {
+                            leftColumn.appendChild(card);
+                        }
+                    });
+
+                    // Reordenar filas en ajustes
+                    const lista = document.getElementById('lista-orden-cards');
+                    if (lista) {
+                        orden.forEach(cual => {
+                            const item = document.getElementById('orden-item-' + cual);
+                            if (item) lista.appendChild(item);
+                        });
+                    }
+                }
+
+                function iniciarDragOrdenCards() {
+                    const lista = document.getElementById('lista-orden-cards');
+                    if (!lista) return;
+
+                    let draggingEl = null;
+                    let startY = 0;
+                    let longPressTimer = null;
+                    const LONG_PRESS_MS = 300;
+
+                    function getItemFromHandle(el) { return el.closest('.orden-card-item'); }
+                    function getCardFromItem(el) {
+                        const handle = el?.classList?.contains('drag-handle') ? el : el?.querySelector('.drag-handle');
+                        return handle?.dataset?.card;
+                    }
+                    function getItemAtY(y) {
+                        return [...lista.querySelectorAll('.orden-card-item')].find(item => {
+                            if (item === draggingEl) return false;
+                            const r = item.getBoundingClientRect();
+                            return y >= r.top && y <= r.bottom;
+                        });
+                    }
+                    function aplicarCambioOrden(desde, hasta) {
+                        const orden = obtenerOrdenCards();
+                        const fromIdx = orden.indexOf(desde);
+                        const toIdx = orden.indexOf(hasta);
+                        if (fromIdx === -1 || toIdx === -1) return;
+                        orden.splice(fromIdx, 1);
+                        orden.splice(toIdx, 0, desde);
+                        try { localStorage.setItem(_perfilKey('ordenCards'), JSON.stringify(orden)); } catch (e) { }
+                        aplicarOrdenCards(orden);
+                    }
+
+                    // Touch
+                    let dragActivado = false;
+
+                    lista.addEventListener('touchstart', (e) => {
+                        const handle = e.target.closest('.drag-handle');
+                        if (!handle) return;
+                        const item = getItemFromHandle(handle);
+                        if (!item) return;
+                        startY = e.touches[0].clientY;
+                        dragActivado = false;
+                        longPressTimer = setTimeout(() => {
+                            draggingEl = item;
+                            dragActivado = true;
+                            item.classList.add('dragging');
+                            navigator.vibrate && navigator.vibrate(30);
+                        }, LONG_PRESS_MS);
+                    }, { passive: true });
+
+                    lista.addEventListener('touchmove', (e) => {
+                        if (!draggingEl) {
+                            if (Math.abs(e.touches[0].clientY - startY) > 10) clearTimeout(longPressTimer);
+                            return;
+                        }
+                        e.preventDefault();
+                        const y = e.touches[0].clientY;
+                        const deltaY = y - startY;
+                        draggingEl.style.transform = `translateY(${deltaY}px)`;
+                        draggingEl.style.zIndex = '10';
+                        draggingEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                        lista.querySelectorAll('.orden-card-item').forEach(i => {
+                            if (i !== draggingEl) i.classList.remove('drag-over');
+                        });
+                        const target = getItemAtY(y);
+                        if (target && target !== draggingEl) target.classList.add('drag-over');
+                    }, { passive: false });
+
+                    lista.addEventListener('touchend', (e) => {
+                        clearTimeout(longPressTimer);
+                        if (!draggingEl) return;
+                        const target = getItemAtY(e.changedTouches[0].clientY);
+                        draggingEl.style.transform = '';
+                        draggingEl.style.zIndex = '';
+                        draggingEl.style.boxShadow = '';
+                        lista.querySelectorAll('.orden-card-item').forEach(i => {
+                            i.classList.remove('drag-over');
+                            i.classList.remove('dragging');
+                        });
+                        if (target && target !== draggingEl) {
+                            aplicarCambioOrden(getCardFromItem(draggingEl), getCardFromItem(target));
+                        }
+                        draggingEl = null;
+                    });
+
+                    // Mouse (desktop)
+                    lista.addEventListener('mousedown', (e) => {
+                        const handle = e.target.closest('.drag-handle');
+                        if (!handle) return;
+                        e.preventDefault();
+                        draggingEl = getItemFromHandle(handle);
+                        if (!draggingEl) return;
+                        startY = e.clientY;
+                        draggingEl.classList.add('dragging');
+                    });
+
+                    document.addEventListener('mousemove', (e) => {
+                        if (!draggingEl) return;
+                        const deltaY = e.clientY - startY;
+                        draggingEl.style.transform = `translateY(${deltaY}px)`;
+                        draggingEl.style.zIndex = '10';
+                        draggingEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                        lista.querySelectorAll('.orden-card-item').forEach(i => {
+                            if (i !== draggingEl) i.classList.remove('drag-over');
+                        });
+                        const target = getItemAtY(e.clientY);
+                        if (target && target !== draggingEl) target.classList.add('drag-over');
+                    });
+
+                    document.addEventListener('mouseup', (e) => {
+                        if (!draggingEl) return;
+                        const target = getItemAtY(e.clientY);
+                        draggingEl.style.transform = '';
+                        draggingEl.style.zIndex = '';
+                        draggingEl.style.boxShadow = '';
+                        lista.querySelectorAll('.orden-card-item').forEach(i => {
+                            i.classList.remove('drag-over');
+                            i.classList.remove('dragging');
+                        });
+                        if (target && target !== draggingEl) {
+                            aplicarCambioOrden(getCardFromItem(draggingEl), getCardFromItem(target));
+                        }
+                        draggingEl = null;
                     });
                 }
 
@@ -8059,6 +8245,18 @@ Generado por Sistema Horarios
                     if (!confirmacion) return;
 
                     // Eliminar el perfil
+                    // Limpiar claves localStorage del perfil eliminado
+                    const pid = perfilEnEdicion;
+                    localStorage.removeItem(`breakStartTime_${pid}`);
+                    localStorage.removeItem(`history_${pid}`);
+                    localStorage.removeItem(`fondoCard_${pid}`);
+                    localStorage.removeItem(`ignorarTiempoFuera_${pid}`);
+                    localStorage.removeItem(`cardVisible_registrar_${pid}`);
+                    localStorage.removeItem(`cardVisible_estadisticas_${pid}`);
+                    localStorage.removeItem(`cardVisible_historico_${pid}`);
+                    localStorage.removeItem(`ordenCards_${pid}`);
+
+                    // Eliminar el perfil
                     delete perfiles[perfilEnEdicion];
                     try {
                         localStorage.setItem('perfiles', JSON.stringify(perfiles));
@@ -8450,14 +8648,8 @@ Generado por Sistema Horarios
                     // Usamos el dataset como fuente de verdad
                     const estaActivo = btn.dataset.activo === "true";
 
-                    if (estaActivo) {
-                        // --- DESACTIVAR (Volver a Gris original) ---
-                        btn.dataset.activo = "false";
-                        btn.classList.remove('btn-activo');
-                    } else {
-                        btn.dataset.activo = "true";
-                        btn.classList.add('btn-activo');
-                    }
+                    btn.dataset.activo = estaActivo ? "false" : "true";
+                    _setBtnActivo('btn-toggle-credito', !estaActivo);
                 }
 
                 function mostrarExportar(desdeLista = false) {
@@ -8897,7 +9089,7 @@ Generado por Sistema Horarios
                             { texto: 'Respaldar', hint: '', activo: true }
                         ];
                         const c = configs[estado];
-                        btn.classList.toggle('btn-activo', c.activo);
+                        _setBtnActivo(btn.id, c.activo);
                         if (label) label.textContent = c.texto;
                         if (hint) { hint.textContent = c.hint; hint.style.color = c.color; }
 
@@ -9113,7 +9305,7 @@ Generado por Sistema Horarios
                         togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, navegarCalendario, toggleGistMerge,
                         actualizarEstadoBotonesGist, togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
                         abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
-                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards, _popupCalendario,
+                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards, _popupCalendario,
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -9292,6 +9484,8 @@ Generado por Sistema Horarios
                     D.setIgnorarTiempoFuera(config.ignorarTiempoFuera || false);
                     UILogic.actualizarEstadoBotonIgnorarTF();
                     UILogic.aplicarVisibilidadCards();
+                    UILogic.aplicarOrdenCards(UILogic.obtenerOrdenCards());
+                    UILogic.iniciarDragOrdenCards();
                     UILogic.setFondoCard(config.fondoCard || 'golden-gate');
                     if (config.modoEstadisticas === 'anual') UILogic.togglePeriodoStats();
                     else if (config.modoEstadisticas === 'semanal') { UILogic.togglePeriodoStats(); UILogic.togglePeriodoStats(); }
@@ -9938,10 +10132,30 @@ Generado por Sistema Horarios
 
                 let _calendarioMes = null; // { anio, mes } — null = mes actual
 
-                function _renderizarCalendario() {
+                function _renderizarCalendario(idResaltar = null) {
                     const grid = document.getElementById('calendario-grid');
                     const titulo = document.getElementById('calendario-titulo-mes');
                     if (!grid) return;
+
+                    // Swipe para móvil (se adjunta una sola vez)
+                    if (!grid.dataset.swipeInit) {
+                        grid.dataset.swipeInit = '1';
+                        let _sx = null, _sy = null;
+                        grid.addEventListener('touchstart', e => {
+                            if (e.touches.length !== 1) return;
+                            _sx = e.touches[0].clientX;
+                            _sy = e.touches[0].clientY;
+                        }, { passive: true });
+                        grid.addEventListener('touchend', e => {
+                            if (_sx === null) return;
+                            const dx = e.changedTouches[0].clientX - _sx;
+                            const dy = e.changedTouches[0].clientY - _sy;
+                            _sx = null; _sy = null;
+                            if (Math.abs(dy) > 80) return;  // scroll vertical, ignorar
+                            if (Math.abs(dx) < 50) return;  // muy corto, ignorar
+                            navegarCalendario(dx < 0 ? 1 : -1);
+                        }, { passive: true });
+                    }
 
                     const hoy = new Date();
                     const anio = _calendarioMes ? _calendarioMes.anio : hoy.getFullYear();
@@ -9972,7 +10186,7 @@ Generado por Sistema Horarios
                             const tipo = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
                             return `dia-especial-${tipo ? tipo.color : 'purple'}`;  // ← cambio
                         }
-                        if (r.entrada && (!r.salida || r.entrada === r.salida)) return 'dia-en-curso';
+                        if (r.entrada && !r.salida) return 'dia-en-curso';
                         if (r.total >= horasDiariasObj) return 'dia-normal';
                         return 'dia-incompleto';
                     };
@@ -9995,7 +10209,8 @@ Generado por Sistema Horarios
                         const esHoy = anio === hoy.getFullYear() && mes === hoy.getMonth() && dia === hoy.getDate();
                         const reg = regsPorFecha[fecha];
                         const onclick = reg ? ` onclick="UILogic._popupCalendario(event, '${reg.id}')" style="cursor:pointer;"` : '';
-                        html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}"${onclick}>${dia}</div>`;
+                        const esNuevo = idResaltar && reg && reg.id === idResaltar ? ' nuevo-registro-animacion' : '';
+                        html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}${esNuevo}"${onclick}>${dia}</div>`;
                     }
 
                     if (filtroActivo) {
@@ -10067,8 +10282,8 @@ Generado por Sistema Horarios
                         const emoji = tipoConfig ? tipoConfig.emoji : '';
                         const label = tipoConfig ? tipoConfig.label : reg.entrada;
                         infoHtml = `<span class="cal-popup-badge" style="background:var(--c-${tipoConfig.color})">${emoji} ${label}</span>`;
-                    } else if (reg.entrada && (!reg.salida || reg.entrada === reg.salida)) {
-                        infoHtml = `<div class="cal-popup-info" style="color:var(--c-blue)">En curso</div>
+                    } else if (reg.entrada && !reg.salida) {
+                        infoHtml = `<div class="cal-popup-info">En curso</div>
                                     <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`;
                     } else {
                         const totalHoras = reg.total || 0;
@@ -10330,8 +10545,8 @@ Generado por Sistema Horarios
                     toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
                     mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
-                    togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
-                    togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico, toggleVistaHistorico,
+                    togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards,
+                    togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
                     _popupCalendario
                 };
 
@@ -10366,16 +10581,11 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.14
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.16
     // ====================================================================
     
      - CAMBIOS:
-    1) Se unifica la tarjeta de calendario en la tarjeta de historico
-    2) Se crea una clase generica para aplicar a varios botones cuando estan activos
-    3) Se crea una funcion helper para refactorizar el aplicado de iconos
-    4) Se agrega tiempo fuera en el popup del calendario
-    5) Se extiende la propiedad color de tipos de registros module al historico y tarjeta de estado
-    6) Se corrige el bug del timer
+    1) Refactorizacion de varias funciones
 
      - BUGS MENORES CONOCIDOS:
           
