@@ -38,6 +38,7 @@
             --c-red: rgba(172, 90, 76, 0.8);
             --c-purple: rgba(129, 76, 172, 0.8);
             --c-gold: rgba(172, 155, 76, 0.8);
+            --c-orange: rgba(210, 120, 50, 0.8);
             --c-gray-btn: #dde3ea;
             --c-white: #ffffff;
             --hover: #989ca0;
@@ -441,6 +442,10 @@
             border-left-color: var(--c-gold) !important;
         }
 
+        .stats-card.border-orange {
+            border-left-color: var(--c-orange) !important;
+        }
+
         .stats-card.border-transparent {
             border-left-color: transparent !important;
         }
@@ -480,6 +485,10 @@
 
         .progress-fill.gold {
             background: var(--c-gold) !important;
+        }
+
+        .progress-fill.orange {
+            background: var(--c-orange) !important;
         }
 
         .progress-fill.shimmer::after {
@@ -554,10 +563,10 @@
         }
 
         .registro-total.red-text,
-        .calendario-dia.dia-incompleto,
         .registro-total.red-text-bg,
         .toast.error,
         .toast.warning,
+        .calendario-dia.dia-incompleto,
         .calendario-dia.dia-especial-red {
             background: var(--c-red);
         }
@@ -567,6 +576,12 @@
             background: var(--c-purple);
         }
 
+        .registro-total.orange-text,
+        .calendario-dia.dia-especial-orange {
+            background: var(--c-orange);
+        }
+
+        .calendario-dia.dia-sin-salida,
         .registro-total.gold-text,
         .calendario-dia.dia-especial-gold,
         .registro-total.yellow-text {
@@ -1874,7 +1889,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.17</span>
+                    <span class="version-text">LUSHIBOSCA-8.18</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -3252,7 +3267,7 @@
                         label: 'Vacaciones',
                         labelPlural: 'Vacaciones',
                         descripcion: 'Vacaciones',
-                        color: 'gold',
+                        color: 'orange',
                         contabiliza: true
                     },
                     ASUETO: {
@@ -4520,24 +4535,45 @@
                                 const fechasExistentes = new Set(registros.map(r => r.fecha));
                                 const nuevos = registrosImportados.filter(imp => !fechasExistentes.has(imp.fecha));
 
-                                if (nuevos.length === 0) {
-                                    UILogic.mostrarToast('No hay días nuevos para agregar', 'info');
+                                // Registros que existen en ambos pero el importado complementa al local
+                                const complementarios = registrosImportados.filter(imp => {
+                                    if (!fechasExistentes.has(imp.fecha)) return false;
+                                    const local = registros.find(r => r.fecha === imp.fecha);
+                                    if (!local) return false;
+                                    // El importado aporta salida que el local no tiene
+                                    const aportaSalida = !local.salida && imp.salida;
+                                    // El importado aporta tiempoFuera que el local no tiene
+                                    const aportaTF = !local.tiempoFuera && imp.tiempoFuera;
+                                    return aportaSalida || aportaTF;
+                                });
+
+                                if (nuevos.length === 0 && complementarios.length === 0) {
+                                    UILogic.mostrarToast('No hay días nuevos ni datos para completar', 'info');
                                     return;
                                 }
 
-                                // Validar que no se exceda el límite total
                                 if (registros.length + nuevos.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
                                     UILogic.mostrarToast(`Límite alcanzado. Solo se pueden agregar ${S.SECURITY_LIMITS.MAX_REGISTROS - registros.length} registros más`, 'error');
                                     return;
                                 }
 
+                                // Aplicar complementarios: actualizar campos faltantes en local
+                                complementarios.forEach(imp => {
+                                    const local = registros.find(r => r.fecha === imp.fecha);
+                                    if (!local) return;
+                                    if (!local.salida && imp.salida) local.salida = imp.salida;
+                                    if (!local.tiempoFuera && imp.tiempoFuera) local.tiempoFuera = imp.tiempoFuera;
+                                    // Recalcular total
+                                    const t = calcularHoras(local.entrada, local.salida, local.tiempoFuera || null, local.credito || null);
+                                    if (t) { local.horas = t.horas; local.minutos = t.minutos; local.total = t.total; }
+                                });
+
                                 registros = registros.concat(nuevos);
 
-                                const mensaje = nuevos.length === 1
-                                    ? 'Se agregó 1 día'
-                                    : `Se agregaron ${nuevos.length} días`;
-
-                                finalizarImportacionAndSave(mensaje);
+                                const partes = [];
+                                if (nuevos.length > 0) partes.push(`${nuevos.length} día${nuevos.length !== 1 ? 's' : ''} nuevo${nuevos.length !== 1 ? 's' : ''}`);
+                                if (complementarios.length > 0) partes.push(`${complementarios.length} registro${complementarios.length !== 1 ? 's' : ''} completado${complementarios.length !== 1 ? 's' : ''}`);
+                                finalizarImportacionAndSave(`Combinado: ${partes.join(', ')}`);
                             }
 
                         } catch (err) {
@@ -6092,6 +6128,7 @@
                         red: 'rgba(172,90,76,0.12)',
                         purple: 'rgba(140,80,200,0.12)',
                         gold: 'rgba(172,155,76,0.12)',
+                        orange: 'rgba(210, 120, 50, 0.12)',
                     };
 
                     const colores = {
@@ -6330,7 +6367,7 @@
                         const card = document.getElementById('stats-card');
                         if (card) {
                             // Limpiar clases previas
-                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-orange', 'border-transparent');
 
                             if (horasDiarias === 0) {
                                 // Sin objetivo configurado
@@ -6405,7 +6442,7 @@
 
                                 const card = document.getElementById('stats-card');
                                 if (card) {
-                                    card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-gold', 'border-transparent');
+                                    card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-gold', 'border-orange', 'border-transparent');
                                     card.classList.add(`border-${tipoEspecialHoy.color}`);
                                 }
                                 actualizarFondoCard('especial', tipoEspecialHoy.color);
@@ -6443,7 +6480,7 @@
                                         //  Borde transparente
                                         const card = document.getElementById('stats-card');
                                         if (card) {
-                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple');
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-orange');
                                             card.classList.add('border-transparent');
                                         }
                                     } else {
@@ -6453,7 +6490,7 @@
                                         // Borde verde o rojo
                                         const card = document.getElementById('stats-card');
                                         if (card) {
-                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-orange', 'border-transparent');
                                             card.classList.add(tiempoTranscurrido >= objetivoDiario ? 'border-green' : 'border-red');
                                         }
 
@@ -6471,7 +6508,7 @@
                                         // Borde transparente
                                         const card = document.getElementById('stats-card');
                                         if (card) {
-                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple');
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-orange');
                                             card.classList.add('border-transparent');
                                         }
                                     } else {
@@ -6486,7 +6523,7 @@
                                         // Borde verde o azul
                                         const card = document.getElementById('stats-card');
                                         if (card) {
-                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-transparent');
+                                            card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-orange', 'border-transparent');
                                             card.classList.add(objetivoCumplido ? 'border-green' : 'border-blue');
                                         }
 
@@ -6530,7 +6567,7 @@
                             //  Borde transparente si no hay registro
                             const card = document.getElementById('stats-card');
                             if (card) {
-                                card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple');
+                                card.classList.remove('border-blue', 'border-green', 'border-red', 'border-purple', 'border-orange');
                                 card.classList.add('border-transparent');
                             }
 
@@ -8983,25 +9020,43 @@ Generado por Sistema Horarios
 
                     async function gistMergeAplicar(modo, modoAutomatico = false) {
                         if (!_gistMergeData) return;
-                        const { registrosNormalizados, soloEnGist, data } = _gistMergeData;
+                        const { registrosNormalizados, soloEnGist, complementarios = [], data } = _gistMergeData;
                         _gistMergeData = null;
 
                         let registrosFinales;
                         let mensajeExito;
 
                         if (modo === 'merge') {
-                            if (soloEnGist.length === 0) {
+                            if (soloEnGist.length === 0 && complementarios.length === 0) {
                                 ModalManager.cerrar('modal-gist-merge');
-                                gistSetStatus('Sin días nuevos para agregar', 'ok');
-                                mostrarToast('Sin días nuevos para agregar', 'info');
+                                gistSetStatus('Sin días nuevos ni datos para completar', 'ok');
+                                mostrarToast('Sin días nuevos ni datos para completar', 'info');
                                 return;
                             }
                             if (D.registros().length + soloEnGist.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
                                 mostrarToast(`Límite alcanzado`, 'error');
                                 return;
                             }
-                            registrosFinales = [...D.registros(), ...soloEnGist];
-                            mensajeExito = soloEnGist.length === 1 ? 'Se agregó 1 día del Gist' : `Se agregaron ${soloEnGist.length} días del Gist`;
+
+                            // Aplicar complementarios sobre los registros locales
+                            const registrosActualizados = D.registros().map(local => {
+                                const imp = complementarios.find(c => c.fecha === local.fecha);
+                                if (!imp) return local;
+                                const actualizado = { ...local };
+                                if (!actualizado.salida && imp.salida) actualizado.salida = imp.salida;
+                                if (!actualizado.tiempoFuera && imp.tiempoFuera) actualizado.tiempoFuera = imp.tiempoFuera;
+                                const t = D.calcularHoras(actualizado.entrada, actualizado.salida, actualizado.tiempoFuera || null, actualizado.credito || null);
+                                if (t) { actualizado.horas = t.horas; actualizado.minutos = t.minutos; actualizado.total = t.total; }
+                                return actualizado;
+                            });
+
+                            registrosFinales = [...registrosActualizados, ...soloEnGist];
+
+                            const partes = [];
+                            if (soloEnGist.length > 0) partes.push(`${soloEnGist.length} día${soloEnGist.length !== 1 ? 's' : ''} nuevo${soloEnGist.length !== 1 ? 's' : ''}`);
+                            if (complementarios.length > 0) partes.push(`${complementarios.length} registro${complementarios.length !== 1 ? 's' : ''} completado${complementarios.length !== 1 ? 's' : ''}`);
+                            mensajeExito = `Combinado: ${partes.join(', ')}`;
+
                         } else {
                             registrosFinales = registrosNormalizados;
                             mensajeExito = `${registrosNormalizados.length} registros restaurados desde Gist`;
@@ -9231,8 +9286,15 @@ Generado por Sistema Horarios
                             const enAmbos = registrosNormalizados.filter(r => fechasLocales.has(r.fecha));
                             const soloLocal = D.registros().filter(r => !registrosNormalizados.some(g => g.fecha === r.fecha));
 
+                            // Registros que el Gist puede complementar (tienen datos que el local no tiene)
+                            const complementarios = enAmbos.filter(imp => {
+                                const local = D.registros().find(r => r.fecha === imp.fecha);
+                                if (!local) return false;
+                                return (!local.salida && imp.salida) || (!local.tiempoFuera && imp.tiempoFuera);
+                            });
+
                             // Guardar datos para que gistMergeAplicar los use
-                            _gistMergeData = { registrosNormalizados, soloEnGist, data };
+                            _gistMergeData = { registrosNormalizados, soloEnGist, complementarios, data };
 
                             if (modoAutomatico) {
                                 // En automático: usar el toggle configurado sin preguntar
@@ -9255,14 +9317,14 @@ Generado por Sistema Horarios
                                     resumenEl.innerHTML =
                                         `<div>` +
                                         `<div><svg class="icon"><use href="#icon-cloud"/></svg> En Gist <strong style="color:var(--c-green)">${soloEnGist.length}</strong> registro${soloEnGist.length !== 1 ? 's' : ''} nuevos</div>` +
-                                        `<div><svg class="icon"><use href="#icon-combine"/></svg> En ambos <strong>${enAmbos.length}</strong> registro${enAmbos.length !== 1 ? 's' : ''} (por fecha)</div>` +
+                                        `<div><svg class="icon"><use href="#icon-combine"/></svg> En ambos <strong>${enAmbos.length}</strong> registro${enAmbos.length !== 1 ? 's' : ''} (por fecha${complementarios.length > 0 ? `, <strong style="color:var(--c-blue)">${complementarios.length}</strong> para completar` : ''})</div>` +
                                         `<div><svg class="icon"><use href="#icon-save"/></svg> Local <strong>${soloLocal.length}</strong> registro${soloLocal.length !== 1 ? 's' : ''} no subidos</div>` +
                                         `</div>` +
                                         (configCambios.length > 0
                                             ? `<svg class="icon"><use href="#icon-settings"/></svg> Reemplazar cambiará: ${configCambios.join(', ')}</div>`
                                             : `<svg class="icon"><use href="#icon-settings"/></svg> Sin cambios de configuración</div>`) +
                                         `<div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem">` +
-                                        `<strong>Combinar</strong>: agrega ${soloEnGist.length} nuevo(s), mantiene los locales<br>` +
+                                        `<strong>Combinar</strong>: agrega ${soloEnGist.length} nuevo(s)${complementarios.length > 0 ? `, completa ${complementarios.length} registro(s)` : ''}, mantiene los locales<br>` +
                                         `<strong>Reemplazar</strong>: usa los ${registrosNormalizados.length} registros del Gist` +
                                         `</div>`;
                                 }
@@ -10175,7 +10237,10 @@ Generado por Sistema Horarios
                             const tipo = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
                             return `dia-especial-${tipo ? tipo.color : 'purple'}`;  // ← cambio
                         }
-                        if (r.entrada && !r.salida) return 'dia-en-curso';
+                        if (r.entrada && !r.salida) {
+                            const fechaHoy = obtenerFechaHoy();
+                            return fecha === fechaHoy ? 'dia-en-curso' : 'dia-sin-salida';
+                        }
                         if (r.total >= horasDiariasObj) return 'dia-normal';
                         return 'dia-incompleto';
                     };
@@ -10272,8 +10337,12 @@ Generado por Sistema Horarios
                         const label = tipoConfig ? tipoConfig.label : reg.entrada;
                         infoHtml = `<span class="cal-popup-badge" style="background:var(--c-${tipoConfig.color})">${emoji} ${label}</span>`;
                     } else if (reg.entrada && !reg.salida) {
-                        infoHtml = `<div class="cal-popup-info">En curso</div>
-                                    <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`;
+                        const esHoy = reg.fecha === obtenerFechaHoy();
+                        infoHtml = esHoy
+                            ? `<div class="cal-popup-info" style="color:var(--c-blue)">En curso</div>
+                               <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`
+                            : `<div class="cal-popup-info" style="color:var(--c-gold)">Incompleto</div>
+                               <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`;
                     } else {
                         const totalHoras = reg.total || 0;
                         const h = Math.floor(totalHoras);
@@ -10570,12 +10639,13 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.17
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.18
     // ====================================================================
     
      - CAMBIOS:
     1) Refactorizacion de varias funciones
-    2) Se completa el aplicado de color de tipos de registro module
+    2) Se completa la aplicacion de color de tipos de registro module
+    3) Se agrega comparacion interna de los registros en el modo combinar (gist y local)
 
      - BUGS MENORES CONOCIDOS:
           
