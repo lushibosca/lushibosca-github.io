@@ -2000,7 +2000,7 @@
                     </button>
                 </div>
                 <div class="config-actions">
-                    <label>Registros y Sincronización</label>
+                    <label>Datos</label>
                     <button class="btn-edit" onclick="UILogic.abrirModalGist()">
                         <svg class="icon">
                             <use href="#icon-cloud" />
@@ -7302,15 +7302,15 @@
                     }, 300);
                 }
 
-                function togglePeriodoStats() {
+                function togglePeriodoStats(direccion = 1) {
                     const selectMes = $('select-mes-stats');
                     const selectAnio = $('select-anio-stats');
                     const label = $('label-periodo-toggle');
                     const formStats = $('form-stats');
 
-                    if (modoEstadisticas === 'mensual') modoEstadisticas = 'anual';
-                    else if (modoEstadisticas === 'anual') modoEstadisticas = 'semanal';
-                    else modoEstadisticas = 'mensual';
+                    const orden = ['mensual', 'anual', 'semanal'];
+                    const idx = orden.indexOf(modoEstadisticas);
+                    modoEstadisticas = orden[(idx + direccion + orden.length) % orden.length];
                     try { localStorage.setItem('modoEstadisticas', modoEstadisticas); } catch (e) { }
 
                     const selectSemana = $('select-semana-stats');
@@ -10473,7 +10473,7 @@ Generado por Sistema Horarios
                                 _stx = null; _sty = null;
                                 if (Math.abs(dy) > 80) return;
                                 if (Math.abs(dx) < 50) return;
-                                togglePeriodoStats();
+                                togglePeriodoStats(dx < 0 ? 1 : -1);
                             }, { passive: true });
                         }
 
