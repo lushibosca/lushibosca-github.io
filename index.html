@@ -1172,10 +1172,10 @@
         .fade-out {
             opacity: 0;
             transform: translateY(-10px);
-        } 
+        }
 
         #form-stats.fade-out {
-            opacity: 0 ;
+            opacity: 0;
             transform: translateY(-10px);
         }
 
@@ -5259,6 +5259,26 @@
                 let timerAutoCierreBotones = null;
                 let modoEstadisticas = 'mensual'; // 'mensual' | 'anual'
                 let _modalAbiertoDesdeLista = false;
+
+                function registrarSwipe(el, callback, { minX = 50, maxY = 80 } = {}) {
+                    if (!el || el.dataset.swipeInit) return;
+                    el.dataset.swipeInit = '1';
+                    let _x = null, _y = null;
+                    el.addEventListener('touchstart', e => {
+                        if (e.touches.length !== 1) return;
+                        _x = e.touches[0].clientX;
+                        _y = e.touches[0].clientY;
+                    }, { passive: true });
+                    el.addEventListener('touchend', e => {
+                        if (_x === null) return;
+                        const dx = e.changedTouches[0].clientX - _x;
+                        const dy = e.changedTouches[0].clientY - _y;
+                        _x = null; _y = null;
+                        if (Math.abs(dy) > maxY) return;
+                        if (Math.abs(dx) < minX) return;
+                        callback(dx < 0 ? 1 : -1);
+                    }, { passive: true });
+                }
 
                 // FUNCIÓN DEBOUNCE REUTILIZABLE
                 function debounce(func, wait) {
@@ -9527,29 +9547,7 @@ Generado por Sistema Horarios
                     }
 
                     // Swipe en stats-card (solo touch/móvil)
-                    const statsCard = document.getElementById('stats-card');
-                    if (statsCard && !statsCard.dataset.swipeInit) {
-                        statsCard.dataset.swipeInit = '1';
-                        let _ssx = null, _ssy = null;
-                        statsCard.addEventListener('touchstart', e => {
-                            if (e.touches.length !== 1) return;
-                            _ssx = e.touches[0].clientX;
-                            _ssy = e.touches[0].clientY;
-                        }, { passive: true });
-                        statsCard.addEventListener('touchend', e => {
-                            if (_ssx === null) return;
-                            const dx = e.changedTouches[0].clientX - _ssx;
-                            const dy = e.changedTouches[0].clientY - _ssy;
-                            _ssx = null; _ssy = null;
-                            if (Math.abs(dy) > 80) return;
-                            if (Math.abs(dx) < 50) return;
-                            alternarVista();
-                        }, { passive: true });
-                    }
-
-                    
-
-                    // ===================================
+                    registrarSwipe(document.getElementById('stats-card'), () => alternarVista());
 
                     // CARGAR CONFIGURACIÓN
                     const config = D.cargarConfiguracion();
@@ -10212,24 +10210,7 @@ Generado por Sistema Horarios
                     if (!grid) return;
 
                     // Swipe para móvil (se adjunta una sola vez)
-                    if (!grid.dataset.swipeInit) {
-                        grid.dataset.swipeInit = '1';
-                        let _sx = null, _sy = null;
-                        grid.addEventListener('touchstart', e => {
-                            if (e.touches.length !== 1) return;
-                            _sx = e.touches[0].clientX;
-                            _sy = e.touches[0].clientY;
-                        }, { passive: true });
-                        grid.addEventListener('touchend', e => {
-                            if (_sx === null) return;
-                            const dx = e.changedTouches[0].clientX - _sx;
-                            const dy = e.changedTouches[0].clientY - _sy;
-                            _sx = null; _sy = null;
-                            if (Math.abs(dy) > 80) return;  // scroll vertical, ignorar
-                            if (Math.abs(dx) < 50) return;  // muy corto, ignorar
-                            navegarCalendario(dx < 0 ? 1 : -1);
-                        }, { passive: true });
-                    }
+                    registrarSwipe(grid, dir => navegarCalendario(dir));
 
                     const hoy = new Date();
                     const anio = _calendarioMes ? _calendarioMes.anio : hoy.getFullYear();
@@ -10457,25 +10438,7 @@ Generado por Sistema Horarios
                 function toggleStats() {
                     toggleSeccionGen('form-stats', 'icon-indicator-stats', 'statsExpandido', () => {
                         // Swipe para alternar período (mensual/anual/semanal)
-                        const formStats = $('form-stats');
-                        if (formStats && !formStats.dataset.swipeInit) {
-                            formStats.dataset.swipeInit = '1';
-                            let _stx = null, _sty = null;
-                            formStats.addEventListener('touchstart', e => {
-                                if (e.touches.length !== 1) return;
-                                _stx = e.touches[0].clientX;
-                                _sty = e.touches[0].clientY;
-                            }, { passive: true });
-                            formStats.addEventListener('touchend', e => {
-                                if (_stx === null) return;
-                                const dx = e.changedTouches[0].clientX - _stx;
-                                const dy = e.changedTouches[0].clientY - _sty;
-                                _stx = null; _sty = null;
-                                if (Math.abs(dy) > 80) return;
-                                if (Math.abs(dx) < 50) return;
-                                togglePeriodoStats(dx < 0 ? 1 : -1);
-                            }, { passive: true });
-                        }
+                        registrarSwipe($('form-stats'), dir => togglePeriodoStats(dir));
 
                         // Lógica específica de stats al abrir
                         if (modoEstadisticas === 'anual') {
