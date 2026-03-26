@@ -9526,6 +9526,29 @@ Generado por Sistema Horarios
                         });
                     }
 
+                    // Swipe en stats-card (solo touch/móvil)
+                    const statsCard = document.getElementById('stats-card');
+                    if (statsCard && !statsCard.dataset.swipeInit) {
+                        statsCard.dataset.swipeInit = '1';
+                        let _ssx = null, _ssy = null;
+                        statsCard.addEventListener('touchstart', e => {
+                            if (e.touches.length !== 1) return;
+                            _ssx = e.touches[0].clientX;
+                            _ssy = e.touches[0].clientY;
+                        }, { passive: true });
+                        statsCard.addEventListener('touchend', e => {
+                            if (_ssx === null) return;
+                            const dx = e.changedTouches[0].clientX - _ssx;
+                            const dy = e.changedTouches[0].clientY - _ssy;
+                            _ssx = null; _ssy = null;
+                            if (Math.abs(dy) > 80) return;
+                            if (Math.abs(dx) < 50) return;
+                            alternarVista();
+                        }, { passive: true });
+                    }
+
+                    
+
                     // ===================================
 
                     // CARGAR CONFIGURACIÓN
@@ -10430,8 +10453,30 @@ Generado por Sistema Horarios
                     }
                 }
 
+                // DESPUÉS:
                 function toggleStats() {
                     toggleSeccionGen('form-stats', 'icon-indicator-stats', 'statsExpandido', () => {
+                        // Swipe para alternar período (mensual/anual/semanal)
+                        const formStats = $('form-stats');
+                        if (formStats && !formStats.dataset.swipeInit) {
+                            formStats.dataset.swipeInit = '1';
+                            let _stx = null, _sty = null;
+                            formStats.addEventListener('touchstart', e => {
+                                if (e.touches.length !== 1) return;
+                                _stx = e.touches[0].clientX;
+                                _sty = e.touches[0].clientY;
+                            }, { passive: true });
+                            formStats.addEventListener('touchend', e => {
+                                if (_stx === null) return;
+                                const dx = e.changedTouches[0].clientX - _stx;
+                                const dy = e.changedTouches[0].clientY - _sty;
+                                _stx = null; _sty = null;
+                                if (Math.abs(dy) > 80) return;
+                                if (Math.abs(dx) < 50) return;
+                                togglePeriodoStats();
+                            }, { passive: true });
+                        }
+
                         // Lógica específica de stats al abrir
                         if (modoEstadisticas === 'anual') {
                             poblarSelectorAnios();
@@ -10643,9 +10688,8 @@ Generado por Sistema Horarios
     // ====================================================================
     
      - CAMBIOS:
-    1) Refactorizacion de varias funciones
-    2) Se completa la aplicacion de color de tipos de registro module
-    3) Se agrega comparacion interna de los registros en el modo combinar (gist y local)
+    1) Se agrega comparacion interna de los registros en el modo combinar (gist y local)
+    2) Se agrega swipe a las tarjetas de estado y estadisticas
 
      - BUGS MENORES CONOCIDOS:
           
