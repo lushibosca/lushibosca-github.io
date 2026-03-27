@@ -716,6 +716,18 @@
             }
         }
 
+        @keyframes calPopupIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
         @keyframes llamarAtencion {
             0% {
                 transform: scale(1, 1);
@@ -868,7 +880,7 @@
         /* --- Popup quick-view calendario --- */
         .cal-popup {
             position: fixed;
-            z-index: 200;
+            z-index: 90;
             background: var(--bg-card);
             border: 1px solid var(--border);
             border-radius: var(--radius);
@@ -880,7 +892,9 @@
             flex-direction: column;
             gap: 0.4rem;
             pointer-events: all;
-            animation: slideDownFade 0.15s ease;
+            transform: translateY(24px) scale(0.96);
+            opacity: 0;
+            animation: calPopupIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
         .cal-popup-fecha {
@@ -1289,6 +1303,12 @@
         /* --- Hovers de botones --- */
         @media (hover: hover) and (pointer: fine) {
 
+            #btn-toggle-fondo:hover:not(:disabled),
+            #btn-toggle-gist-backup:hover:not(:disabled),
+            #btn-toggle-gist-merge:hover:not(:disabled),
+            #btn-toggle-ignorar-tf:hover:not(:disabled),
+            #btn-toggle-hover-popup:hover:not(:disabled),
+            #btn-toggle-persistir-tarjetas:hover:not(:disabled),
             .icon-btn:hover:not(:disabled),
             .time-btn:hover:not(:disabled),
             .btn-increment:hover:not(:disabled),
@@ -1298,10 +1318,6 @@
             .btn-export:hover:not(:disabled),
             .btn-backup:hover:not(:disabled),
             .btn-edit:hover:not(:disabled),
-            #btn-toggle-fondo:hover:not(:disabled),
-            #btn-toggle-gist-backup:hover:not(:disabled),
-            #btn-toggle-gist-merge:hover:not(:disabled),
-            #btn-toggle-ignorar-tf:hover:not(:disabled),
             .registro-item:hover,
             .header-profile-btn:hover,
             .btn-perfil-select:hover,
@@ -1348,6 +1364,17 @@
 
             .week-selector {
                 gap: 5px;
+            }
+
+            #modal-config .modal-content {
+                max-width: 700px;
+            }
+
+            #modal-config .modal-config-cols {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0 1.5rem;
+                align-items: start;
             }
         }
     </style>
@@ -1889,142 +1916,163 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.18</span>
+                    <span class="version-text">LUSHIBOSCA-8.20</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
-                <div class="form-group">
-                    <label>Horas Diarias</label>
-                    <div class="input-number-group">
-                        <input type="number" id="config-horas-diarias" min="0" max="24" step="0.5" readonly />
-                        <button class="btn-increment" onmousedown="UILogic.iniciarCambioHoras(0.5)"
-                            onmouseup="UILogic.detenerCambio()" onmouseleave="UILogic.detenerCambio()"
-                            ontouchstart="event.preventDefault(); UILogic.iniciarCambioHoras(0.5)"
-                            ontouchend="event.preventDefault(); UILogic.detenerCambio()">+</button>
-                        <button class="btn-increment" onmousedown="UILogic.iniciarCambioHoras(-0.5)"
-                            onmouseup="UILogic.detenerCambio()" onmouseleave="UILogic.detenerCambio()"
-                            ontouchstart="event.preventDefault(); UILogic.iniciarCambioHoras(-0.5)"
-                            ontouchend="event.preventDefault(); UILogic.detenerCambio()">−</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Días Laborales</label>
-                    <div class="week-selector">
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="1">
-                            <span>Lu</span>
-                        </label>
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="2">
-                            <span>Ma</span>
-                        </label>
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="3">
-                            <span>Mi</span>
-                        </label>
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="4">
-                            <span>Ju</span>
-                        </label>
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="5">
-                            <span>Vi</span>
-                        </label>
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="6">
-                            <span>Sa</span>
-                        </label>
-                        <label class="day-checkbox">
-                            <input type="checkbox" name="dia-habil" value="0"> <span>Do</span>
-                        </label>
-                    </div>
-                    <div id="config-total-feedback" class="config-hint-text">(Total semanal: --hs)</div>
-                </div>
-                <div class="form-group">
-                    <label>Mostrar / Ordenar Tarjetas</label>
-                    <div style="display:flex;flex-direction:column;gap:0.4rem;" id="lista-orden-cards">
-                        <div class="orden-card-item" id="orden-item-registrar">
-                            <button id="btn-toggle-card-registrar" class="drag-handle" data-card="registrar"
-                                onclick="UILogic.toggleVisibilidadCard('registrar')" style="flex:1;">
+                <div class="modal-config-cols">
+
+                    <!-- COLUMNA IZQUIERDA -->
+                    <div>
+                        <div class="form-group">
+                            <label>Horas Diarias</label>
+                            <div class="input-number-group">
+                                <input type="number" id="config-horas-diarias" min="0" max="24" step="0.5" readonly />
+                                <button class="btn-increment" onmousedown="UILogic.iniciarCambioHoras(0.5)"
+                                    onmouseup="UILogic.detenerCambio()" onmouseleave="UILogic.detenerCambio()"
+                                    ontouchstart="event.preventDefault(); UILogic.iniciarCambioHoras(0.5)"
+                                    ontouchend="event.preventDefault(); UILogic.detenerCambio()">+</button>
+                                <button class="btn-increment" onmousedown="UILogic.iniciarCambioHoras(-0.5)"
+                                    onmouseup="UILogic.detenerCambio()" onmouseleave="UILogic.detenerCambio()"
+                                    ontouchstart="event.preventDefault(); UILogic.iniciarCambioHoras(-0.5)"
+                                    ontouchend="event.preventDefault(); UILogic.detenerCambio()">−</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Días Laborales</label>
+                            <div class="week-selector">
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="1">
+                                    <span>Lu</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="2">
+                                    <span>Ma</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="3">
+                                    <span>Mi</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="4">
+                                    <span>Ju</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="5">
+                                    <span>Vi</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="6">
+                                    <span>Sa</span>
+                                </label>
+                                <label class="day-checkbox">
+                                    <input type="checkbox" name="dia-habil" value="0"> <span>Do</span>
+                                </label>
+                            </div>
+                            <div id="config-total-feedback" class="config-hint-text">(Total semanal: --hs)</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Fondo del dashboard</label>
+                            <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()">
+                                <svg class="icon">
+                                    <use href="#icon-landscape" />
+                                </svg>
+                                <span id="hint-fondo-label">Golden Gate</span>
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label>Tiempo Fuera</label>
+                            <button id="btn-toggle-ignorar-tf" onclick="UILogic.toggleIgnorarTiempoFuera()">
+                                <svg class="icon">
+                                    <use href="#icon-exit" />
+                                </svg>
+                                <span>Ignorar calculo TF</span>
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label>Calendario</label>
+                            <button id="btn-toggle-hover-popup" onclick="UILogic.toggleHoverPopupCalendario()">
+                                <svg class="icon">
+                                    <use href="#icon-calendar-simple" />
+                                </svg>
+                                <span>Popup al pasar mouse (PC)</span>
+                            </button>
+                        </div>
+                        <div class="form-group">
+                            <label>Estado de Tarjetas</label>
+                            <button id="btn-toggle-persistir-tarjetas" onclick="UILogic.togglePersistirTarjetas()">
                                 <svg class="icon">
                                     <use href="#icon-save" />
                                 </svg>
-                                <span>Registrar</span>
-                            </button>
-                        </div>
-                        <div class="orden-card-item" id="orden-item-estadisticas">
-                            <button id="btn-toggle-card-estadisticas" class="drag-handle" data-card="estadisticas"
-                                onclick="UILogic.toggleVisibilidadCard('estadisticas')" style="flex:1;">
-                                <svg class="icon">
-                                    <use href="#icon-stats" />
-                                </svg>
-                                <span>Estadísticas</span>
-                            </button>
-                        </div>
-                        <div class="orden-card-item" id="orden-item-historico">
-                            <button id="btn-toggle-card-historico" class="drag-handle" data-card="historico"
-                                onclick="UILogic.toggleVisibilidadCard('historico')" style="flex:1;">
-                                <svg class="icon">
-                                    <use href="#icon-list" />
-                                </svg>
-                                <span>Histórico</span>
+                                <span>Recordar estado</span>
                             </button>
                         </div>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Estado de Tarjetas</label>
-                    <button id="btn-toggle-persistir-tarjetas" onclick="UILogic.togglePersistirTarjetas()">
-                        <svg class="icon">
-                            <use href="#icon-save" />
-                        </svg>
-                        <span>Recordar estado</span>
-                    </button>
-                </div>
-                <div class="form-group">
-                    <label>Tiempo Fuera</label>
-                    <button id="btn-toggle-ignorar-tf" onclick="UILogic.toggleIgnorarTiempoFuera()">
-                        <svg class="icon">
-                            <use href="#icon-exit" />
-                        </svg>
-                        <span>Ignorar calculo TF</span>
-                    </button>
-                </div>
-                <div class="form-group">
-                    <label>Fondo de Estado</label>
-                    <button id="btn-toggle-fondo" onclick="UILogic.toggleFondoCard()">
-                        <svg class="icon">
-                            <use href="#icon-landscape" />
-                        </svg>
-                        <span id="hint-fondo-label">Golden Gate</span>
-                    </button>
-                </div>
-                <div class="config-actions">
-                    <label>Datos</label>
-                    <button class="btn-edit" onclick="UILogic.abrirModalGist()">
-                        <svg class="icon">
-                            <use href="#icon-cloud" />
-                        </svg>
-                        GitHub Gist
-                    </button>
-                    <button class="btn-backup" onclick="UILogic.mostrarImportar()">
-                        <svg class="icon">
-                            <use href="#icon-upload" />
-                        </svg>
-                        Restaurar
-                    </button>
-                    <button class="btn-export" onclick="UILogic.mostrarExportar()">
-                        <svg class="icon">
-                            <use href="#icon-download" />
-                        </svg>
-                        Respaldar
-                    </button>
-                    <button class="btn-delete" onclick="DataManagement.borrarTodoHistorial()">
-                        <svg class="icon">
-                            <use href="#icon-trash" />
-                        </svg>
-                        Restablecer
-                    </button>
+
+                    <!-- COLUMNA DERECHA -->
+                    <div>
+                        <div class="form-group">
+                            <label>Tarjetas</label>
+                            <div style="display:flex;flex-direction:column;gap:0.4rem;" id="lista-orden-cards">
+                                <div class="orden-card-item" id="orden-item-registrar">
+                                    <button id="btn-toggle-card-registrar" class="drag-handle" data-card="registrar"
+                                        onclick="UILogic.toggleVisibilidadCard('registrar')" style="flex:1;">
+                                        <svg class="icon">
+                                            <use href="#icon-save" />
+                                        </svg>
+                                        <span>Registrar</span>
+                                    </button>
+                                </div>
+                                <div class="orden-card-item" id="orden-item-estadisticas">
+                                    <button id="btn-toggle-card-estadisticas" class="drag-handle"
+                                        data-card="estadisticas" onclick="UILogic.toggleVisibilidadCard('estadisticas')"
+                                        style="flex:1;">
+                                        <svg class="icon">
+                                            <use href="#icon-stats" />
+                                        </svg>
+                                        <span>Estadísticas</span>
+                                    </button>
+                                </div>
+                                <div class="orden-card-item" id="orden-item-historico">
+                                    <button id="btn-toggle-card-historico" class="drag-handle" data-card="historico"
+                                        onclick="UILogic.toggleVisibilidadCard('historico')" style="flex:1;">
+                                        <svg class="icon">
+                                            <use href="#icon-list" />
+                                        </svg>
+                                        <span>Histórico</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="config-actions">
+                            <label>Datos</label>
+                            <button class="btn-edit" onclick="UILogic.abrirModalGist()">
+                                <svg class="icon">
+                                    <use href="#icon-cloud" />
+                                </svg>
+                                GitHub Gist
+                            </button>
+                            <button class="btn-backup" onclick="UILogic.mostrarImportar()">
+                                <svg class="icon">
+                                    <use href="#icon-upload" />
+                                </svg>
+                                Restaurar
+                            </button>
+                            <button class="btn-export" onclick="UILogic.mostrarExportar()">
+                                <svg class="icon">
+                                    <use href="#icon-download" />
+                                </svg>
+                                Respaldar
+                            </button>
+                            <button class="btn-delete" onclick="DataManagement.borrarTodoHistorial()">
+                                <svg class="icon">
+                                    <use href="#icon-trash" />
+                                </svg>
+                                Restablecer
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div><!-- /modal-config-body -->
             <div class="modal-config-footer">
@@ -2785,6 +2833,10 @@
                     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 }
 
+                function parsearFechaLocal(fechaStr) {
+                    return new Date(fechaStr.replace(/-/g, '/') + ' 00:00:00');
+                }
+
                 return {
                     SECURITY_LIMITS,
                     REGEX_PATTERNS,
@@ -2795,7 +2847,8 @@
                     calcularHashSHA256,
                     validarRegistroSeguro,
                     fechaLocalISO,
-                    formatearFechaLocal
+                    formatearFechaLocal,
+                    parsearFechaLocal
                 };
             })();
 
@@ -3439,8 +3492,8 @@
                     // 3. VALIDACIÓN DE RANGO RAZONABLE (2 AÑOS)
                     // ============================================
                     const hoy = new Date();
-                    const fechaInicioObj = new Date(nuevaDesde.replace(/-/g, '/') + ' 00:00:00');
-                    const fechaFinObj = new Date(nuevaHasta.replace(/-/g, '/') + ' 00:00:00');
+                    const fechaInicioObj = S.parsearFechaLocal(nuevaDesde);
+                    const fechaFinObj = S.parsearFechaLocal(nuevaHasta);
 
                     // Permitir hasta 2 años en el futuro
                     const dosPasado = new Date(hoy);
@@ -3500,8 +3553,8 @@
                     // 7. GENERAR LISTA DE FECHAS NUEVAS
                     // ============================================
                     const fechasNuevas = [];
-                    let checkFecha = new Date(nuevaDesde.replace(/-/g, '/') + ' 00:00:00');
-                    const checkFin = new Date(nuevaHasta.replace(/-/g, '/') + ' 00:00:00');
+                    let checkFecha = S.parsearFechaLocal(nuevaDesde);
+                    const checkFin = S.parsearFechaLocal(nuevaHasta);
 
                     while (checkFecha <= checkFin) {
                         const y = checkFecha.getFullYear();
@@ -3765,7 +3818,7 @@
                                 return; // Saltar este registro
                             }
 
-                            const fechaObj = new Date(r.fecha.replace(/-/g, '/') + ' 00:00:00');
+                            const fechaObj = S.parsearFechaLocal(r.fecha);
                             const diaSemana = fechaObj.getDay();
 
                             if (diasHabilesConfig.includes(diaSemana)) {
@@ -4664,8 +4717,8 @@
                     const registrosRango = registros.filter(r => r.fecha >= inicioSemana && r.fecha <= fechaHoy);
                     const registrosMap = new Map(registrosRango.map(r => [r.fecha, r]));
 
-                    let fechaIteracion = new Date(inicioSemana.replace(/-/g, '/') + ' 00:00:00');
-                    let fechaLimite = new Date(fechaHoy.replace(/-/g, '/') + ' 00:00:00');
+                    let fechaIteracion = S.parsearFechaLocal(inicioSemana);
+                    let fechaLimite = S.parsearFechaLocal(fechaHoy);
 
                     while (fechaIteracion <= fechaLimite) {
                         const y = fechaIteracion.getFullYear();
@@ -4774,8 +4827,8 @@
                     const entrada = tipoConfig.codigo;
                     const salida = tipoConfig.codigo;
 
-                    let fechaActual = new Date(desde.replace(/-/g, '/') + ' 00:00:00');
-                    const fechaFin = new Date(hasta.replace(/-/g, '/') + ' 00:00:00');
+                    let fechaActual = S.parsearFechaLocal(desde);
+                    const fechaFin = S.parsearFechaLocal(hasta);
                     const fechasARegistrar = [];
 
                     while (fechaActual <= fechaFin) {
@@ -5400,7 +5453,7 @@
                 }
 
                 function obtenerLunesSemana(fecha) {
-                    const date = new Date(fecha.replace(/-/g, '/') + ' 00:00:00');
+                    const date = S.parsearFechaLocal(fecha);
                     const dia = date.getDay();
                     const offset = dia === 0 ? -6 : 1 - dia;
                     const lunes = new Date(date);
@@ -5495,8 +5548,8 @@
 
                 // Función auxiliar para verificar si una fecha es consecutiva a otra
                 function esFechaConsecutiva(fechaActual, fechaSiguiente) {
-                    const actual = new Date(fechaActual.replace(/-/g, '/') + ' 00:00:00');
-                    const siguiente = new Date(fechaSiguiente.replace(/-/g, '/') + ' 00:00:00');
+                    const actual = S.parsearFechaLocal(fechaActual);
+                    const siguiente = S.parsearFechaLocal(fechaSiguiente);
                     actual.setDate(actual.getDate() - 1);
                     return S.formatearFechaLocal(actual) === fechaSiguiente;
                 }
@@ -6914,6 +6967,18 @@
                     _setBtnActivo('btn-toggle-ignorar-tf', D.getIgnorarTiempoFuera());
                 }
 
+                function toggleHoverPopupCalendario() {
+                    const actual = localStorage.getItem('hoverPopupCalendario') !== 'false';
+                    const nuevo = !actual;
+                    try { localStorage.setItem('hoverPopupCalendario', nuevo); } catch (e) { }
+                    actualizarEstadoBotonHoverPopup();
+                    mostrarToast(nuevo ? 'Popup al pasar mouse activado' : 'Popup al pasar mouse desactivado', 'info');
+                }
+
+                function actualizarEstadoBotonHoverPopup() {
+                    _setBtnActivo('btn-toggle-hover-popup', localStorage.getItem('hoverPopupCalendario') !== 'false');
+                }
+
                 function togglePersistirTarjetas() {
                     const actual = localStorage.getItem('persistirTarjetas') !== 'false';
                     const nuevo = !actual;
@@ -7659,7 +7724,7 @@ REPORTE DE HORAS TRABAJADAS
                                 let minutosSem = Math.round((totalSemanal - horasSem) * 60);
                                 if (minutosSem === 60) { horasSem++; minutosSem = 0; }
 
-                                const fechaLunes = new Date(lunes.replace(/-/g, '/') + ' 00:00:00');
+                                const fechaLunes = S.parsearFechaLocal(lunes);
                                 const fechaDomingo = new Date(fechaLunes);
                                 fechaDomingo.setDate(fechaLunes.getDate() + 6);
                                 const domingo = S.formatearFechaLocal(fechaDomingo);
@@ -8624,8 +8689,8 @@ Generado por Sistema Horarios
                     }
 
                     // 3. Calcular días totales en el rango
-                    const fechaInicio = new Date(desde.replace(/-/g, '/') + ' 00:00:00');
-                    const fechaFin = new Date(hasta.replace(/-/g, '/') + ' 00:00:00');
+                    const fechaInicio = S.parsearFechaLocal(desde);
+                    const fechaFin = S.parsearFechaLocal(hasta);
                     const diffTime = Math.abs(fechaFin - fechaInicio);
                     const diasTotales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
@@ -9376,7 +9441,8 @@ Generado por Sistema Horarios
                         togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, navegarCalendario, toggleGistMerge,
                         actualizarEstadoBotonesGist, togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
                         abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
-                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards, _popupCalendario,
+                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards,
+                        _popupCalendario, _popupCalendarioHover, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, actualizarEstadoBotonHoverPopup
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -9555,6 +9621,7 @@ Generado por Sistema Horarios
                     D.setVistaActual(config.vistaActual);
                     D.setIgnorarTiempoFuera(config.ignorarTiempoFuera || false);
                     UILogic.actualizarEstadoBotonIgnorarTF();
+                    UILogic.actualizarEstadoBotonHoverPopup();
                     UILogic.aplicarVisibilidadCards();
                     UILogic.aplicarOrdenCards(UILogic.obtenerOrdenCards());
                     UILogic.iniciarDragOrdenCards();
@@ -10266,9 +10333,11 @@ Generado por Sistema Horarios
                         const clase = claseDelDia(fecha);
                         const esHoy = anio === hoy.getFullYear() && mes === hoy.getMonth() && dia === hoy.getDate();
                         const reg = regsPorFecha[fecha];
-                        const onclick = reg ? ` onclick="UILogic._popupCalendario(event, '${reg.id}')" style="cursor:pointer;"` : '';
+                        const onclick = reg ? ` onclick="UILogic._popupCalendario(event, '${reg.id}')"` : '';
+                        const onhover = reg ? ` onmouseenter="UILogic._popupCalendarioHover(event, '${reg.id}')" onmouseleave="UILogic._cerrarPopupCalendarioHover(event)"` : '';
+                        const cursor = reg ? ' style="cursor:pointer;"' : '';
                         const esNuevo = idResaltar && reg && reg.id === idResaltar ? ' nuevo-registro-animacion' : '';
-                        html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}${esNuevo}"${onclick}>${dia}</div>`;
+                        html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}${esNuevo}"${onclick}${onhover}${cursor}>${dia}</div>`;
                     }
 
                     if (filtroActivo) {
@@ -10380,8 +10449,25 @@ Generado por Sistema Horarios
                         </button>
                     `;
 
+                    // DESPUÉS:
                     document.body.appendChild(popup);
                     _popupCalendarioEl = popup;
+
+                    // En desktop: si el mouse entra al popup cancelar el cierre por hover
+                    popup.addEventListener('mouseenter', () => {
+                        clearTimeout(_popupCalendarioHoverTimer);
+                    });
+                    popup.addEventListener('mouseleave', () => {
+                        if (_popupCalendarioEsHover) {
+                            _popupCalendarioHoverTimer = setTimeout(() => {
+                                if (_popupCalendarioEl) {
+                                    _popupCalendarioEl.remove();
+                                    _popupCalendarioEl = null;
+                                }
+                                _popupCalendarioEsHover = false;
+                            }, 500);
+                        }
+                    });
 
                     // Posicionar cerca del elemento tocado
                     const el = event.currentTarget || event.target;
@@ -10412,6 +10498,37 @@ Generado por Sistema Horarios
                     };
                     setTimeout(() => document.addEventListener('click', cerrar, true), 10);
                     window.addEventListener('scroll', cerrar, { once: true, capture: true });
+                }
+
+                let _popupCalendarioEsHover = false;
+                let _popupCalendarioHoverTimer = null;
+
+                function _popupCalendarioHover(event, registroId) {
+                    // Ignorar si el evento fue precedido por un touch (browsers Android simulan mouse events)
+                    if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) return;
+                    if (!window.matchMedia('(hover: hover)').matches) return;
+                    const stored = localStorage.getItem('hoverPopupCalendario');
+                    const esHover = window.matchMedia('(hover: hover)').matches;
+                    if (stored === null ? !esHover : stored !== 'true') return;
+                    clearTimeout(_popupCalendarioHoverTimer);
+                    _popupCalendarioHoverTimer = setTimeout(() => {
+                        _popupCalendarioEsHover = true;
+                        _popupCalendario(event, registroId);
+                    }, 150);
+                }
+
+                function _cerrarPopupCalendarioHover(event) {
+                    if (!_popupCalendarioEsHover) return;
+                    const related = event.relatedTarget;
+                    if (related && _popupCalendarioEl && _popupCalendarioEl.contains(related)) return;
+                    clearTimeout(_popupCalendarioHoverTimer);
+                    _popupCalendarioHoverTimer = setTimeout(() => {
+                        if (_popupCalendarioEl) {
+                            _popupCalendarioEl.remove();
+                            _popupCalendarioEl = null;
+                        }
+                        _popupCalendarioEsHover = false;
+                    }, 500);
                 }
 
                 function navegarCalendario(delta) {
@@ -10613,7 +10730,7 @@ Generado por Sistema Horarios
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                     togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards,
                     togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
-                    _popupCalendario
+                    _popupCalendario, _popupCalendarioHover, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, actualizarEstadoBotonHoverPopup
                 };
 
             })(SecurityAndUtils, DataManagement, GistSync);
@@ -10639,7 +10756,6 @@ Generado por Sistema Horarios
                     })
                     .catch(err => console.error('❌ Error SW:', err));
             });
-
         }
     </script>
 </body>
@@ -10647,7 +10763,7 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.18
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.20
     // ====================================================================
     
      - CAMBIOS:
@@ -10655,5 +10771,5 @@ Generado por Sistema Horarios
     2) Se agrega swipe a las tarjetas de estado y estadisticas
 
      - BUGS MENORES CONOCIDOS:
-          
+
     -->
