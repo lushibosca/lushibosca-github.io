@@ -29,7 +29,8 @@
             --bg-card: #f0f4f9;
             --bg-header: #ffffff;
             --text-main: #1f1f1f;
-            --text-muted: #444746 --text-inv: #ffffff;
+            --text-muted: #444746;
+            --text-disabled: #444746a2;
             --border: #dde3ea;
             --input-bg: #dde3ea;
             --input-focus: #dde3ea;
@@ -53,6 +54,7 @@
             --bg-header: #131314f6;
             --text-main: #e3e3e3;
             --text-muted: #b4b4b4;
+            --text-disabled: #b4b4b4a2;
             --border: #313333;
             --input-bg: #313333;
             --input-focus: #313333;
@@ -222,9 +224,9 @@
         input:disabled,
         select:disabled {
             background-color: var(--bg-card);
-            color: var(--text-muted);
+            color: var(--text-disabled);
             opacity: 1;
-            -webkit-text-fill-color: var(--text-muted);
+            -webkit-text-fill-color: var(--text-disabled);
             /* Corrección para Safari/iOS */
             cursor: not-allowed;
         }
@@ -291,7 +293,7 @@
             background: transparent;
             cursor: not-allowed;
             transform: none;
-            color: #6b7280;
+            color: var(--text-disabled);
         }
 
         #btn-timer-main {
@@ -835,6 +837,7 @@
             grid-template-columns: repeat(7, 1fr);
             gap: 4px;
             margin-top: 0.75rem;
+            grid-template-rows: auto repeat(6, 1fr);
         }
 
         .calendario-dia-nombre {
@@ -1071,13 +1074,12 @@
             border-radius: var(--radius);
             padding: 0.25rem 0.75rem;
             color: var(--text-main);
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 0.5rem;
             cursor: pointer;
-            transition: border-color 0.2s;
+            transition: border-color 0.5s;
             width: auto;
             max-width: 160px;
         }
@@ -1309,6 +1311,7 @@
             #btn-toggle-ignorar-tf:hover:not(:disabled),
             #btn-toggle-hover-popup:hover:not(:disabled),
             #btn-toggle-persistir-tarjetas:hover:not(:disabled),
+            #btn-reporte:hover:not(:disabled),
             .icon-btn:hover:not(:disabled),
             .time-btn:hover:not(:disabled),
             .btn-increment:hover:not(:disabled),
@@ -1324,6 +1327,16 @@
             .day-checkbox:hover span,
             .btn-perfil-edit:hover {
                 border: 1px solid var(--hover);
+            }
+
+            .calendario-dia:not(.vacio):not(.dia-sin-registro) {
+                transition: filter 0.3s ease;
+            }
+
+            .calendario-dia:not(.vacio):not(.dia-sin-registro):hover {
+                filter: brightness(1.2);
+                z-index: 2;
+                position: relative;
             }
 
             .calendario-nav button:hover:not(:disabled) {
@@ -1367,7 +1380,7 @@
             }
 
             #modal-config .modal-content {
-                max-width: 700px;
+                max-width: 800px;
             }
 
             #modal-config .modal-config-cols {
@@ -1569,13 +1582,11 @@
                 </svg>
             </button>
             <button class="header-profile-btn" onclick="UILogic.abrirSelectorPerfiles()">
+                <span id="nombre-perfil-header">Cargando...</span>
                 <svg class="icon">
                     <use href="#icon-briefcase" />
                 </svg>
-                <span id="nombre-perfil-header">Cargando...</span>
-                <svg class="icon" style="font-size: 0.8em; margin-left: 2px;">
-                    <use href="#icon-chevron-down" />
-                </svg>
+
             </button>
         </div>
     </div>
@@ -1890,6 +1901,8 @@
                 <div id="vista-calendario-historico" style="display:none; padding: 0 0.5rem 0.5rem;">
                     <div class="calendario-nav">
                         <span class="calendario-titulo" id="calendario-titulo-mes"></span>
+                        <button onclick="UILogic.irHoyCalendario()"
+                            style="width:auto; padding: 4px 10px; font-size:0.8rem; font-weight:600;">Hoy</button>
                         <button onclick="UILogic.navegarCalendario(-1)">
                             <svg class="icon" style="transform:rotate(90deg);">
                                 <use href="#icon-chevron-down" />
@@ -1916,7 +1929,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.20</span>
+                    <span class="version-text">LUSHIBOSCA-8.28</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -2154,6 +2167,20 @@
                             </svg>
                             <span id="hint-gist-merge">Reemplazar</span>
                         </button>
+                    </div>
+                    <div id="gist-limite-sync"
+                        style="max-height:0; overflow:hidden; transition:max-height 0.3s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem;">
+                        <div class="form-group" style="margin-bottom:0.5rem">
+                            <label id="gist-limite-label">Límite por hora</label>
+                            <div class="input-number-group">
+                                <input type="number" id="gist-limite-valor" min="0" max="99" step="1" readonly />
+                                <button class="btn-increment" onclick="UILogic.cambiarLimiteSync(1)">+</button>
+                                <button class="btn-increment" onclick="UILogic.cambiarLimiteSync(-1)">−</button>
+                                <button class="btn-increment" id="btn-limite-siempre"
+                                    onclick="UILogic.toggleLimiteSiempre()" title="Sin límite"
+                                    style="min-width:100px; font-size:0.8rem;">Sin limite</button>
+                            </div>
+                        </div>
                     </div>
                     <div id="gist-rango-horario"
                         style="max-height:0; overflow:hidden; transition:max-height 0.3s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem; gap:0.5rem; align-items:center; display:flex;">
@@ -2580,6 +2607,8 @@
                     </button>
                 </div>
             </div>
+            <div id="edit-grupo-hint" class="config-hint-text"
+                style="text-align: center; margin-top: 0; min-height: 1.2em;"></div>
             <div class="btn-group">
                 <button class="btn-edit" onclick="DataManagement.guardarEdicionGrupo()">
                     <svg class="icon">
@@ -2916,7 +2945,6 @@
                     const btnEliminar = document.getElementById('btn-eliminar-perfil-modal');
                     if (btnEliminar) {
                         btnEliminar.disabled = (perfilActual === 'default');
-                        btnEliminar.style.opacity = (perfilActual === 'default') ? '0.5' : '1';
                     }
                 }
 
@@ -3430,16 +3458,18 @@
                     grupoEnEdicion = {
                         registros: grupo.registros,
                         subtipo: grupo.subtipo,
-                        fechaDesde: grupo.registros[grupo.registros.length - 1].fecha, // El más antiguo
-                        fechaHasta: grupo.registros[0].fecha // El más reciente
+                        fechaDesde: grupo.registros[grupo.registros.length - 1].fecha,
+                        fechaHasta: grupo.registros[0].fecha
                     };
 
                     $('edit-grupo-tipo').value = grupo.subtipo;
                     $('edit-grupo-desde').value = grupoEnEdicion.fechaDesde;
                     $('edit-grupo-hasta').value = grupoEnEdicion.fechaHasta;
 
-                    ModalManager.abrir('modal-editar-grupo');
+                    // Hint con cantidad de registros y tipo
+                    UILogic.actualizarHintGrupo();
 
+                    ModalManager.abrir('modal-editar-grupo');
                     UILogic.setBloqueoEdicionGrupo(true);
                 }
 
@@ -5135,6 +5165,7 @@
                 }
 
                 function marcarSync(tipo) {
+                    if (getSyncLimite(tipo) === 0) return; // modo siempre: no acumular
                     if (window.PerfilManager) {
                         const perfil = PerfilManager.obtenerDatosPerfil();
                         if (perfil) {
@@ -5149,7 +5180,31 @@
                     }
                 }
 
-                function superaLimite(tipo, limite) {
+                function getSyncLimite(tipo) {
+                    const key = `gistSyncLimite_${tipo}`;
+                    const val = parseInt(localStorage.getItem(key));
+                    if (tipo === 'bajar') return isNaN(val) ? 2 : val;
+                    if (tipo === 'subir') return isNaN(val) ? 1 : val;
+                    return 2;
+                }
+
+                function setSyncLimite(tipo, valor) {
+                    const anteriorLimite = getSyncLimite(tipo);
+                    try { localStorage.setItem(`gistSyncLimite_${tipo}`, valor); } catch (e) { }
+                    // Si se pasa de "siempre" (0) a numérico, resetear el contador
+                    if (anteriorLimite === 0 && valor > 0 && window.PerfilManager) {
+                        const perfil = PerfilManager.obtenerDatosPerfil();
+                        if (perfil) {
+                            perfil[`gistSyncCount_${tipo}`] = 0;
+                            perfil[`gistSyncFecha_${tipo}`] = null;
+                            PerfilManager.guardarPerfiles();
+                        }
+                    }
+                }
+
+                function superaLimite(tipo) {
+                    const limite = getSyncLimite(tipo);
+                    if (limite === 0) return false; // 0 = siempre
                     return getSyncCount(tipo) >= limite;
                 }
 
@@ -5291,7 +5346,7 @@
                     return data;
                 }
 
-                return { getToken, getGistId, getLastSync, getMergeBehavior, setMergeBehavior, getAutoSync, setAutoSync, getRangoHorario, setRangoHorario, getSyncCount, marcarSync, superaLimite, dentroDelRangoHorario, saveCredentials, esGistIdValido, subir, bajar };
+                return { getToken, getGistId, getLastSync, getMergeBehavior, setMergeBehavior, getAutoSync, setAutoSync, getRangoHorario, setRangoHorario, getSyncCount, marcarSync, superaLimite, getSyncLimite, setSyncLimite, dentroDelRangoHorario, saveCredentials, esGistIdValido, subir, bajar };
 
             })(SecurityAndUtils);
 
@@ -6101,8 +6156,6 @@
                     const btnReporte = document.getElementById('btn-reporte');
                     if (btnReporte) {
                         btnReporte.disabled = !mostrarBtnReporte;
-                        btnReporte.style.opacity = mostrarBtnReporte ? '' : '0.4';
-                        btnReporte.style.cursor = mostrarBtnReporte ? '' : 'not-allowed';
                     }
                 }
 
@@ -6849,6 +6902,7 @@
                         // --- Avisar que se borró para bloquear el botón ---
                         if (id === 'edit-entrada' || id === 'edit-salida') {
                             verificarBloqueoCredito();
+                            c.dispatchEvent(new Event('input'));
                         }
                         return;
                     }
@@ -6862,6 +6916,7 @@
                     // --- Avisar que se pegó para habilitar el botón ---
                     if (id === 'edit-entrada' || id === 'edit-salida') {
                         verificarBloqueoCredito();
+                        c.dispatchEvent(new Event('input'));
                     }
                 }
 
@@ -7205,11 +7260,9 @@
 
                         if (btnCombinar) {
                             btnCombinar.disabled = true;
-                            btnCombinar.style.opacity = '0.5';
                         }
                         if (btnReemplazar) {
                             btnReemplazar.disabled = true;
-                            btnReemplazar.style.opacity = '0.5';
                         }
 
                         const btnVolverI = $('btn-volver-importar');
@@ -8251,7 +8304,6 @@ Generado por Sistema Horarios
                     const btnEliminar = document.getElementById('btn-eliminar-perfil-editor');
                     if (btnEliminar) {
                         btnEliminar.disabled = (perfilId === 'default');
-                        btnEliminar.style.opacity = (perfilId === 'default') ? '0.5' : '1';
                     }
 
                     // Cerrar selector y abrir editor
@@ -8979,39 +9031,21 @@ Generado por Sistema Horarios
 
                     let _gistModalPadre = null;
                     let _gistAutoSyncTemp = null;
+                    let _gistLimitesTemp = null;
+                    let _gistLimitesOrig = null;
 
                     function actualizarEstadoBotonesGist() {
                         const token = document.getElementById('gist-token')?.value.trim() || '';
                         const gistId = document.getElementById('gist-id')?.value.trim() || '';
                         const soloToken = token !== '';
-                        const ambosCompletos = token !== '' && gistId.length > 10;
+                        const ambosCompletos = soloToken && gistId.length > 10;
 
-                        // Subir: solo requiere token (el ID se genera solo si está vacío)
-                        const btnSubir = document.getElementById('btn-gist-subir');
-                        if (btnSubir) {
-                            btnSubir.disabled = !soloToken;
-                            btnSubir.style.opacity = soloToken ? '1' : '0.4';
-                            btnSubir.style.cursor = soloToken ? '' : 'not-allowed';
-                        }
+                        _setBtnDisabled('btn-gist-subir', !soloToken);
+                        _setBtnDisabled('btn-gist-bajar', !ambosCompletos);
+                        _setBtnDisabled('btn-toggle-gist-backup', !ambosCompletos);
 
-                        // Bajar y Automatización: requieren ambos
-                        ['btn-gist-bajar', 'btn-toggle-gist-backup'].forEach(id => {
-                            const btn = document.getElementById(id);
-                            if (!btn) return;
-                            btn.disabled = !ambosCompletos;
-                            btn.style.opacity = ambosCompletos ? '1' : '0.4';
-                            btn.style.cursor = ambosCompletos ? '' : 'not-allowed';
-                        });
-
-                        // Comportamiento (merge): requiere ambos completos Y que esté en modo Restaurar (estado 1)
-                        const btnMerge = document.getElementById('btn-toggle-gist-merge');
-                        if (btnMerge) {
-                            const estadoBackup = parseInt(_gistAutoSyncTemp ?? GistSync.getAutoSync());
-                            const habilitarMerge = ambosCompletos && estadoBackup === 1;
-                            btnMerge.disabled = !habilitarMerge;
-                            btnMerge.style.opacity = habilitarMerge ? '1' : '0.4';
-                            btnMerge.style.cursor = habilitarMerge ? '' : 'not-allowed';
-                        }
+                        const estadoBackup = parseInt(_gistAutoSyncTemp ?? GistSync.getAutoSync());
+                        _setBtnDisabled('btn-toggle-gist-merge', !(ambosCompletos && estadoBackup === 1));
                     }
 
                     function abrirModalGist() {
@@ -9044,6 +9078,24 @@ Generado por Sistema Horarios
                         actualizarEstadoBotonesGist();
                         ModalManager.cerrarTodos();
                         ModalManager.abrir('modal-gist');
+                        _gistLimitesTemp = null;
+                        _actualizarCampoLimite();
+                        _gistLimitesOrig = { bajar: GistSync.getSyncLimite('bajar'), subir: GistSync.getSyncLimite('subir') };
+                    }
+
+                    function _gistGuardarCredencialesSiModalAbierto() {
+                        if (document.getElementById('modal-gist')?.classList.contains('show')) {
+                            GistSync.saveCredentials(
+                                document.getElementById('gist-token')?.value.trim() || '',
+                                document.getElementById('gist-id')?.value.trim() || ''
+                            );
+                        }
+                    }
+
+                    function _setBtnDisabled(id, disabled) {
+                        const btn = document.getElementById(id);
+                        if (!btn) return;
+                        btn.disabled = disabled;
                     }
 
                     function actualizarBotonesHistorico() {
@@ -9079,51 +9131,55 @@ Generado por Sistema Horarios
                         const hasta = document.getElementById('gist-rango-hasta')?.value || '00:00';
 
                         const rango = GistSync.getRangoHorario();
+                        const limitesCambiaron = _gistLimitesOrig !== null && (
+                            _gistLimitesOrig.bajar !== GistSync.getSyncLimite('bajar') ||
+                            _gistLimitesOrig.subir !== GistSync.getSyncLimite('subir')
+                        );
                         const huboCambios = token !== GistSync.getToken()
                             || gistId !== GistSync.getGistId()
                             || desde !== rango.desde
                             || hasta !== rango.hasta
-                            || (_gistAutoSyncTemp !== null && _gistAutoSyncTemp !== GistSync.getAutoSync());
+                            || limitesCambiaron
+                            || (_gistAutoSyncTemp !== null && _gistAutoSyncTemp !== GistSync.getAutoSync())
+                            || (_gistLimitesTemp !== null);
 
                         if (_gistAutoSyncTemp !== null) GistSync.setAutoSync(_gistAutoSyncTemp);
+                        if (_gistLimitesTemp !== null) {
+                            GistSync.setSyncLimite('bajar', _gistLimitesTemp.bajar);
+                            GistSync.setSyncLimite('subir', _gistLimitesTemp.subir);
+                        }
                         GistSync.saveCredentials(token, gistId);
                         GistSync.setRangoHorario(desde, hasta);
                         mostrarToast(huboCambios ? 'Configuración guardada' : 'Sin cambios', huboCambios ? 'success' : 'info');
                         _gistAutoSyncTemp = null;
+                        _gistLimitesTemp = null;
                         _gistModalPadre = null;
+                        _gistLimitesOrig = null;
                         ModalManager.cerrar('modal-gist');
                         actualizarBotonesHistorico();
                     }
 
                     function cerrarModalGist() {
                         _gistAutoSyncTemp = null;
+                        _gistLimitesTemp = null;
+                        _gistLimitesOrig = null;
                         ModalManager.cerrar('modal-gist');
                         if (_gistModalPadre) ModalManager.abrir(_gistModalPadre);
                         _gistModalPadre = null;
                         actualizarBotonesHistorico();
                     }
 
-                    async function gistMergeAplicar(modo, modoAutomatico = false) {
-                        if (!_gistMergeData) return;
-                        const { registrosNormalizados, soloEnGist, complementarios = [], data } = _gistMergeData;
-                        _gistMergeData = null;
-
-                        let registrosFinales;
-                        let mensajeExito;
+                    function _calcularRegistrosMerge(modo, mergeData) {
+                        const { registrosNormalizados, soloEnGist, complementarios = [], data } = mergeData;
 
                         if (modo === 'merge') {
                             if (soloEnGist.length === 0 && complementarios.length === 0) {
-                                ModalManager.cerrar('modal-gist-merge');
-                                gistSetStatus('Sin días nuevos ni datos para completar', 'ok');
-                                mostrarToast('Sin días nuevos ni datos para completar', 'info');
-                                return;
+                                return { vacio: true };
                             }
                             if (D.registros().length + soloEnGist.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
-                                mostrarToast(`Límite alcanzado`, 'error');
-                                return;
+                                return { limiteAlcanzado: true };
                             }
 
-                            // Aplicar complementarios sobre los registros locales
                             const registrosActualizados = D.registros().map(local => {
                                 const imp = complementarios.find(c => c.fecha === local.fecha);
                                 if (!imp) return local;
@@ -9135,16 +9191,16 @@ Generado por Sistema Horarios
                                 return actualizado;
                             });
 
-                            registrosFinales = [...registrosActualizados, ...soloEnGist];
-
                             const partes = [];
                             if (soloEnGist.length > 0) partes.push(`${soloEnGist.length} día${soloEnGist.length !== 1 ? 's' : ''} nuevo${soloEnGist.length !== 1 ? 's' : ''}`);
                             if (complementarios.length > 0) partes.push(`${complementarios.length} registro${complementarios.length !== 1 ? 's' : ''} completado${complementarios.length !== 1 ? 's' : ''}`);
-                            mensajeExito = `Combinado: ${partes.join(', ')}`;
+
+                            return {
+                                registrosFinales: [...registrosActualizados, ...soloEnGist],
+                                mensajeExito: `Combinado: ${partes.join(', ')}`
+                            };
 
                         } else {
-                            registrosFinales = registrosNormalizados;
-                            mensajeExito = `${registrosNormalizados.length} registros restaurados desde Gist`;
                             if (Array.isArray(data.diasHabiles)) {
                                 const diasValidos = data.diasHabiles.filter(d => Number.isInteger(d) && d >= 0 && d <= 6);
                                 if (diasValidos.length > 0) D.setDiasHabiles(diasValidos);
@@ -9153,7 +9209,32 @@ Generado por Sistema Horarios
                                 const hd = parseFloat(data.horasDiarias);
                                 if (Number.isFinite(hd) && hd >= 0 && hd <= 24) D.setHorasDiarias(hd);
                             }
+                            return {
+                                registrosFinales: registrosNormalizados,
+                                mensajeExito: `${registrosNormalizados.length} registros restaurados desde Gist`
+                            };
                         }
+                    }
+
+                    async function gistMergeAplicar(modo, modoAutomatico = false) {
+                        if (!_gistMergeData) return;
+                        const mergeData = _gistMergeData;
+                        _gistMergeData = null;
+
+                        const resultado = _calcularRegistrosMerge(modo, mergeData);
+
+                        if (resultado.vacio) {
+                            ModalManager.cerrar('modal-gist-merge');
+                            gistSetStatus('Sin días nuevos ni datos para completar', 'ok');
+                            mostrarToast('Sin días nuevos ni datos para completar', 'info');
+                            return;
+                        }
+                        if (resultado.limiteAlcanzado) {
+                            mostrarToast('Límite alcanzado', 'error');
+                            return;
+                        }
+
+                        const { registrosFinales, mensajeExito } = resultado;
 
                         D.registros().splice(0, D.registros().length, ...registrosFinales);
                         D.registros().sort((a, b) => {
@@ -9202,6 +9283,7 @@ Generado por Sistema Horarios
                         _gistAutoSyncTemp = (actual + 1) % 3;
                         actualizarBotonGistBackup();
                         actualizarEstadoBotonesGist();
+                        _actualizarCampoLimite();
                     }
 
                     function actualizarBotonGistBackup() {
@@ -9245,6 +9327,52 @@ Generado por Sistema Horarios
                         }
                     }
 
+                    function _tipoSyncActual() {
+                        const estado = parseInt(_gistAutoSyncTemp ?? GistSync.getAutoSync());
+                        return estado === 1 ? 'bajar' : estado === 2 ? 'subir' : null;
+                    }
+
+                    function _actualizarCampoLimite() {
+                        const tipo = _tipoSyncActual();
+                        const contenedor = document.getElementById('gist-limite-sync');
+                        if (!contenedor) return;
+                        if (!tipo) {
+                            contenedor.style.maxHeight = '0';
+                            contenedor.style.opacity = '0';
+                            return;
+                        }
+                        const limite = _gistLimitesTemp ? _gistLimitesTemp[tipo] : GistSync.getSyncLimite(tipo);
+                        const input = document.getElementById('gist-limite-valor');
+                        const label = document.getElementById('gist-limite-label');
+                        const btnSiempre = document.getElementById('btn-limite-siempre');
+                        const esSiempre = limite === 0;
+                        if (input) { input.value = esSiempre ? '∞' : limite; input.disabled = esSiempre; }
+                        if (label) label.textContent = tipo === 'bajar' ? 'Límite bajadas por hora' : 'Límite subidas por hora';
+                        if (btnSiempre) _setBtnActivo('btn-limite-siempre', esSiempre);
+                        // Deshabilitar botones +/− cuando es siempre
+                        const btnsIncrement = contenedor.querySelectorAll('.btn-increment:not(#btn-limite-siempre)');
+                        btnsIncrement.forEach(b => { b.disabled = esSiempre; b.style.opacity = esSiempre ? '0.4' : ''; });
+                        contenedor.style.maxHeight = '80px';
+                        contenedor.style.opacity = '1';
+                    }
+
+                    function cambiarLimiteSync(delta) {
+                        const tipo = _tipoSyncActual();
+                        if (!tipo) return;
+                        if (!_gistLimitesTemp) _gistLimitesTemp = { bajar: GistSync.getSyncLimite('bajar'), subir: GistSync.getSyncLimite('subir') };
+                        if (_gistLimitesTemp[tipo] === 0) return;
+                        _gistLimitesTemp[tipo] = Math.max(1, Math.min(99, _gistLimitesTemp[tipo] + delta));
+                        _actualizarCampoLimite();
+                    }
+
+                    function toggleLimiteSiempre() {
+                        const tipo = _tipoSyncActual();
+                        if (!tipo) return;
+                        if (!_gistLimitesTemp) _gistLimitesTemp = { bajar: GistSync.getSyncLimite('bajar'), subir: GistSync.getSyncLimite('subir') };
+                        _gistLimitesTemp[tipo] = _gistLimitesTemp[tipo] === 0 ? (tipo === 'bajar' ? 2 : 1) : 0;
+                        _actualizarCampoLimite();
+                    }
+
                     function gistSetStatus(msg, tipo = '') {
                         const modal = document.getElementById('modal-gist');
                         const modalAbierto = modal?.classList.contains('show');
@@ -9258,18 +9386,10 @@ Generado por Sistema Horarios
                     }
 
                     async function gistSubir() {
-                        // Leer desde DOM solo si el modal está abierto, si no usar GistSync directamente
-                        const tokenInput = document.getElementById('gist-token');
-                        const gistIdInput = document.getElementById('gist-id');
-                        const modalAbierto = document.getElementById('modal-gist')?.classList.contains('show');
-                        if (modalAbierto) {
-                            GistSync.saveCredentials(tokenInput?.value.trim() || '', gistIdInput?.value.trim() || '');
-                        }
-
+                        _gistGuardarCredencialesSiModalAbierto();
                         const btn = document.getElementById('btn-gist-subir');
                         if (btn) btn.disabled = true;
                         gistSetStatus('Subiendo...');
-                        mostrarToast('Subiendo...', 'info');
 
                         try {
                             const nuevoId = await GistSync.subir(
@@ -9297,17 +9417,10 @@ Generado por Sistema Horarios
                     let _gistMergeData = null;
 
                     async function gistBajar(modoAutomatico = false) {
-                        const tokenInput = document.getElementById('gist-token');
-                        const gistIdInput = document.getElementById('gist-id');
-                        const modalAbierto = document.getElementById('modal-gist')?.classList.contains('show');
-                        if (modalAbierto) {
-                            GistSync.saveCredentials(tokenInput?.value.trim() || '', gistIdInput?.value.trim() || '');
-                        }
-
+                        _gistGuardarCredencialesSiModalAbierto();
                         const btn = document.getElementById('btn-gist-bajar');
                         if (btn) btn.disabled = true;
                         gistSetStatus('Bajando...');
-                        mostrarToast('Bajando...', 'info');
 
                         try {
                             const data = await GistSync.bajar();
@@ -9441,8 +9554,10 @@ Generado por Sistema Horarios
                         togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, navegarCalendario, toggleGistMerge,
                         actualizarEstadoBotonesGist, togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
                         abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
-                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards,
-                        _popupCalendario, _popupCalendarioHover, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, actualizarEstadoBotonHoverPopup
+                        gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards,
+                        _popupCalendario, _popupCalendarioHover, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, actualizarEstadoBotonHoverPopup,
+                        cambiarLimiteSync, toggleLimiteSiempre, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards, _onclickCalendarioDia,
+                        actualizarHintGrupo, irHoyCalendario
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -9682,7 +9797,9 @@ Generado por Sistema Horarios
                         if (persistir && localStorage.getItem('statsExpandido') === 'true') toggleStats();
 
                         // Restaurar estado de Histórico (3 estados)
-                        const estadoHistorico = persistir ? localStorage.getItem('historicoExpandido') : null;
+                        const estadoHistoricoGuardado = persistir ? localStorage.getItem('historicoExpandido') : null;
+                        // Si estaba completo (con botones), restaurar solo con registros
+                        const estadoHistorico = estadoHistoricoGuardado === 'completo' ? 'meses' : estadoHistoricoGuardado;
                         if (estadoHistorico === 'meses' || estadoHistorico === 'completo') {
                             const contenido = $('contenido-historico');
                             const icon = $('icon-indicator-historico');
@@ -9717,14 +9834,15 @@ Generado por Sistema Horarios
                             }
                         }
 
-                        // Restaurar vista calendario dentro del histórico (solo si histórico está abierto)
-                        if (localStorage.getItem('vistaHistoricoCalendario') === 'true') {
+                        // Default: calendario si no hay nada guardado (primera vez)
+                        const vistaGuardada = localStorage.getItem('vistaHistoricoCalendario');
+                        const usarCalendario = vistaGuardada === null ? true : vistaGuardada === 'true';
+                        if (usarCalendario) {
                             const contenidoAbierto = $('contenido-historico')?.classList.contains('expanded');
                             if (contenidoAbierto) {
-                                _vistaHistoricoCalendario = false; // resetear para que el toggle funcione
+                                _vistaHistoricoCalendario = false;
                                 toggleVistaHistorico();
                             } else {
-                                // Histórico cerrado: solo pre-setear el estado, se aplicará cuando se abra
                                 _vistaHistoricoCalendario = true;
                             }
                         }
@@ -9743,7 +9861,7 @@ Generado por Sistema Horarios
                     if (_tieneCredenciales) {
                         if (_autoSyncEstado === 1) {
                             // Estado 1: restaurar al inicio si está en rango — máx 2 bajas por hora
-                            if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('bajar', 2)) {
+                            if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('bajar')) {
                                 setTimeout(async () => {
                                     await gistBajar(true);
                                     GistSync.marcarSync('bajar');
@@ -9751,7 +9869,7 @@ Generado por Sistema Horarios
                             }
                         } else if (_autoSyncEstado === 2) {
                             // Estado 2: respaldo automático — máx 1 subida por hora
-                            if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('subir', 1)) {
+                            if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('subir')) {
                                 setTimeout(async () => {
                                     await gistSubir();
                                     GistSync.marcarSync('subir');
@@ -10050,16 +10168,39 @@ Generado por Sistema Horarios
                                 }
                                 if (btnCombinar) {
                                     btnCombinar.disabled = true;
-                                    btnCombinar.style.opacity = '0.5';
                                 }
                                 if (btnReemplazar) {
                                     btnReemplazar.disabled = true;
-                                    btnReemplazar.style.opacity = '0.5';
                                 }
                             }
                         });
                     }
                 }
+
+                // E) Hint resumen en tiempo real para editar grupo
+                function actualizarHintGrupo() {
+                    const hint = document.getElementById('edit-grupo-hint');
+                    if (!hint) return;
+                    const desde = document.getElementById('edit-grupo-desde')?.value;
+                    const hasta = document.getElementById('edit-grupo-hasta')?.value;
+                    if (!desde && !hasta) { hint.textContent = ''; return; }
+                    if (desde && !hasta) {
+                        hint.textContent = `1 día`;
+                        return;
+                    }
+                    if (!S.validarFechaSegura(desde) || !S.validarFechaSegura(hasta) || desde > hasta) {
+                        hint.textContent = 'Rango inválido';
+                        return;
+                    }
+                    const fechaInicio = S.parsearFechaLocal(desde);
+                    const fechaFin = S.parsearFechaLocal(hasta);
+                    const diasTotales = Math.ceil(Math.abs(fechaFin - fechaInicio) / (1000 * 60 * 60 * 24)) + 1;
+                    hint.textContent = `${diasTotales} día${diasTotales !== 1 ? 's' : ''}`;
+                }
+                ['edit-grupo-desde', 'edit-grupo-hasta'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.addEventListener('change', actualizarHintGrupo);
+                });
 
                 function mostrarFiltros() {
                     // Si hay filtro activo, limpiarlo directamente
@@ -10333,7 +10474,7 @@ Generado por Sistema Horarios
                         const clase = claseDelDia(fecha);
                         const esHoy = anio === hoy.getFullYear() && mes === hoy.getMonth() && dia === hoy.getDate();
                         const reg = regsPorFecha[fecha];
-                        const onclick = reg ? ` onclick="UILogic._popupCalendario(event, '${reg.id}')"` : '';
+                        const onclick = reg ? ` onclick="UILogic._onclickCalendarioDia(event, '${reg.id}')"` : '';
                         const onhover = reg ? ` onmouseenter="UILogic._popupCalendarioHover(event, '${reg.id}')" onmouseleave="UILogic._cerrarPopupCalendarioHover(event)"` : '';
                         const cursor = reg ? ' style="cursor:pointer;"' : '';
                         const esNuevo = idResaltar && reg && reg.id === idResaltar ? ' nuevo-registro-animacion' : '';
@@ -10387,7 +10528,6 @@ Generado por Sistema Horarios
                 function _popupCalendario(event, registroId) {
                     event.stopPropagation();
 
-                    // Cerrar popup previo si existe
                     if (_popupCalendarioEl) {
                         _popupCalendarioEl.remove();
                         _popupCalendarioEl = null;
@@ -10396,9 +10536,16 @@ Generado por Sistema Horarios
                     const reg = D.registros().find(r => r.id === registroId);
                     if (!reg) return;
 
+                    // Detectar si pertenece a un grupo reutilizando la lógica existente
+                    const claveMes = reg.fecha.substring(0, 7);
+                    const registrosDelMes = D.registros().filter(r => r.fecha.substring(0, 7) === claveMes);
+                    const grupos = agruparRegistrosConsecutivos(registrosDelMes);
+                    const grupoDelRegistro = grupos.find(g =>
+                        g.tipo === 'grupo' && g.registros.some(r => r.id === registroId)
+                    );
+
                     const esEspecial = TiposRegistro.esRegistroEspecial(reg.entrada, reg.salida);
 
-                    // Construir contenido
                     const fechaObj = new Date(reg.fecha + 'T12:00:00');
                     const opcFecha = { weekday: 'long', day: 'numeric', month: 'long' };
                     const fechaLabel = fechaObj.toLocaleDateString('es-AR', opcFecha);
@@ -10408,46 +10555,55 @@ Generado por Sistema Horarios
                         const tipoConfig = TiposRegistro.obtenerTipoPorCodigo(reg.entrada, reg.salida);
                         const emoji = tipoConfig ? tipoConfig.emoji : '';
                         const label = tipoConfig ? tipoConfig.label : reg.entrada;
-                        infoHtml = `<span class="cal-popup-badge" style="background:var(--c-${tipoConfig.color})">${emoji} ${label}</span>`;
-                    } else if (reg.entrada && !reg.salida) {
-                        const esHoy = reg.fecha === obtenerFechaHoy();
-                        infoHtml = esHoy
-                            ? `<div class="cal-popup-info" style="color:var(--c-blue)">En curso</div>
-                               <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`
-                            : `<div class="cal-popup-info" style="color:var(--c-gold)">Incompleto</div>
-                               <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`;
+                        infoHtml = `<span class="cal-popup-badge" style="background:var(--c-${tipoConfig?.color || 'purple'})">${emoji} ${label}</span>`;
+                    } else if (reg.entrada && (!reg.salida || reg.entrada === reg.salida)) {
+                        infoHtml = `<div class="cal-popup-info" style="color:var(--c-blue)">En curso</div>
+                    <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${reg.entrada}</div>`;
                     } else {
                         const totalHoras = reg.total || 0;
                         const h = Math.floor(totalHoras);
                         const m = Math.round((totalHoras - h) * 60);
                         const totalStr = `${h}h${m > 0 ? ' ' + m + 'm' : ''}`;
-
-                        // Tiempo fuera
                         let tfStr = '';
                         if (reg.tiempoFuera && reg.tiempoFuera !== '00:00') {
                             const [tfH, tfM] = reg.tiempoFuera.split(':').map(Number);
                             tfStr = tfH > 0 ? `${tfH}h ${tfM}m fuera` : `${tfM}m fuera`;
                         }
-
                         infoHtml = `<div class="cal-popup-info">${totalStr}</div>
-                <div style="font-size:0.82rem;color:var(--text-muted)">${reg.entrada} – ${reg.salida}</div>
-                ${tfStr ? `<div style="font-size:0.82rem;color:var(--text-muted)">${tfStr}</div>` : ''}`;
+                    <div style="font-size:0.82rem;color:var(--text-muted)">${reg.entrada} – ${reg.salida}</div>
+                    ${tfStr ? `<div style="font-size:0.82rem;color:var(--text-muted)">${tfStr}</div>` : ''}`;
+                    }
+
+                    // Botón editar grupo (solo si pertenece a uno)
+                    const btnGrupoHtml = grupoDelRegistro ? `
+        <button class="cal-popup-btn-edit" onclick="DataManagement.editarGrupo(window._calPopupGrupo);document.getElementById('_cal-popup')?.remove()">
+            <svg class="icon icon-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Editar grupo
+        </button>` : '';
+
+                    // Antes de crear el popup, si hay grupo:
+                    if (grupoDelRegistro) {
+                        window._calPopupGrupo = grupoDelRegistro;
                     }
 
                     const popup = document.createElement('div');
                     popup.className = 'cal-popup';
                     popup.id = '_cal-popup';
+                    popup.dataset.registroId = reg.id;
                     popup.innerHTML = `
-                        <div class="cal-popup-fecha">${fechaLabel}</div>
-                        ${infoHtml}
-                        <button class="cal-popup-btn-edit" onclick="DataManagement.editarRegistro('${reg.id}');document.getElementById('_cal-popup')?.remove()">
-                            <svg class="icon icon-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                            Editar
-                        </button>
-                    `;
+        <div class="cal-popup-fecha">${fechaLabel}</div>
+        ${infoHtml}
+        <button class="cal-popup-btn-edit" onclick="DataManagement.editarRegistro('${reg.id}');document.getElementById('_cal-popup')?.remove()">
+            <svg class="icon icon-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Editar
+        </button>
+        ${btnGrupoHtml}
+    `;
 
                     // DESPUÉS:
                     document.body.appendChild(popup);
@@ -10489,15 +10645,28 @@ Generado por Sistema Horarios
                     popup.style.left = left + 'px';
 
                     // Cerrar al tocar fuera
-                    const cerrar = (e) => {
-                        if (!popup.contains(e.target)) {
-                            popup.remove();
-                            _popupCalendarioEl = null;
-                            document.removeEventListener('click', cerrar, true);
-                        }
+                    const cerrarPopup = () => {
+                        popup.remove();
+                        _popupCalendarioEl = null;
+                        document.removeEventListener('click', cerrar, true);
+                        document.removeEventListener('scroll', cerrarPopup, true);
                     };
-                    setTimeout(() => document.addEventListener('click', cerrar, true), 10);
-                    window.addEventListener('scroll', cerrar, { once: true, capture: true });
+                    const cerrar = (e) => {
+                        const diaClickeado = e.target.closest('.calendario-dia');
+                        if (diaClickeado && diaClickeado.getAttribute('onclick')?.includes(popup.dataset.registroId)) return;
+                        if (!popup.contains(e.target)) cerrarPopup();
+                    };
+                    setTimeout(() => {
+                        document.addEventListener('click', cerrar, true);
+                        document.addEventListener('scroll', cerrarPopup, true);
+                    }, 10);
+                    const cerrarPorScroll = () => {
+                        popup.remove();
+                        _popupCalendarioEl = null;
+                        document.removeEventListener('click', cerrar, true);
+                        document.removeEventListener('scroll', cerrarPorScroll, true);
+                    };
+                    setTimeout(() => document.addEventListener('scroll', cerrarPorScroll, true), 10);
                 }
 
                 let _popupCalendarioEsHover = false;
@@ -10517,6 +10686,25 @@ Generado por Sistema Horarios
                     }, 150);
                 }
 
+                function _onclickCalendarioDia(event, registroId) {
+                    const esDesktop = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+                    const stored = localStorage.getItem('hoverPopupCalendario');
+                    const hoverActivo = esDesktop && (stored === null ? true : stored === 'true');
+
+                    if (hoverActivo) {
+                        if (_popupCalendarioEl) {
+                            _popupCalendarioEl.remove();
+                            _popupCalendarioEl = null;
+                        }
+                        clearTimeout(_popupCalendarioHoverTimer);
+                        DataManagement.editarRegistro(registroId);
+                    } else {
+                        // Si el popup ya está abierto para este mismo registro, no hacer nada
+                        if (_popupCalendarioEl && _popupCalendarioEl.dataset.registroId === registroId) return;
+                        _popupCalendario(event, registroId);
+                    }
+                }
+
                 function _cerrarPopupCalendarioHover(event) {
                     if (!_popupCalendarioEsHover) return;
                     const related = event.relatedTarget;
@@ -10532,6 +10720,12 @@ Generado por Sistema Horarios
                 }
 
                 function navegarCalendario(delta) {
+                    // Cerrar popup si está abierto
+                    if (_popupCalendarioEl) {
+                        _popupCalendarioEl.remove();
+                        _popupCalendarioEl = null;
+                    }
+
                     const hoy = new Date();
                     const base = _calendarioMes || { anio: hoy.getFullYear(), mes: hoy.getMonth() };
                     let nuevoMes = base.mes + delta;
@@ -10551,7 +10745,20 @@ Generado por Sistema Horarios
                     }
                 }
 
-                // DESPUÉS:
+                function irHoyCalendario() {
+                    _calendarioMes = null; // null = mes actual
+                    const grid = document.getElementById('calendario-grid');
+                    if (grid) {
+                        grid.classList.add('fade-out');
+                        setTimeout(() => {
+                            _renderizarCalendario();
+                            grid.classList.remove('fade-out');
+                        }, 300);
+                    } else {
+                        _renderizarCalendario();
+                    }
+                }
+
                 function toggleStats() {
                     toggleSeccionGen('form-stats', 'icon-indicator-stats', 'statsExpandido', () => {
                         // Swipe para alternar período (mensual/anual/semanal)
@@ -10588,6 +10795,10 @@ Generado por Sistema Horarios
 
                     // Actualizar el estado del botón principal
                     actualizarBotonLote();
+                    // Actualizar hint si es campo del grupo
+                    if (id === 'edit-grupo-desde' || id === 'edit-grupo-hasta') {
+                        c.dispatchEvent(new Event('change'));
+                    }
                 }
 
                 function verificarBloqueoCredito() {
@@ -10717,9 +10928,9 @@ Generado por Sistema Horarios
                 return {
                     init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, cerrarConfig,
                     cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError,
-                    limpiarError, resetearBoton, restaurarBotonGuardarEdicion, toggleFormulario,
-                    limpiarCampo, mostrarFiltros, cerrarFiltros, registrarLoteDesdeCard,
-                    cambiarMesStats, generarReporte, toggleHistorico, toggleStats, sumarMinutosAHora,
+                    limpiarError, resetearBoton, restaurarBotonGuardarEdicion, toggleFormulario, aplicarOrdenCards, iniciarDragOrdenCards,
+                    limpiarCampo, mostrarFiltros, cerrarFiltros, registrarLoteDesdeCard, irHoyCalendario, obtenerOrdenCards,
+                    cambiarMesStats, generarReporte, toggleHistorico, toggleStats, sumarMinutosAHora, actualizarEstadoBotonHoverPopup,
                     toggleTimerBreakMain, actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion,
                     actualizarFeedbackConfig, poblarSelectorMeses, abrirSelectorPerfiles, actualizarBotonLote,
                     cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
@@ -10728,9 +10939,9 @@ Generado por Sistema Horarios
                     toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
                     mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
-                    togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards,
-                    togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
-                    _popupCalendario, _popupCalendarioHover, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, actualizarEstadoBotonHoverPopup
+                    togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
+                    togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico, actualizarHintGrupo,
+                    _popupCalendario, _popupCalendarioHover, _onclickCalendarioDia, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario
                 };
 
             })(SecurityAndUtils, DataManagement, GistSync);
@@ -10763,13 +10974,16 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.20
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.28
     // ====================================================================
     
      - CAMBIOS:
-    1) Se agrega comparacion interna de los registros en el modo combinar (gist y local)
-    2) Se agrega swipe a las tarjetas de estado y estadisticas
-
-     - BUGS MENORES CONOCIDOS:
+    1) Se corrige hint de modales editar para que se actualicen en tiempo real en todos los casos
+    2) Se crea la variable disabled para color y se refactoriza algunos casos de botones deshabilitados
+    3) Se configura la vista calendario como predeterminada al abrir por primera vez
+    
+     - BUGS CONOCIDOS:
+    1) el popup parpadea constantemente al aparecer por encima del ares del dia, (cuando no tiene
+    espacio para mostrarse por debajo), y el cursor estar cerca del popup
 
     -->
