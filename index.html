@@ -1596,8 +1596,7 @@
     <div class="container">
 
         <div class="left-column">
-            <div class="card stats-card animated-card" id="stats-card" onclick="UILogic.alternarVista()"
-                style="animation-delay: 0s;">
+            <div class="card stats-card animated-card" id="stats-card" onclick="UILogic.alternarVista()">
                 <div class="stats-card-bg" id="stats-card-bg" aria-hidden="true"></div>
                 <div class="stats-card-content" id="stats-card-content">
                     <h2 id="stats-titulo">Hoy</h2>
@@ -1612,7 +1611,7 @@
                     <span class="toggle-hint" id="toggle-hint">Toca para ver la Semana</span>
                 </div>
             </div>
-            <div class="card animated-card" id="card-registrar" style="animation-delay: 0.10s;">
+            <div class="card animated-card" id="card-registrar">
                 <h2 class="no-margin"
                     style="display: flex; justify-content: center; align-items: center; position: relative;">
                     <button class="filter-btn timer-btn" id="btn-timer-main" onclick="UILogic.toggleTimerBreakMain()"
@@ -1727,7 +1726,7 @@
                     </div>
                 </div>
             </div>
-            <div class="card animated-card" id="card-estadisticas" style="animation-delay: 0.15s;">
+            <div class="card animated-card" id="card-estadisticas">
                 <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleStats()">
                     <span style="display: flex; align-items: center; gap: 0.5rem;">
                         <svg class="icon">
@@ -1841,7 +1840,7 @@
                 </div>
             </div>
         </div>
-        <div class="card animated-card" id="card-historico" style="animation-delay: 0.25s;">
+        <div class="card animated-card" id="card-historico">
             <h2 class="no-margin card-header-clickable" onclick="UILogic.toggleHistorico()">
                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                     <svg class="icon">
@@ -1929,7 +1928,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.28</span>
+                    <span class="version-text">LUSHIBOSCA-8.29</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -7090,12 +7089,13 @@
                     const container = leftColumn ? leftColumn.parentElement : null;
                     if (!leftColumn || !container) return;
 
+                    const delays = [0.10, 0.15, 0.25];
                     orden.forEach((cual, idx) => {
                         const card = document.getElementById('card-' + cual);
                         if (!card) return;
+                        card.style.animationDelay = `${delays[idx] || 0.25}s`;
                         const esUltima = idx === orden.length - 1;
                         if (esUltima) {
-                            // La última va fuera de left-column (columna derecha en desktop)
                             container.appendChild(card);
                         } else {
                             leftColumn.appendChild(card);
@@ -10746,7 +10746,12 @@ Generado por Sistema Horarios
                 }
 
                 function irHoyCalendario() {
-                    _calendarioMes = null; // null = mes actual
+                    const hoy = new Date();
+                    if (_calendarioMes === null ||
+                        (_calendarioMes.anio === hoy.getFullYear() && _calendarioMes.mes === hoy.getMonth())) {
+                        return; // Ya estamos en el mes actual
+                    }
+                    _calendarioMes = null;
                     const grid = document.getElementById('calendario-grid');
                     if (grid) {
                         grid.classList.add('fade-out');
@@ -10974,13 +10979,12 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.28
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.29
     // ====================================================================
     
      - CAMBIOS:
-    1) Se corrige hint de modales editar para que se actualicen en tiempo real en todos los casos
-    2) Se crea la variable disabled para color y se refactoriza algunos casos de botones deshabilitados
-    3) Se configura la vista calendario como predeterminada al abrir por primera vez
+    1) el boton "hoy" del calendario solo funciona si no estamos en el mes actual
+    2) Se reemplaza el delay hardcodeado de las tarjetas por delay dinamico en funcion aplicarOrdenCards 
     
      - BUGS CONOCIDOS:
     1) el popup parpadea constantemente al aparecer por encima del ares del dia, (cuando no tiene
