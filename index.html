@@ -326,7 +326,6 @@
             justify-content: center;
             padding: 0.875rem 1rem;
             border: 1px solid var(--border);
-            color: var(--text-main);
             transition: background 0.2s, color 0.2s, border-color 0.2s;
             flex: 1;
         }
@@ -351,6 +350,25 @@
         .filter-btn.filtro-activo {
             color: var(--c-red);
             border-color: var(--c-red);
+        }
+
+        #gist-rango-horario,
+        #gist-limite-sync {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            opacity: 0;
+            margin-top: 0.5rem;
+        }
+
+        #gist-rango-horario {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        #gist-limite-sync {
+            display: block;
         }
 
         .header-buttons {
@@ -2167,12 +2185,11 @@
                             <span id="hint-gist-merge">Reemplazar</span>
                         </button>
                     </div>
-                    <div id="gist-limite-sync"
-                        style="max-height:0; overflow:hidden; transition:max-height 0.3s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem;">
+                    <div id="gist-limite-sync">
                         <div class="form-group" style="margin-bottom:0.5rem">
                             <label id="gist-limite-label">Límite por hora</label>
                             <div class="input-number-group">
-                                <input type="number" id="gist-limite-valor" min="0" max="99" step="1" readonly />
+                                <input type="number" id="gist-limite-valor" min="0" max="10" step="1" readonly />
                                 <button class="btn-increment" onclick="UILogic.cambiarLimiteSync(1)">+</button>
                                 <button class="btn-increment" onclick="UILogic.cambiarLimiteSync(-1)">−</button>
                                 <button class="btn-increment" id="btn-limite-siempre"
@@ -2181,14 +2198,13 @@
                             </div>
                         </div>
                     </div>
-                    <div id="gist-rango-horario"
-                        style="max-height:0; overflow:hidden; transition:max-height 0.3s ease, opacity 0.3s ease; opacity:0; margin-top:0.5rem; gap:0.5rem; align-items:center; display:flex;">
-                        <span style="font-size:0.85rem; color:var(--text-muted)">Desde</span>
-                        <input type="time" id="gist-rango-desde"
-                            style=" background:var(--bg-input); color:var(--text-main); font-size:0.9rem;" />
-                        <span style="font-size:0.85rem; color:var(--text-muted)">Hasta</span>
-                        <input type="time" id="gist-rango-hasta"
-                            style=" background:var(--bg-input); color:var(--text-main); font-size:0.9rem;" />
+                    <div id="gist-rango-horario">
+                        <span>Desde</span>
+                        <input type="text" id="gist-rango-desde" inputmode="numeric" maxlength="5"
+                            placeholder="HH:MM" />
+                        <span>Hasta</span>
+                        <input type="text" id="gist-rango-hasta" inputmode="numeric" maxlength="5"
+                            placeholder="HH:MM" />
                     </div>
                 </div>
                 <div class="config-hint-text" id="gist-ultima-sync">Sin sincronizar</div>
@@ -9127,8 +9143,20 @@ Generado por Sistema Horarios
                     function guardarConfigGist() {
                         const token = document.getElementById('gist-token')?.value.trim() || '';
                         const gistId = document.getElementById('gist-id')?.value.trim() || '';
-                        const desde = document.getElementById('gist-rango-desde')?.value || '21:00';
-                        const hasta = document.getElementById('gist-rango-hasta')?.value || '00:00';
+                        const desdeRaw = document.getElementById('gist-rango-desde')?.value || '';
+                        const hastaRaw = document.getElementById('gist-rango-hasta')?.value || '';
+
+                        if (desdeRaw && !S.validarHoraSegura(desdeRaw)) {
+                            mostrarToast('Hora inicial inválida.', 'error');
+                            return;
+                        }
+                        if (hastaRaw && !S.validarHoraSegura(hastaRaw)) {
+                            mostrarToast('Hora final inválida.', 'error');
+                            return;
+                        }
+
+                        const desde = desdeRaw || '21:00';
+                        const hasta = hastaRaw || '00:00';
 
                         const rango = GistSync.getRangoHorario();
                         const limitesCambiaron = _gistLimitesOrig !== null && (
@@ -9588,6 +9616,12 @@ Generado por Sistema Horarios
                     // C) Otros inputs
                     const tf = document.getElementById('edit-tiempo-fuera');
                     if (tf) tf.addEventListener('input', formatearInput);
+
+                    // D) modal gist
+                    ['gist-rango-desde', 'gist-rango-hasta'].forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) el.addEventListener('input', formatearInput);
+                    });
 
                     // D) Hint resumen en tiempo real
                     function actualizarHintEdicion() {
