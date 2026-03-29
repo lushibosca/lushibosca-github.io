@@ -1951,7 +1951,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.29</span>
+                    <span class="version-text">LUSHIBOSCA-8.30</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -2194,12 +2194,17 @@
                         <div class="form-group" style="margin-bottom:0.5rem">
                             <label id="gist-limite-label">Límite por hora</label>
                             <div class="input-number-group">
-                                <input type="number" id="gist-limite-valor" min="0" max="10" step="1" readonly />
-                                <button class="btn-increment" onclick="UILogic.cambiarLimiteSync(1)">+</button>
-                                <button class="btn-increment" onclick="UILogic.cambiarLimiteSync(-1)">−</button>
-                                <button class="btn-increment" id="btn-limite-siempre"
-                                    onclick="UILogic.toggleLimiteSiempre()" title="Sin límite"
-                                    style="min-width:100px; font-size:0.8rem;">Sin limite</button>
+                                <input type="number" id="gist-limite-valor" min="0" max="99" step="1" readonly />
+                                <button class="btn-increment" onmousedown="UILogic.iniciarCambioLimite(1)"
+                                    onmouseup="UILogic.detenerCambioLimite()"
+                                    onmouseleave="UILogic.detenerCambioLimite()"
+                                    ontouchstart="event.preventDefault(); UILogic.iniciarCambioLimite(1)"
+                                    ontouchend="event.preventDefault(); UILogic.detenerCambioLimite()">+</button>
+                                <button class="btn-increment" onmousedown="UILogic.iniciarCambioLimite(-1)"
+                                    onmouseup="UILogic.detenerCambioLimite()"
+                                    onmouseleave="UILogic.detenerCambioLimite()"
+                                    ontouchstart="event.preventDefault(); UILogic.iniciarCambioLimite(-1)"
+                                    ontouchend="event.preventDefault(); UILogic.detenerCambioLimite()">−</button>
                             </div>
                         </div>
                     </div>
@@ -4042,6 +4047,7 @@
                         minutos: t?.minutos || 0,
                         total: t?.total || 0
                     });
+
                     registros.sort((a, b) => {
                         if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
                         return (b.entrada || '').localeCompare(a.entrada || '');
@@ -9377,14 +9383,8 @@ Generado por Sistema Horarios
                         const limite = _gistLimitesTemp ? _gistLimitesTemp[tipo] : GistSync.getSyncLimite(tipo);
                         const input = document.getElementById('gist-limite-valor');
                         const label = document.getElementById('gist-limite-label');
-                        const btnSiempre = document.getElementById('btn-limite-siempre');
-                        const esSiempre = limite === 0;
-                        if (input) { input.value = esSiempre ? '∞' : limite; input.disabled = esSiempre; }
-                        if (label) label.textContent = tipo === 'bajar' ? 'Límite bajadas por hora' : 'Límite subidas por hora';
-                        if (btnSiempre) _setBtnActivo('btn-limite-siempre', esSiempre);
-                        // Deshabilitar botones +/− cuando es siempre
-                        const btnsIncrement = contenedor.querySelectorAll('.btn-increment:not(#btn-limite-siempre)');
-                        btnsIncrement.forEach(b => { b.disabled = esSiempre; b.style.opacity = esSiempre ? '0.4' : ''; });
+                        if (input) input.value = limite;
+                        if (label) label.textContent = tipo === 'bajar' ? 'Límite bajadas por hora (0 = sin límite)' : 'Límite subidas por hora (0 = sin límite)';
                         contenedor.style.maxHeight = '80px';
                         contenedor.style.opacity = '1';
                     }
@@ -9393,17 +9393,23 @@ Generado por Sistema Horarios
                         const tipo = _tipoSyncActual();
                         if (!tipo) return;
                         if (!_gistLimitesTemp) _gistLimitesTemp = { bajar: GistSync.getSyncLimite('bajar'), subir: GistSync.getSyncLimite('subir') };
-                        if (_gistLimitesTemp[tipo] === 0) return;
-                        _gistLimitesTemp[tipo] = Math.max(1, Math.min(99, _gistLimitesTemp[tipo] + delta));
+                        _gistLimitesTemp[tipo] = Math.max(0, Math.min(99, _gistLimitesTemp[tipo] + delta));
                         _actualizarCampoLimite();
                     }
 
-                    function toggleLimiteSiempre() {
-                        const tipo = _tipoSyncActual();
-                        if (!tipo) return;
-                        if (!_gistLimitesTemp) _gistLimitesTemp = { bajar: GistSync.getSyncLimite('bajar'), subir: GistSync.getSyncLimite('subir') };
-                        _gistLimitesTemp[tipo] = _gistLimitesTemp[tipo] === 0 ? (tipo === 'bajar' ? 2 : 1) : 0;
-                        _actualizarCampoLimite();
+                    let _timeoutLimite = null;
+                    let _intervaloLimite = null;
+
+                    function iniciarCambioLimite(delta) {
+                        cambiarLimiteSync(delta);
+                        _timeoutLimite = setTimeout(() => {
+                            _intervaloLimite = setInterval(() => cambiarLimiteSync(delta), 100);
+                        }, 500);
+                    }
+
+                    function detenerCambioLimite() {
+                        if (_timeoutLimite) { clearTimeout(_timeoutLimite); _timeoutLimite = null; }
+                        if (_intervaloLimite) { clearInterval(_intervaloLimite); _intervaloLimite = null; }
                     }
 
                     function gistSetStatus(msg, tipo = '') {
@@ -9589,8 +9595,8 @@ Generado por Sistema Horarios
                         abrirModalGist, cerrarModalGist, guardarConfigGist, toggleVerToken, abrirGistEnBrowser, gistSubir, gistBajar,
                         gistMergeAplicar, gistMergeCancelar, actualizarBotonesHistorico, toggleGistBackup, toggleModoLote, toggleVisibilidadCard, aplicarVisibilidadCards,
                         _popupCalendario, _popupCalendarioHover, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, actualizarEstadoBotonHoverPopup,
-                        cambiarLimiteSync, toggleLimiteSiempre, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards, _onclickCalendarioDia,
-                        actualizarHintGrupo, irHoyCalendario
+                        cambiarLimiteSync, obtenerOrdenCards, aplicarOrdenCards, iniciarDragOrdenCards, _onclickCalendarioDia,
+                        actualizarHintGrupo, irHoyCalendario, detenerCambioLimite, iniciarCambioLimite
                     };
 
                     // === LISTENERS E INTERACTIVIDAD ===
@@ -10985,7 +10991,8 @@ Generado por Sistema Horarios
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                     togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
                     togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico, actualizarHintGrupo,
-                    _popupCalendario, _popupCalendarioHover, _onclickCalendarioDia, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario
+                    _popupCalendario, _popupCalendarioHover, _onclickCalendarioDia, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, 
+                    
                 };
 
             })(SecurityAndUtils, DataManagement, GistSync);
@@ -11018,12 +11025,11 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.29
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.30
     // ====================================================================
     
      - CAMBIOS:
-    1) el boton "hoy" del calendario solo funciona si no estamos en el mes actual
-    2) Se reemplaza el delay hardcodeado de las tarjetas por delay dinamico en funcion aplicarOrdenCards 
+    1) cambios en el campo limite del modal de gist 
     
      - BUGS CONOCIDOS:
     1) el popup parpadea constantemente al aparecer por encima del ares del dia, (cuando no tiene
