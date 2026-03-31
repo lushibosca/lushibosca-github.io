@@ -1710,6 +1710,7 @@
                                     <option value="paro">📢 Paro (15:15)</option>
                                     <option value="remoto">💻 Remoto (16:16)</option>
                                     <option value="capacitacion">📚 Capacitación (17:17)</option>
+                                    <option value="compensatorio">⚖️ Compensatorio (18:18)</option>
                                     <option value="normal">🕒 Normales (borrar)</option>
                                 </select>
                                 <button class="time-btn" onclick="UILogic.toggleModoLote()" title="Ir al modo normal"
@@ -1809,6 +1810,10 @@
                                 <div class="stat-label">Tiempo Fuera</div>
                                 <div class="stat-value" id="stat-tiempo-fuera-total">0h 0m</div>
                             </div>
+                            <div class="stat-item" id="stat-item-saldo">
+                                <div class="stat-label">Saldo</div>
+                                <div class="stat-value" id="stat-saldo">--</div>
+                            </div>
                             <div class="stat-item">
                                 <div class="stat-label">Jornadas</div>
                                 <div class="stat-value" id="stat-dias-trabajados">0</div>
@@ -1844,6 +1849,10 @@
                             <div class="stat-item">
                                 <div class="stat-label">Capacitaciones</div>
                                 <div class="stat-value" id="stat-capacitaciones">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Compensatorios</div>
+                                <div class="stat-value" id="stat-compensatorios">0</div>
                             </div>
                             <div class="stat-item">
                                 <div class="stat-label">Salidas Temprano</div>
@@ -1886,6 +1895,12 @@
                                     <use href="#icon-calendar-simple" />
                                 </svg>
                             </button>
+                            <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()"
+                                title="Filtrar">
+                                <svg class="icon">
+                                    <use href="#icon-filter" />
+                                </svg>
+                            </button>
                             <button class="filter-btn" id="btn-hist-restaurar" onclick="UILogic.mostrarImportar(true)"
                                 title="Restaurar">
                                 <svg class="icon">
@@ -1896,12 +1911,6 @@
                                 title="Respaldar">
                                 <svg class="icon">
                                     <use href="#icon-download" />
-                                </svg>
-                            </button>
-                            <button class="filter-btn" id="btn-filtro" onclick="UILogic.mostrarFiltros()"
-                                title="Filtrar">
-                                <svg class="icon">
-                                    <use href="#icon-filter" />
                                 </svg>
                             </button>
                         </div>
@@ -1951,7 +1960,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.30</span>
+                    <span class="version-text">LUSHIBOSCA-8.32</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -2477,6 +2486,7 @@
                     <option value="paro">📢 Paros</option>
                     <option value="remoto">💻 Remotos</option>
                     <option value="capacitacion">📚 Capacitaciones</option>
+                    <option value="compensatorio">⚖️ Compensatorios</option>
                 </select>
             </div>
             <div class="btn-group">
@@ -2599,6 +2609,7 @@
                         <option value="paro">📢 Paro</option>
                         <option value="remoto">💻 Remoto</option>
                         <option value="capacitacion">📚 Capacitación</option>
+                        <option value="compensatorio">⚖️ Compensatorio</option>
                     </select>
                     <button class="time-btn" id="btn-lock-grupo-toggle" onclick="UILogic.toggleBloqueoEdicionGrupo()"
                         title="Desbloquear edición">
@@ -3423,6 +3434,16 @@
                         label: 'Capacitación',
                         labelPlural: 'Capacitaciones',
                         descripcion: 'Formacion profesional',
+                        color: 'purple',
+                        contabiliza: true
+                    },
+                    COMPENSATORIO: {
+                        id: 'compensatorio',
+                        codigo: '18:18',
+                        emoji: '⚖️',
+                        label: 'Compensatorio',
+                        labelPlural: 'Compensatorios',
+                        descripcion: 'Día compensatorio',
                         color: 'purple',
                         contabiliza: true
                     }
@@ -4781,23 +4802,17 @@
                         const m = String(fechaIteracion.getMonth() + 1).padStart(2, '0');
                         const d = String(fechaIteracion.getDate()).padStart(2, '0');
                         const isoDate = `${y}-${m}-${d}`;
-
                         const numDia = fechaIteracion.getDay();
                         const esDiaLaboralConfigurado = diasHabiles.includes(numDia);
-
                         const r = registrosMap.get(isoDate);
                         let horasObjetivoDia = 0;
                         let horasHechasDia = 0;
-
                         const esEspecial = r && TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
-
-                        // Validar si el registro está cerrado o si es un día pasado
                         const tieneSalida = r && r.salida && !esEspecial;
                         const esDiaPasado = isoDate < fechaHoy;
+                        const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
 
-                        // Solo sumamos objetivo si es un día configurado Y no es especial
-                        if (esDiaLaboralConfigurado && !esEspecial) {
-                            // Si es un día pasado (ya terminó) O es hoy y ya cerraste turno, cuenta el objetivo
+                        if (esDiaLaboralConfigurado && (!esEspecial || esRemoto)) {
                             if (esDiaPasado || (isoDate === fechaHoy && tieneSalida)) {
                                 horasObjetivoDia = horasDiariasLocal;
                             }
@@ -4807,6 +4822,9 @@
                             if (r.salida) {
                                 horasHechasDia = r.total;
                             }
+                        }
+                        if (esRemoto) {
+                            horasHechasDia = horasDiariasLocal;
                         }
 
                         buffer += (horasHechasDia - horasObjetivoDia);
@@ -5563,6 +5581,15 @@
                     return partes.join(' ');
                 }
 
+                function horasATextoCorto(totalHoras) {
+                    const abs = Math.abs(totalHoras);
+                    let h = Math.floor(abs);
+                    let m = Math.round((abs - h) * 60);
+                    if (m === 60) { h++; m = 0; }
+                    const signo = totalHoras >= 0 ? '+' : '-';
+                    return m > 0 ? `${signo}${h}h ${m}m` : `${signo}${h}h`;
+                }
+
                 function formatoDiferencia(tiempoTotalHoras) {
                     const horasDiarias = D.horasDiarias();
                     const objetivoMinutos = horasDiarias * 60;
@@ -6066,6 +6093,7 @@
                     const paros = contarPorTipo('paro');
                     const remotos = contarPorTipo('remoto');
                     const capacitaciones = contarPorTipo('capacitacion');
+                    const compensatorios = contarPorTipo('compensatorio');
                     const compensaciones = registrosRango.filter(r => r.credito && r.credito !== '00:00').length;
 
                     let tiempoFueraTotalMinutos = 0;
@@ -6087,8 +6115,9 @@
                         diasTrabajados: 0, promedioDiario: '--:--',
                         tiempoFueraTotal: '--:--', tiempoTotal: '0h 0m',
                         feriados, ausencias, vacaciones, enfermedades,
-                        asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones,
-                        regularidadEntrada: '--', regularidadJornada: '--'
+                        asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones, compensatorios,
+                        regularidadEntrada: '--', regularidadJornada: '--',
+                        bufferPeriodo: null
                     };
                     if (registrosValidos.length === 0) return vacios;
 
@@ -6126,6 +6155,40 @@
                         regJornada = calcularRegularidad(desviacionEstandar(registrosValidos.map(r => Math.round(r.total * 60))));
                     }
 
+                    // Calcular buffer del período iterando todos los días del rango
+                    const horasDiariasObj = D.horasDiarias();
+                    let bufferPeriodo = null;
+                    if (horasDiariasObj > 0 && opciones.desde && opciones.hasta) {
+                        const diasHabilesConfig = D.diasHabiles();
+                        const regsPorFecha = new Map(registrosRango.map(r => [r.fecha, r]));
+                        const hoy = obtenerFechaHoy();
+                        let objetivo = 0;
+                        let hechas = 0;
+                        let fechaIt = S.parsearFechaLocal(opciones.desde);
+                        const fechaFin = S.parsearFechaLocal(opciones.hasta);
+                        while (fechaIt <= fechaFin) {
+                            const iso = S.formatearFechaLocal(fechaIt);
+                            if (iso > hoy) { fechaIt.setDate(fechaIt.getDate() + 1); continue; }
+                            const esDiaHabil = diasHabilesConfig.includes(fechaIt.getDay());
+                            const r = regsPorFecha.get(iso);
+                            const esEspecial = r && TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
+                            const esHoy = iso === hoy;
+                            const diaTerminado = esHoy ? (r && r.salida) : true;
+                            const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
+                            if (esDiaHabil && (!esEspecial || esRemoto) && diaTerminado) {
+                                objetivo += horasDiariasObj;
+                            }
+                            if (r && r.salida && !esEspecial && diaTerminado) {
+                                hechas += r.total;
+                            }
+                            if (esRemoto) {
+                                hechas += horasDiariasObj;
+                            }
+                            fechaIt.setDate(fechaIt.getDate() + 1);
+                        }
+                        bufferPeriodo = hechas - objetivo;
+                    }
+
                     return {
                         entradaPromedio: `${String(Math.floor(promedioEntrada / 60)).padStart(2, '0')}:${String(promedioEntrada % 60).padStart(2, '0')}`,
                         salidaPromedio: `${String(Math.floor(promedioSalida / 60)).padStart(2, '0')}:${String(promedioSalida % 60).padStart(2, '0')}`,
@@ -6134,9 +6197,10 @@
                         tiempoFueraTotal: `${hTiempoFuera}h ${mTiempoFuera}m`,
                         tiempoTotal: `${hTotal}h ${mTotal}m`,
                         feriados, ausencias, vacaciones, enfermedades,
-                        asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones,
+                        asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones, compensatorios,
                         regularidadEntrada: regEntrada,
-                        regularidadJornada: regJornada
+                        regularidadJornada: regJornada,
+                        bufferPeriodo
                     };
                 }
 
@@ -6164,6 +6228,7 @@
                     toggleStatItem('stat-paros', stats.paros);
                     toggleStatItem('stat-remotos', stats.remotos);
                     toggleStatItem('stat-capacitaciones', stats.capacitaciones);
+                    toggleStatItem('stat-compensatorios', stats.compensatorios);
 
                     const elProm = $('stat-promedio-diario');
                     if (elProm) {
@@ -6183,6 +6248,27 @@
                     if (btnReporte) {
                         btnReporte.disabled = !mostrarBtnReporte;
                     }
+                    const elSaldo = $('stat-saldo');
+                    const itemSaldo = $('stat-item-saldo');
+                    if (elSaldo && itemSaldo) {
+                        if (stats.bufferPeriodo === null) {
+                            itemSaldo.style.display = 'none';
+                        } else {
+                            itemSaldo.style.display = '';
+                            const b = stats.bufferPeriodo;
+                            const abs = Math.abs(b);
+                            let h = Math.floor(abs);
+                            let m = Math.round((abs - h) * 60);
+                            if (m === 60) { h++; m = 0; }
+                            const signo = b >= 0 ? '+' : '-';
+                            const texto = h > 0 && m > 0 ? `${signo}${h}h ${m}m`
+                                : h > 0 ? `${signo}${h}h`
+                                    : m > 0 ? `${signo}${m}m`
+                                        : '0h';
+                            elSaldo.textContent = b === 0 ? '0h' : texto;
+                            elSaldo.style.color = b > 0 ? 'var(--c-green)' : b < 0 ? 'var(--c-red)' : 'var(--text-main)';
+                        }
+                    }
                 }
 
                 function calcularEstadisticasMes(mesAnio = null) {
@@ -6198,7 +6284,9 @@
                         const [a, m] = r.fecha.split('-').map(Number);
                         return a === añoActual && m === mesActual + 1;
                     });
-                    return _calcularEstadisticasRango(registros, { regularidadPorMes: false });
+                    const primerDia = `${añoActual}-${String(mesActual + 1).padStart(2, '0')}-01`;
+                    const ultimoDia = S.formatearFechaLocal(new Date(añoActual, mesActual + 1, 0));
+                    return _calcularEstadisticasRango(registros, { regularidadPorMes: false, desde: primerDia, hasta: ultimoDia });
                 }
 
                 function actualizarEstadisticas(mesAnio = null) {
@@ -7310,7 +7398,7 @@
                 function calcularEstadisticasAnio(anio) {
                     const anioNum = parseInt(anio);
                     const registros = D.registros().filter(r => parseInt(r.fecha.substring(0, 4)) === anioNum);
-                    return _calcularEstadisticasRango(registros, { regularidadPorMes: true });
+                    return _calcularEstadisticasRango(registros, { regularidadPorMes: true, desde: `${anioNum}-01-01`, hasta: `${anioNum}-12-31` });
                 }
 
                 function poblarSelectorAnios() {
@@ -7431,7 +7519,7 @@
                     domingo.setDate(lunes.getDate() + 6);
                     const hasta = S.formatearFechaLocal(domingo);
                     const registros = D.registros().filter(r => r.fecha >= lunesISO && r.fecha <= hasta);
-                    return _calcularEstadisticasRango(registros, { regularidadPorMes: false });
+                    return _calcularEstadisticasRango(registros, { regularidadPorMes: false, desde: lunesISO, hasta });
                 }
 
                 function actualizarEstadisticasSemana(lunesISO) {
@@ -7663,12 +7751,13 @@ REPORTE DE HORAS TRABAJADAS
    • Paros:                  ${stats.paros}
    • Remotos:                ${stats.remotos}
    • Capacitaciones:         ${stats.capacitaciones}
-
+   • Compensatorios:         ${stats.compensatorios}
    • Entrada promedio:       ${stats.entradaPromedio}
    • Salida promedio:        ${stats.salidaPromedio}
    • Promedio diario:        ${stats.promedioDiario}
    
-   • Total horas trabajadas: ${hTotal}h ${mTotal}m`,
+   • Total horas trabajadas: ${hTotal}h ${mTotal}m
+   • Saldo:              ${stats.bufferPeriodo !== null ? horasATextoCorto(stats.bufferPeriodo) : 'N/A'}`,
 
                         detallePeriodo: () => {
                             if (esAnual) {
@@ -10468,12 +10557,9 @@ Generado por Sistema Horarios
                     const hoy = new Date();
                     const anio = _calendarioMes ? _calendarioMes.anio : hoy.getFullYear();
                     const mes = _calendarioMes ? _calendarioMes.mes : hoy.getMonth();
-
                     const nombresMes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
                     if (titulo) titulo.textContent = `${nombresMes[mes]} ${anio}`;
-
                     const fechaStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
                     // ← CAMBIO: usar registros filtrados
                     const registrosFiltrados = D.obtenerRegistrosFiltrados();
                     const todosLosRegistros = D.registros();
@@ -10482,10 +10568,8 @@ Generado por Sistema Horarios
                     // Para saber si un día tiene registro pero fue filtrado
                     const todosRegsPorFecha = {};
                     todosLosRegistros.forEach(r => { todosRegsPorFecha[r.fecha] = r; });
-
                     const horasDiariasObj = D.horasDiarias();
                     const filtroActivo = D.obtenerRegistrosFiltrados().length !== D.registros().length;
-
                     const claseDelDia = (fecha) => {
                         const r = regsPorFecha[fecha];
                         if (!r && filtroActivo && todosRegsPorFecha[fecha]) return 'dia-filtrado';
@@ -10502,14 +10586,11 @@ Generado por Sistema Horarios
                         return 'dia-incompleto';
                     };
 
-                    const diasNombre = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+                    const diasNombre = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
                     let html = diasNombre.map(d => `<div class="calendario-dia-nombre">${d}</div>`).join('');
-
                     const primerDia = new Date(anio, mes, 1);
                     const ultimoDia = new Date(anio, mes + 1, 0);
                     let offsetInicio = primerDia.getDay();
-                    offsetInicio = offsetInicio === 0 ? 6 : offsetInicio - 1;
-
                     for (let i = 0; i < offsetInicio; i++) {
                         html += `<div class="calendario-dia vacio"></div>`;
                     }
@@ -10590,7 +10671,6 @@ Generado por Sistema Horarios
                     );
 
                     const esEspecial = TiposRegistro.esRegistroEspecial(reg.entrada, reg.salida);
-
                     const fechaObj = new Date(reg.fecha + 'T12:00:00');
                     const opcFecha = { weekday: 'long', day: 'numeric', month: 'long' };
                     const fechaLabel = fechaObj.toLocaleDateString('es-AR', opcFecha);
@@ -10991,8 +11071,8 @@ Generado por Sistema Horarios
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                     togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
                     togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico, actualizarHintGrupo,
-                    _popupCalendario, _popupCalendarioHover, _onclickCalendarioDia, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario, 
-                    
+                    _popupCalendario, _popupCalendarioHover, _onclickCalendarioDia, _cerrarPopupCalendarioHover, toggleHoverPopupCalendario,
+
                 };
 
             })(SecurityAndUtils, DataManagement, GistSync);
@@ -11025,12 +11105,12 @@ Generado por Sistema Horarios
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.30
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.32
     // ====================================================================
     
      - CAMBIOS:
-    1) cambios en el campo limite del modal de gist 
-    
+    1) Se corrigen 2 bugs relacionados con el tipo de registro REMOTO en buffer y estadisticas
+
      - BUGS CONOCIDOS:
     1) el popup parpadea constantemente al aparecer por encima del ares del dia, (cuando no tiene
     espacio para mostrarse por debajo), y el cursor estar cerca del popup
