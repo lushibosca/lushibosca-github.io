@@ -1702,15 +1702,6 @@
                             <label>Tipo de registro</label>
                             <div class="input-with-btn">
                                 <select id="lote-tipo" onchange="UILogic.actualizarBotonLote()">
-                                    <option value="feriado">🎉 Feriado (00:00)</option>
-                                    <option value="ausencia">🏠 Licencia (11:11)</option>
-                                    <option value="vacaciones">🏖️ Vacaciones (12:12)</option>
-                                    <option value="asueto">🎁 Asueto (13:13)</option>
-                                    <option value="enfermedad">🏥 Enfermedad (14:14)</option>
-                                    <option value="paro">📢 Paro (15:15)</option>
-                                    <option value="remoto">💻 Remoto (16:16)</option>
-                                    <option value="capacitacion">📚 Capacitación (17:17)</option>
-                                    <option value="compensatorio">⚖️ Compensatorio (18:18)</option>
                                     <option value="normal">🕒 Normales (borrar)</option>
                                 </select>
                                 <button class="time-btn" onclick="UILogic.toggleModoLote()" title="Ir al modo normal"
@@ -2478,15 +2469,6 @@
                 <select id="filtro-tipo">
                     <option value="">Todos</option>
                     <option value="normal">🕒 Normales</option>
-                    <option value="feriado">🎉 Feriados</option>
-                    <option value="ausencia">🏠 Licencias</option>
-                    <option value="vacaciones">🏖️ Vacaciones</option>
-                    <option value="enfermedad">🏥 Enfermedades</option>
-                    <option value="asueto">🎁 Asuetos</option>
-                    <option value="paro">📢 Paros</option>
-                    <option value="remoto">💻 Remotos</option>
-                    <option value="capacitacion">📚 Capacitaciones</option>
-                    <option value="compensatorio">⚖️ Compensatorios</option>
                 </select>
             </div>
             <div class="btn-group">
@@ -2601,15 +2583,6 @@
                 <label>Tipo de registro</label>
                 <div class="input-with-btn">
                     <select id="edit-grupo-tipo">
-                        <option value="feriado">🎉 Feriado</option>
-                        <option value="ausencia">🏠 Licencia</option>
-                        <option value="vacaciones">🏖️ Vacaciones</option>
-                        <option value="asueto">🎁 Asueto</option>
-                        <option value="enfermedad">🏥 Enfermedad</option>
-                        <option value="paro">📢 Paro</option>
-                        <option value="remoto">💻 Remoto</option>
-                        <option value="capacitacion">📚 Capacitación</option>
-                        <option value="compensatorio">⚖️ Compensatorio</option>
                     </select>
                     <button class="time-btn" id="btn-lock-grupo-toggle" onclick="UILogic.toggleBloqueoEdicionGrupo()"
                         title="Desbloquear edición">
@@ -8792,6 +8765,51 @@ Generado por Sistema Lushibosca
                     if (use) use.setAttribute('href', icono);
                 }
 
+                function poblarSelectoresTipos() {
+                    const tipos = TiposRegistro.obtenerTodosLosTipos();
+
+                    // lote-tipo: tipos especiales + opción "normal" al final
+                    const selectLote = $('lote-tipo');
+                    if (selectLote) {
+                        // Conservar la opción "normal" que ya está en el HTML
+                        selectLote.innerHTML = '';
+                        tipos.forEach(t => {
+                            const opt = document.createElement('option');
+                            opt.value = t.id;
+                            opt.textContent = `${t.emoji} ${t.label} (${t.codigo})`;
+                            selectLote.appendChild(opt);
+                        });
+                        const optNormal = document.createElement('option');
+                        optNormal.value = 'normal';
+                        optNormal.textContent = '🕒 Normales (borrar)';
+                        selectLote.appendChild(optNormal);
+                    }
+
+                    // filtro-tipo: "Todos" + "Normales" + tipos especiales en plural
+                    const selectFiltro = $('filtro-tipo');
+                    if (selectFiltro) {
+                        selectFiltro.innerHTML = '<option value="">Todos</option><option value="normal">🕒 Normales</option>';
+                        tipos.forEach(t => {
+                            const opt = document.createElement('option');
+                            opt.value = t.id;
+                            opt.textContent = `${t.emoji} ${t.labelPlural}`;
+                            selectFiltro.appendChild(opt);
+                        });
+                    }
+
+                    // edit-grupo-tipo: solo tipos especiales en singular
+                    const selectGrupo = $('edit-grupo-tipo');
+                    if (selectGrupo) {
+                        selectGrupo.innerHTML = '';
+                        tipos.forEach(t => {
+                            const opt = document.createElement('option');
+                            opt.value = t.id;
+                            opt.textContent = `${t.emoji} ${t.label}`;
+                            selectGrupo.appendChild(opt);
+                        });
+                    }
+                }
+
                 function actualizarBotonLote() {
                     const tipo = document.getElementById('lote-tipo').value;
                     const desde = document.getElementById('lote-fecha-desde').value;
@@ -9674,7 +9692,7 @@ Generado por Sistema Lushibosca
                     }
 
                     window.UILogic = {
-                        alternarTema, cerrarConfig, pegarHoraActual, alternarVista,
+                        alternarTema, cerrarConfig, pegarHoraActual, alternarVista, poblarSelectoresTipos,
                         cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
                         mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion,
                         limpiarCampo, obtenerFechaHoy, mostrarFiltros, poblarSelectorMeses, actualizarBotonLote,
@@ -9877,6 +9895,7 @@ Generado por Sistema Lushibosca
                     D.setVistaActual(config.vistaActual);
                     D.setIgnorarTiempoFuera(config.ignorarTiempoFuera || false);
                     UILogic.actualizarEstadoBotonIgnorarTF();
+                    UILogic.poblarSelectoresTipos();
                     UILogic.actualizarEstadoBotonHoverPopup();
                     UILogic.aplicarVisibilidadCards();
                     UILogic.aplicarOrdenCards(UILogic.obtenerOrdenCards());
@@ -11073,7 +11092,7 @@ Generado por Sistema Lushibosca
                     cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
                     eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                     iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
-                    toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
+                    toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo, poblarSelectoresTipos,
                     mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                     togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
@@ -11119,6 +11138,7 @@ Generado por Sistema Lushibosca
     1) Se corrigen 2 bugs relacionados con el tipo de registro REMOTO en buffer y estadisticas
     2) Se suma al tiempo total: REMOTO
     3) se vuelve a agregar el toast subiendo, bajando de gist
+    4) Se agrega poblarselectortipos, para tomar automaticamente los tipos de registros especiales
 
      - BUGS CONOCIDOS:
     1) el popup parpadea constantemente al aparecer por encima del ares del dia, (cuando no tiene
