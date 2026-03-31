@@ -1960,7 +1960,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA-8.32</span>
+                    <span class="version-text">LUSHIBOSCA-8.33</span>
                 </h3>
             </div>
             <div class="modal-config-body custom-scroll">
@@ -6128,8 +6128,10 @@
                     const promedioEntrada = avgMin(registrosValidos.map(r => toMin(r.entrada)));
                     const promedioSalida = avgMin(registrosValidos.map(r => toMin(r.salida)));
 
-                    const totalHoras = registrosValidos.reduce((s, r) => s + r.total, 0);
-                    const promDiario = totalHoras / registrosValidos.length;
+                    const horasDiariasParaRemoto = D.horasDiarias();
+                    const totalHorasTrabajadas = registrosValidos.reduce((s, r) => s + r.total, 0);
+                    const totalHoras = totalHorasTrabajadas + (remotos * horasDiariasParaRemoto);
+                    const promDiario = totalHorasTrabajadas / registrosValidos.length;
                     let hPromedio = Math.floor(promDiario);
                     let mPromedio = Math.round((promDiario - hPromedio) * 60);
                     if (mPromedio === 60) { hPromedio++; mPromedio = 0; }
@@ -9520,6 +9522,8 @@ Generado por Sistema Lushibosca
                         const btn = document.getElementById('btn-gist-subir');
                         if (btn) btn.disabled = true;
                         gistSetStatus('Subiendo...');
+                        mostrarToast('Subiendo...', 'info');
+
 
                         try {
                             const nuevoId = await GistSync.subir(
@@ -9551,6 +9555,7 @@ Generado por Sistema Lushibosca
                         const btn = document.getElementById('btn-gist-bajar');
                         if (btn) btn.disabled = true;
                         gistSetStatus('Bajando...');
+                        mostrarToast('Bajando...', 'info');
 
                         try {
                             const data = await GistSync.bajar();
@@ -11093,7 +11098,7 @@ Generado por Sistema Lushibosca
                             newWorker.addEventListener('statechange', () => {
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                     // Lógica visual para avisar al usuario
-                                    if (window.UILogic) UILogic.mostrarToast('Nueva versión disponible. Recarga la página.', 'info');
+                                    if (window.UILogic) UILogic.mostrarToast('Nueva versión disponible. Recargar.', 'info');
                                 }
                             });
                         });
@@ -11107,11 +11112,13 @@ Generado por Sistema Lushibosca
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.32
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 8.33
     // ====================================================================
     
      - CAMBIOS:
     1) Se corrigen 2 bugs relacionados con el tipo de registro REMOTO en buffer y estadisticas
+    2) Se suma al tiempo total: REMOTO
+    3) se vuelve a agregar el toast subiendo, bajando de gist
 
      - BUGS CONOCIDOS:
     1) el popup parpadea constantemente al aparecer por encima del ares del dia, (cuando no tiene
