@@ -4812,19 +4812,21 @@
                         const esDiaPasado = isoDate < fechaHoy;
                         const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
 
-                        if (esDiaLaboralConfigurado && (!esEspecial || esRemoto)) {
-                            if (esDiaPasado || (isoDate === fechaHoy && tieneSalida)) {
+                        if (esRemoto) {
+                            // Remoto: neutro en día hábil, extra en día no hábil
+                            if (esDiaLaboralConfigurado) {
                                 horasObjetivoDia = horasDiariasLocal;
                             }
-                        }
-
-                        if (r && !esEspecial) {
-                            if (r.salida) {
+                            horasHechasDia = horasDiariasLocal;
+                        } else {
+                            if (esDiaLaboralConfigurado && !esEspecial) {
+                                if (esDiaPasado || (isoDate === fechaHoy && tieneSalida)) {
+                                    horasObjetivoDia = horasDiariasLocal;
+                                }
+                            }
+                            if (r && !esEspecial && r.salida) {
                                 horasHechasDia = r.total;
                             }
-                        }
-                        if (esRemoto) {
-                            horasHechasDia = horasDiariasLocal;
                         }
 
                         buffer += (horasHechasDia - horasObjetivoDia);
