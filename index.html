@@ -49,7 +49,7 @@
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             --radius: 20px;
             --hover: brightness(0.9);
-            --transition-anim: opacity 0.35s ease, transform 0.35s ease;
+            --transition-anim: opacity 0.3s ease, transform 0.3s ease;
             --transition-collapse: max-height 0.3s ease-out, opacity 0.3s ease-out;
         }
 
@@ -160,25 +160,21 @@
             overflow-x: hidden;
         }
 
-        .custom-scroll::-webkit-scrollbar,
-        .perfil-list-container::-webkit-scrollbar {
+        .custom-scroll::-webkit-scrollbar {
             width: 4px;
         }
 
-        .custom-scroll::-webkit-scrollbar-track,
-        .perfil-list-container::-webkit-scrollbar-track {
+        .custom-scroll::-webkit-scrollbar-track {
             background: var(--bg-body);
             border-radius: var(--radius);
         }
 
-        .custom-scroll::-webkit-scrollbar-thumb,
-        .perfil-list-container::-webkit-scrollbar-thumb {
+        .custom-scroll::-webkit-scrollbar-thumb {
             background: var(--border);
             border-radius: var(--radius);
         }
 
-        .custom-scroll::-webkit-scrollbar-thumb:hover,
-        .perfil-list-container::-webkit-scrollbar-thumb:hover {
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
             background: var(--text-muted);
         }
 
@@ -261,11 +257,6 @@
             align-items: center;
         }
 
-        .contenedor-fechas,
-        .contenedor-horas {
-            display: block;
-        }
-
         .contenedor-fechas .form-group,
         .contenedor-horas .form-group {
             flex-grow: 1;
@@ -304,16 +295,7 @@
             color: var(--text-disabled);
         }
 
-        #btn-timer-main {
-            border: none;
-        }
-
-        #btn-timer-main:disabled {
-            display: none;
-        }
-
         /* Variantes de botones */
-
         .btn-register {
             width: auto;
             padding: 17px;
@@ -360,12 +342,16 @@
             border-color: var(--c-red);
         }
 
-        #gist-rango-horario,
-        #gist-limite-sync {
+        /* --- Colapsables (base compartida) --- */
+        .collapsible {
             max-height: 0;
             overflow: hidden;
-            transition: var(--transition-collapse);
             opacity: 0;
+            transition: var(--transition-collapse);
+        }
+
+        #gist-rango-horario,
+        #gist-limite-sync {
             margin-top: 0.5rem;
         }
 
@@ -373,10 +359,6 @@
             display: flex;
             gap: 0.5rem;
             align-items: center;
-        }
-
-        #gist-limite-sync {
-            display: block;
         }
 
         .btn-group {
@@ -565,10 +547,6 @@
             letter-spacing: 0.5px;
         }
 
-        .registro-info {
-            flex: 1;
-        }
-
         .registro-fecha {
             font-weight: 600;
             margin-bottom: 0.25rem;
@@ -669,18 +647,16 @@
             opacity: 1;
         }
 
-        /* Modal config scrollable con header y footer sticky */
-        #modal-config .modal-content {
+        /* Modales con scroll interno: header/footer sticky, body scrollable */
+        .modal-scrollable>.modal-content {
             display: flex;
             flex-direction: column;
             max-height: 90vh;
             overflow: hidden;
         }
 
-        #modal-config .modal-config-header {
+        .modal-scrollable .modal-panel-header {
             flex-shrink: 0;
-            position: sticky;
-            top: 0;
             background: var(--bg-card);
             z-index: 2;
             padding-bottom: 0.5rem;
@@ -688,19 +664,18 @@
             margin-bottom: 0.5rem;
         }
 
-        #modal-config .modal-config-body {
+        .modal-scrollable .modal-panel-body {
             flex: 1;
             overflow-y: auto;
             padding-right: 0.25rem;
         }
 
-        #modal-config .modal-config-footer {
+        .modal-scrollable .modal-panel-footer {
             flex-shrink: 0;
-            position: sticky;
-            bottom: 0;
             background: var(--bg-card);
             z-index: 2;
             border-top: 1px solid var(--border);
+            padding-top: 0.5rem;
             margin-top: 0.5rem;
         }
 
@@ -716,7 +691,7 @@
             left: 50%;
             justify-content: center;
             transform: translateX(-50%) translateY(80px);
-            transition: opacity 0.3s, transform 0.3s;
+            transition: var(--transition-anim);
             background: var(--bg-toast);
             color: white;
             padding: 1rem 1.5rem;
@@ -956,7 +931,8 @@
             font-weight: 700;
         }
 
-        .calendario-dia.dia-sin-registro {
+        .calendario-dia.dia-sin-registro,
+        .stat-value {
             color: var(--text-muted);
         }
 
@@ -987,17 +963,19 @@
         }
 
         .cal-popup-fecha {
-            font-size: 0.78rem;
             font-weight: 700;
             color: var(--text-muted);
-            text-transform: capitalize;
-            letter-spacing: 0.03em;
         }
 
         .cal-popup-info {
             font-size: 1rem;
             font-weight: 700;
             color: var(--text-main);
+        }
+
+        .cal-popup-3l {
+            font-size: 0.8rem;
+            color: var(--text-muted)
         }
 
         .cal-popup-badge {
@@ -1062,13 +1040,6 @@
             align-items: center;
         }
 
-        .form-collapsible {
-            max-height: 0;
-            overflow: hidden;
-            transition: var(--transition-collapse);
-            opacity: 0;
-        }
-
         .form-collapsible.expanded {
             max-height: 700px;
             opacity: 1;
@@ -1080,10 +1051,6 @@
             transform-origin: center;
             z-index: 10;
             position: relative;
-        }
-
-        .calendario-dia.nuevo-registro-animacion {
-            animation: fade-blur 0.5s ease-out forwards;
         }
 
         /* Animación del boton tiempo fuera*/
@@ -1133,9 +1100,9 @@
         }
 
         .registro-mes-detalle {
-            overflow: hidden;
             max-height: 0;
             opacity: 0;
+            overflow: hidden;
             transition: var(--transition-collapse);
         }
 
@@ -1260,7 +1227,7 @@
         /* Transición suave entre modos */
         #modo-normal,
         #modo-lote {
-            transition: opacity 0.3s ease, transform 0.3s ease;
+            transition: var(--transition-anim);
         }
 
         /* Transición suave entre meses en estadísticas */
@@ -1272,11 +1239,7 @@
             transition: var(--transition-collapse), transform 0.3s ease;
         }
 
-        .fade-out {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
+        .fade-out,
         #form-stats.fade-out {
             opacity: 0;
             transform: translateY(-10px);
@@ -1338,9 +1301,6 @@
 
         /* Estado colapsado de botones histórico */
         #botones-historico {
-            max-height: 0;
-            overflow: hidden;
-            opacity: 0;
             transition: var(--transition-collapse), padding 0.3s ease-out, margin 0.3s ease-out;
             padding-top: 0;
             margin-bottom: 0;
@@ -1373,19 +1333,18 @@
             justify-content: center;
         }
 
-        .stat-value {
-            color: var(--text-muted)
-        }
-
         /* --- Clases utilitarias (reemplazo de inline styles) --- */
-
         /* Ocultar elementos — JS usa classList.add/remove('hidden') */
         .hidden {
             display: none !important;
         }
 
         /* SVG sprite oculto */
-        .svg-sprite {
+        .svg-sprite,
+        #btn-timer-main:disabled,
+        #btn-install,
+        #file-import,
+        #modo-lote {
             display: none;
         }
 
@@ -1394,11 +1353,6 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        /* Botón install: oculto por defecto, JS lo muestra */
-        #btn-install {
-            display: none;
         }
 
         /* progress-bar fill: width se setea por JS, sólo definimos el estado inicial */
@@ -1436,16 +1390,17 @@
         }
 
         /* Modos del formulario */
-        #modo-normal {
+        #modo-normal,
+        #campos-rango-exportar,
+        #gist-limite-sync,
+        .contenedor-fechas,
+        .contenedor-horas {
             display: block;
-        }
-
-        #modo-lote {
-            display: none;
         }
 
         /* Padding top en primer form-group de cada modo */
         .form-group-pt {
+            padding-top: 1rem;
             padding-top: 1rem;
         }
 
@@ -1461,11 +1416,6 @@
             gap: 0.5rem;
         }
 
-        /* Div de stats con padding top */
-        .stats-inner {
-            padding-top: 1rem;
-        }
-
         /* Selector de período de stats */
         .stats-periodo-row {
             display: flex;
@@ -1473,20 +1423,10 @@
             gap: 0.5rem;
         }
 
-        /* Selects del período con flex:1 */
-        .stats-periodo-row select {
-            flex: 1;
-        }
-
         /* Icono pequeño del btn periodo */
         #btn-toggle-periodo .icon {
             width: 14px;
             height: 14px;
-        }
-
-        /* btn-group con margin-top extra */
-        .btn-group-mt {
-            margin-top: 1rem;
         }
 
         /* Botones histórico: layout interno */
@@ -1513,9 +1453,7 @@
         /* Botón "Hoy" del calendario */
         .btn-hoy-calendario {
             width: auto;
-            padding: 4px 10px;
             font-size: 0.8rem;
-            font-weight: 600;
         }
 
         /* Chevrons del calendario (rotados) */
@@ -1525,20 +1463,6 @@
 
         .icon-rotate-neg90 {
             transform: rotate(-90deg);
-        }
-
-        /* Modal headers sin margin-bottom */
-        .modal-h3-no-mb {
-            margin-bottom: 0;
-        }
-
-        /* Modal headers con margin-bottom estándar */
-        .modal-h3-mb-1 {
-            margin-bottom: 1rem;
-        }
-
-        .modal-h3-mb-half {
-            margin-bottom: 0.5rem;
         }
 
         /* Lista orden cards */
@@ -1555,7 +1479,9 @@
         }
 
         /* flex:1 genérico — reemplaza flex-1, flex-1, flex-1 */
-        .flex-1 {
+        .flex-1,
+        .stats-periodo-row select,
+        .registro-info {
             flex: 1;
         }
 
@@ -1576,22 +1502,12 @@
             line-height: 1.8;
         }
 
-        /* Botón crédito con margin-left */
-        #btn-toggle-credito {
-            margin-left: 5px;
-        }
-
         /* Hint resumen edición */
         #edit-hint-resumen,
         #edit-grupo-hint {
-            text-align: center;
+            margin-left: auto;
             margin-top: 0;
             min-height: 1.2em;
-        }
-
-        /* Input file oculto */
-        #file-import {
-            display: none;
         }
 
         /* Nombre archivo seleccionado */
@@ -1615,15 +1531,6 @@
             flex-direction: column;
             gap: 0.75rem;
             margin-top: 1rem;
-        }
-
-        /* Campos rango exportar (colapsable, JS controla) */
-        #campos-rango-exportar {
-            max-height: 0;
-            overflow: hidden;
-            transition: var(--transition-collapse);
-            opacity: 0;
-            display: block;
         }
 
         /* Form-group con borde superior (separador en modal perfiles) */
@@ -1732,7 +1639,7 @@
                 align-items: start;
             }
 
-            #modal-config .modal-config-footer .btn-delete {
+            #modal-config .modal-panel-footer .btn-delete {
                 width: 50%;
                 margin: 0 auto;
             }
@@ -1817,6 +1724,16 @@
             <polyline points="17 21 17 13 7 13 7 21" class="icon-line" stroke="currentColor"></polyline>
             <polyline points="7 3 7 8 15 8" class="icon-line" stroke="currentColor"></polyline>
         </symbol>
+        <symbol id="icon-clock-in" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" class="icon-line" stroke="currentColor" fill="none" stroke-width="2">
+            </circle>
+            <path d="M10 8l6 4-6 4V8z" class="icon-line" fill="currentColor"></path>
+        </symbol>
+        <symbol id="icon-clock-out" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" class="icon-line" stroke="currentColor" fill="none" stroke-width="2">
+            </circle>
+            <rect x="9" y="9" width="6" height="6" rx="1" class="icon-line" fill="currentColor"></rect>
+        </symbol>
         <symbol id="icon-broom" viewBox="0 0 24 24">
             <path class="icon-line"
                 d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM8 11v6M12 11v6M16 11v6M10 3L9 6h6l-1-3" />
@@ -1852,6 +1769,12 @@
         <symbol id="icon-undo" viewBox="0 0 24 24">
             <path d="M3 7v6h6" class="icon-line" stroke="currentColor"></path>
             <path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" class="icon-line" stroke="currentColor"></path>
+        </symbol>
+        <symbol id="icon-grid-group" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
         </symbol>
         <symbol id="icon-redo" viewBox="0 0 24 24">
             <path d="M21 7v6h-6" class="icon-line" stroke="currentColor"></path>
@@ -2009,7 +1932,7 @@
                         <use href="#icon-chevron-down" />
                     </svg>
                 </h2>
-                <div class="form-collapsible" id="form-registro">
+                <div class="form-collapsible collapsible" id="form-registro">
 
                     <!-- MODO NORMAL -->
                     <div id="modo-normal">
@@ -2030,9 +1953,9 @@
                             <div class="form-group">
                                 <label>Entrada</label>
                                 <div class="input-with-btn">
-                                    <input type="text" id="entrada" inputmode="numeric" placeholder="Hora"
-                                        maxlength="5" />
-                                    <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')">
+                                    <input type="text" id="entrada" inputmode="numeric" maxlength="5" />
+                                    <button class="time-btn" onclick="UILogic.pegarHoraActual('entrada')"
+                                        title="Pegar hora actual o limpiar">
                                         <svg class="icon">
                                             <use href="#icon-clock" />
                                         </svg>
@@ -2043,9 +1966,9 @@
                             <div class="form-group">
                                 <label>Salida</label>
                                 <div class="input-with-btn">
-                                    <input type="text" id="salida" inputmode="numeric" placeholder="hora"
-                                        maxlength="5" />
-                                    <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')">
+                                    <input type="text" id="salida" inputmode="numeric" maxlength="5" />
+                                    <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')"
+                                        title="Pegar hora actual o limpiar" s>
                                         <svg class="icon">
                                             <use href="#icon-clock" />
                                         </svg>
@@ -2062,7 +1985,7 @@
                             <label>Tipo de registro</label>
                             <div class="input-with-btn">
                                 <select id="lote-tipo" onchange="UILogic.actualizarBotonLote()">
-                                    <option value="normal">🕒 Normales (borrar)</option>
+                                    <option value="normal">🕒 Jornadas (borrar)</option>
                                 </select>
                                 <button class="time-btn flex-shrink-0" onclick="UILogic.toggleModoLote()"
                                     title="Ir al modo normal">
@@ -2112,7 +2035,7 @@
                         <use href="#icon-chevron-down" />
                     </svg>
                 </h2>
-                <div class="form-collapsible" id="form-stats">
+                <div class="form-collapsible collapsible" id="form-stats">
                     <div class="stats-inner">
                         <div class="form-group">
                             <label>Período</label>
@@ -2168,49 +2091,14 @@
                                 <div class="stat-label">Jornadas</div>
                                 <div class="stat-value" id="stat-dias-trabajados">0</div>
                             </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Feriados</div>
-                                <div class="stat-value" id="stat-feriados">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Licencias</div>
-                                <div class="stat-value" id="stat-ausencias">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Vacaciones</div>
-                                <div class="stat-value" id="stat-vacaciones">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Enfermedades</div>
-                                <div class="stat-value" id="stat-enfermedades">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Asuetos</div>
-                                <div class="stat-value" id="stat-asuetos-dia">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Paros</div>
-                                <div class="stat-value" id="stat-paros">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Remotos</div>
-                                <div class="stat-value" id="stat-remotos">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Capacitaciones</div>
-                                <div class="stat-value" id="stat-capacitaciones">0</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-label">Compensatorios</div>
-                                <div class="stat-value" id="stat-compensatorios">0</div>
-                            </div>
+                            <div id="stat-items-tipos-anchor" style="display:none"></div>
                             <div class="stat-item">
                                 <div class="stat-label">Salidas Temprano</div>
                                 <div class="stat-value" id="stat-compensaciones">0</div>
                             </div>
                         </div>
 
-                        <div class="btn-group btn-group-mt">
+                        <div class="btn-group">
                             <button class="btn-agregar" id="btn-reporte" onclick="UILogic.generarReporte()">
                                 <svg class="icon">
                                     <use href="#icon-download" />
@@ -2234,8 +2122,8 @@
                 </svg>
             </h2>
 
-            <div class="form-collapsible" id="contenido-historico">
-                <div id="botones-historico">
+            <div class="form-collapsible collapsible" id="contenido-historico">
+                <div id="botones-historico" class="collapsible">
                     <div class="botones-historico-inner">
                         <div class="botones-historico-group">
                             <button class="filter-btn" id="btn-vista-calendario"
@@ -2281,15 +2169,16 @@
                 <div id="vista-calendario-historico" class="hidden">
                     <div class="calendario-nav">
                         <span class="calendario-titulo" id="calendario-titulo-mes"
-                            onclick="UILogic.abrirSelectorMesesCalendario()" title="Seleccionar mes"></span>
+                            onclick="UILogic.abrirSelectorMesesCalendario()" title="Mostrar meses"></span>
                         <div id="calendario-nav-botones">
-                            <button class="btn-hoy-calendario" onclick="UILogic.irHoyCalendario()">Hoy</button>
-                            <button onclick="UILogic.navegarCalendario(-1)">
+                            <button class="btn-hoy-calendario" onclick="UILogic.irHoyCalendario()"
+                                title="Ir al mes actual">Hoy</button>
+                            <button onclick="UILogic.navegarCalendario(-1)" title="Mes anterior">
                                 <svg class="icon icon-rotate-90">
                                     <use href="#icon-chevron-down" />
                                 </svg>
                             </button>
-                            <button onclick="UILogic.navegarCalendario(1)">
+                            <button onclick="UILogic.navegarCalendario(1)" title="Mes siguiente">
                                 <svg class="icon icon-rotate-neg90">
                                     <use href="#icon-chevron-down" />
                                 </svg>
@@ -2304,20 +2193,20 @@
             </div>
         </div>
     </div>
-    <div class="modal" id="modal-config">
+    <div class="modal modal-scrollable" id="modal-config">
         <div class="modal-content">
-            <div class="modal-config-header">
-                <h3 class="modal-h3-no-mb">
+            <div class="modal-panel-header">
+                <h3>
                     <span class="modal-title-block">
                         <svg class="icon">
                             <use href="#icon-settings" />
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA build_274</span>
+                    <span class="version-text">LUSHIBOSCA build_295</span>
                 </h3>
             </div>
-            <div class="modal-config-body custom-scroll">
+            <div class="modal-panel-body custom-scroll">
                 <div class="modal-config-cols">
 
                     <!-- COLUMNA IZQUIERDA -->
@@ -2329,11 +2218,13 @@
                                 <button class="btn-increment" onmousedown="UILogic.iniciarCambioHoras(0.5)"
                                     onmouseup="UILogic.detenerCambio()" onmouseleave="UILogic.detenerCambio()"
                                     ontouchstart="event.preventDefault(); UILogic.iniciarCambioHoras(0.5)"
-                                    ontouchend="event.preventDefault(); UILogic.detenerCambio()">+</button>
+                                    ontouchend="event.preventDefault(); UILogic.detenerCambio()"
+                                    title="Incrementar tiempo">+</button>
                                 <button class="btn-increment" onmousedown="UILogic.iniciarCambioHoras(-0.5)"
                                     onmouseup="UILogic.detenerCambio()" onmouseleave="UILogic.detenerCambio()"
                                     ontouchstart="event.preventDefault(); UILogic.iniciarCambioHoras(-0.5)"
-                                    ontouchend="event.preventDefault(); UILogic.detenerCambio()">−</button>
+                                    ontouchend="event.preventDefault(); UILogic.detenerCambio()"
+                                    title="Disminuir tiempo">-</button>
                             </div>
                         </div>
                         <div class="form-group">
@@ -2473,8 +2364,8 @@
                     </div>
 
                 </div>
-            </div><!-- /modal-config-body -->
-            <div class="modal-config-footer">
+            </div><!-- /modal-panel-body -->
+            <div class="modal-panel-footer">
                 <div class="btn-group">
                     <button class="btn-delete" onclick="UILogic.cerrarConfig()">
                         <svg class="icon">
@@ -2482,14 +2373,14 @@
                         </svg> Volver
                     </button>
                 </div>
-            </div><!-- /modal-config-footer -->
+            </div><!-- /modal-panel-footer -->
         </div>
     </div>
 
-    <div class="modal" id="modal-gist">
+    <div class="modal modal-scrollable" id="modal-gist">
         <div class="modal-content">
-            <div class="modal-config-header">
-                <h3 class="modal-h3-mb-1">
+            <div class="modal-panel-header">
+                <h3>
                     <span class="modal-title-block">
                         <svg class="icon">
                             <use href="#icon-cloud" />
@@ -2498,7 +2389,7 @@
                     </span>
                 </h3>
             </div>
-            <div class="modal-config-body custom-scroll">
+            <div class="modal-panel-body custom-scroll">
                 <div class="form-group">
                     <label>Personal Access Token</label>
                     <div class="input-with-btn">
@@ -2561,7 +2452,7 @@
                             <span id="hint-gist-merge">Reemplazar</span>
                         </button>
                     </div>
-                    <div id="gist-limite-sync">
+                    <div id="gist-limite-sync" class="collapsible">
                         <div class="form-group form-group-mb-half">
                             <label id="gist-limite-label">Límite por hora</label>
                             <div class="input-number-group">
@@ -2579,19 +2470,17 @@
                             </div>
                         </div>
                     </div>
-                    <div id="gist-rango-horario">
+                    <div id="gist-rango-horario" class="collapsible">
                         <span>Desde</span>
-                        <input type="text" id="gist-rango-desde" inputmode="numeric" maxlength="5"
-                            placeholder="HH:MM" />
+                        <input type="text" id="gist-rango-desde" inputmode="numeric" maxlength="5" />
                         <span>Hasta</span>
-                        <input type="text" id="gist-rango-hasta" inputmode="numeric" maxlength="5"
-                            placeholder="HH:MM" />
+                        <input type="text" id="gist-rango-hasta" inputmode="numeric" maxlength="5" />
                     </div>
                 </div>
                 <div class="config-hint-text" id="gist-ultima-sync">Sin sincronizar</div>
                 <div class="config-hint-text">Anotá tu Token e ID para no perderlos.</div>
             </div>
-            <div class="modal-config-footer">
+            <div class="modal-panel-footer">
                 <div class="btn-group">
                     <button class="btn-export" onclick="UILogic.guardarConfigGist()">
                         <svg class="icon">
@@ -2613,8 +2502,8 @@
 
     <div class="modal" id="modal-gist-merge">
         <div class="modal-content">
-            <div class="modal-config-header">
-                <h3 class="modal-h3-mb-half">
+            <div class="modal-panel-header">
+                <h3>
                     <span class="modal-title-block">
                         <svg class="icon">
                             <use href="#icon-cloud-download" />
@@ -2623,10 +2512,10 @@
                     </span>
                 </h3>
             </div>
-            <div class="modal-config-body custom-scroll">
+            <div class="modal-panel-body custom-scroll">
                 <div id="gist-merge-resumen"></div>
             </div>
-            <div class="modal-config-footer">
+            <div class="modal-panel-footer">
                 <div class="btn-group">
                     <button class="btn-backup" id="btn-gist-merge-combinar" onclick="UILogic.gistMergeAplicar('merge')">
                         <svg class="icon">
@@ -2654,77 +2543,96 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-editar">
+    <div class="modal modal-scrollable" id="modal-editar">
         <div class="modal-content">
-            <h3>
-                <span class="modal-title-block">
-                    <svg class="icon">
-                        <use href="#icon-edit" />
-                    </svg>Editar Registro
-                </span>
-            </h3>
-            <div class="form-group">
-                <label>Fecha</label>
-                <div class="input-with-btn">
-                    <input type="date" id="edit-fecha" />
-                    <button class="time-btn" id="btn-lock-toggle" onclick="UILogic.toggleBloqueoEdicion()"
-                        title="Desbloquear edición">
+            <div class="modal-panel-header">
+                <h3>
+                    <span class="modal-title-block">
                         <svg class="icon">
-                            <use href="#icon-lock" />
-                        </svg>
-                    </button>
+                            <use href="#icon-edit" />
+                        </svg>Editar Registro
+                    </span>
+                    <span id="edit-hint-resumen" class="config-hint-text"></span>
+                </h3>
+            </div>
+            <div class="modal-panel-body custom-scroll">
+                <div class="form-group">
+                    <label>Fecha</label>
+                    <div class="input-with-btn">
+                        <input type="date" id="edit-fecha" />
+                        <button id="btn-toggle-credito" class="time-btn" onclick="UILogic.toggleCredito()"
+                            title="Asueto | Salida temprano">
+                            <svg class="icon">
+                                <use href="#icon-exit" />
+                            </svg>
+                        </button>
+                        <button class="time-btn" id="btn-lock-toggle" onclick="UILogic.toggleBloqueoEdicion()"
+                            title="Desbloquear edición">
+                            <svg class="icon">
+                                <use href="#icon-lock" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Entrada</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="edit-entrada" inputmode="numeric" maxlength="5" />
+                        <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-entrada')"
+                            title="Pegar hora actual o limpiar"><svg class="icon">
+                                <use href="#icon-clock" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Salida</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="edit-salida" inputmode="numeric" maxlength="5" />
+                        <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-salida')"
+                            title="Pegar hora actual o limpiar"><svg class="icon">
+                                <use href="#icon-clock" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tiempo Fuera</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="edit-tiempo-fuera" inputmode="numeric" maxlength="5" />
+                        <button class="time-btn" onclick="UILogic.limpiarCampo('edit-tiempo-fuera')" title="Limpiar">
+                            <svg class="icon">
+                                <use href="#icon-broom" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Comentarios</label>
+                    <div class="input-with-btn">
+                        <input type="text" id="edit-notas" maxlength="35" autocomplete="off" />
+                        <button class="time-btn" onclick="UILogic.limpiarCampo('edit-notas')" title="Limpiar">
+                            <svg class="icon">
+                                <use href="#icon-broom" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Entrada</label>
-                <div class="input-with-btn">
-                    <input type="text" id="edit-entrada" inputmode="numeric" maxlength="5" />
-                    <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-entrada')"><svg class="icon">
-                            <use href="#icon-clock" />
-                        </svg>
-                    </button>
+            <div class="modal-panel-footer">
+                <div class="btn-group">
+                    <button class="btn-edit" onclick="DataManagement.guardarEdicion()"><svg class="icon">
+                            <use href="#icon-save" />
+                        </svg> Guardar</button>
+                    <button class="btn-delete" onclick="DataManagement.eliminarRegistroActual()"><svg class="icon">
+                            <use href="#icon-trash" />
+                        </svg> Eliminar</button>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Salida</label>
-                <div class="input-with-btn">
-                    <input type="text" id="edit-salida" inputmode="numeric" maxlength="5" />
-                    <button class="time-btn" onclick="UILogic.pegarHoraActual('edit-salida')"><svg class="icon">
-                            <use href="#icon-clock" />
-                        </svg>
-                    </button>
+                <div class="btn-group">
+                    <button class="btn-cancel" onclick="UILogic.cerrarEdicion()"><svg class="icon">
+                            <use href="#icon-cancelar" />
+                        </svg> Cancelar</button>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Tiempo Fuera</label>
-                <div class="input-with-btn">
-                    <input type="text" id="edit-tiempo-fuera" inputmode="numeric" maxlength="5" />
-                    <button class="time-btn" onclick="UILogic.limpiarCampo('edit-tiempo-fuera')" title="Limpiar">
-                        <svg class="icon">
-                            <use href="#icon-broom" />
-                        </svg>
-                    </button>
-                    <button id="btn-toggle-credito" class="time-btn" onclick="UILogic.toggleCredito()"
-                        title="(Compensación/Asueto)">
-                        <svg class="icon">
-                            <use href="#icon-exit" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            <div id="edit-hint-resumen" class="config-hint-text"></div>
-            <div class="btn-group">
-                <button class="btn-edit" onclick="DataManagement.guardarEdicion()"><svg class="icon">
-                        <use href="#icon-save" />
-                    </svg> Guardar</button>
-                <button class="btn-delete" onclick="DataManagement.eliminarRegistroActual()"><svg class="icon">
-                        <use href="#icon-trash" />
-                    </svg> Eliminar</button>
-            </div>
-            <div class="btn-group">
-                <button class="btn-cancel" onclick="UILogic.cerrarEdicion()"><svg class="icon">
-                        <use href="#icon-cancelar" />
-                    </svg> Cancelar</button>
             </div>
         </div>
     </div>
@@ -2788,7 +2696,7 @@
             </div>
 
             <!-- Campos de rango (ocultos por defecto) -->
-            <div id="campos-rango-exportar">
+            <div id="campos-rango-exportar" class="collapsible">
                 <div class="form-group">
                     <label>Desde</label>
                     <input type="date" id="export-fecha-desde" />
@@ -2837,7 +2745,7 @@
                 <label>Tipo de registro</label>
                 <select id="filtro-tipo">
                     <option value="">Todos</option>
-                    <option value="normal">🕒 Normales</option>
+                    <option value="normal">🕒 Jornadas</option>
                 </select>
             </div>
             <div class="btn-group">
@@ -2859,11 +2767,11 @@
                     Perfiles
                 </span>
             </h3>
-            <div id="lista-perfiles-botones" class="perfil-list-container"></div>
+            <div id="lista-perfiles-botones" class="perfil-list-container custom-scroll"></div>
             <div class="form-group form-group-border-top">
                 <label>Agregar perfil</label>
                 <div class="input-with-btn">
-                    <input type="text" id="nombre-nuevo-perfil-selector" placeholder="Nombre del perfil..."
+                    <input type="text" id="nombre-nuevo-perfil-selector" placeholder="Nombre del perfil, lugar..."
                         maxlength="30" />
                     <button class="time-btn" onclick="UILogic.crearPerfilDesdeSelector()" title="Crear perfil">
                         <svg class="icon">
@@ -2907,7 +2815,7 @@
 
             <div class="form-group">
                 <label>Nombre del Perfil</label>
-                <input type="text" id="nombre-perfil-editar" placeholder="Nombre del perfil..." maxlength="30" />
+                <input type="text" id="nombre-perfil-editar" placeholder="Nombre del perfil, lugar..." maxlength="30" />
             </div>
 
             <input type="hidden" id="id-perfil-editar" />
@@ -2939,79 +2847,84 @@
         </div>
     </div>
 
-    <div class="modal" id="modal-editar-grupo">
+    <div class="modal modal-scrollable" id="modal-editar-grupo">
         <div class="modal-content">
-            <h3>
-                <span class="modal-title-block">
-                    <svg class="icon">
-                        <use href="#icon-edit" />
-                    </svg>Editar Grupo
-                </span>
-            </h3>
-            <div class="form-group">
-                <label>Tipo de registro</label>
-                <div class="input-with-btn">
-                    <select id="edit-grupo-tipo">
-                    </select>
-                    <button class="time-btn" id="btn-lock-grupo-toggle" onclick="UILogic.toggleBloqueoEdicionGrupo()"
-                        title="Desbloquear edición">
+            <div class="modal-panel-header">
+                <h3>
+                    <span class="modal-title-block">
                         <svg class="icon">
-                            <use href="#icon-lock" />
-                        </svg>
-                    </button>
+                            <use href="#icon-edit" />
+                        </svg>Editar Grupo
+                    </span>
+                    <span id="edit-grupo-hint" class="config-hint-text"></span>
+                </h3>
+            </div>
+            <div class="modal-panel-body custom-scroll">
+                <div class="form-group">
+                    <label>Tipo de registro</label>
+                    <div class="input-with-btn">
+                        <select id="edit-grupo-tipo">
+                        </select>
+                        <button class="time-btn" id="btn-lock-grupo-toggle"
+                            onclick="UILogic.toggleBloqueoEdicionGrupo()" title="Desbloquear edición">
+                            <svg class="icon">
+                                <use href="#icon-lock" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Desde</label>
+                    <div class="input-with-btn">
+                        <input type="date" id="edit-grupo-desde" />
+                        <button class="time-btn" onclick="UILogic.alternarFechaActual('edit-grupo-desde')"
+                            title="Pegar hoy / Limpiar">
+                            <svg class="icon">
+                                <use href="#icon-calendar-simple" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Hasta</label>
+                    <div class="input-with-btn">
+                        <input type="date" id="edit-grupo-hasta" />
+                        <button class="time-btn" onclick="UILogic.alternarFechaActual('edit-grupo-hasta')"
+                            title="Pegar hoy / Limpiar">
+                            <svg class="icon">
+                                <use href="#icon-calendar-simple" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Desde</label>
-                <div class="input-with-btn">
-                    <input type="date" id="edit-grupo-desde" />
-                    <button class="time-btn" onclick="UILogic.alternarFechaActual('edit-grupo-desde')"
-                        title="Pegar hoy / Limpiar">
+            <div class="modal-panel-footer">
+                <div class="btn-group">
+                    <button class="btn-edit" onclick="DataManagement.guardarEdicionGrupo()">
                         <svg class="icon">
-                            <use href="#icon-calendar-simple" />
-                        </svg>
+                            <use href="#icon-save" />
+                        </svg> Guardar
+                    </button>
+                    <button class="btn-delete" onclick="DataManagement.eliminarGrupoActual()">
+                        <svg class="icon">
+                            <use href="#icon-trash" />
+                        </svg> Eliminar
                     </button>
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Hasta</label>
-                <div class="input-with-btn">
-                    <input type="date" id="edit-grupo-hasta" />
-                    <button class="time-btn" onclick="UILogic.alternarFechaActual('edit-grupo-hasta')"
-                        title="Pegar hoy / Limpiar">
+                <div class="btn-group">
+                    <button class="btn-cancel" onclick="UILogic.cerrarEdicionGrupo()">
                         <svg class="icon">
-                            <use href="#icon-calendar-simple" />
-                        </svg>
+                            <use href="#icon-cancelar" />
+                        </svg> Cancelar
                     </button>
                 </div>
-            </div>
-            <div id="edit-grupo-hint" class="config-hint-text"></div>
-            <div class="btn-group">
-                <button class="btn-edit" onclick="DataManagement.guardarEdicionGrupo()">
-                    <svg class="icon">
-                        <use href="#icon-save" />
-                    </svg> Guardar
-                </button>
-                <button class="btn-delete" onclick="DataManagement.eliminarGrupoActual()">
-                    <svg class="icon">
-                        <use href="#icon-trash" />
-                    </svg> Eliminar
-                </button>
-            </div>
-            <div class="btn-group">
-                <button class="btn-cancel" onclick="UILogic.cerrarEdicionGrupo()">
-                    <svg class="icon">
-                        <use href="#icon-cancelar" />
-                    </svg> Cancelar
-                </button>
             </div>
         </div>
     </div>
-
     <div class="modal" id="modal-confirmar">
         <div class="modal-content">
-            <div class="modal-config-header">
-                <h3 class="modal-h3-no-mb">
+            <div class="modal-panel-header">
+                <h3>
                     <span class="modal-title-block">
                         <svg class="icon">
                             <use href="#icon-help" />
@@ -3020,10 +2933,10 @@
                     </span>
                 </h3>
             </div>
-            <div class="modal-config-body">
+            <div class="modal-panel-body">
                 <p id="modal-confirmar-texto"></p>
             </div>
-            <div class="modal-config-footer">
+            <div class="modal-panel-footer">
                 <div class="btn-group">
                     <button class="btn-delete" id="modal-confirmar-ok">
                         <svg class="icon">
@@ -3090,24 +3003,10 @@
                 }
 
                 async function instalarApp() {
-                    if (!deferredPrompt) {
-                        console.log('No hay prompt de instalación disponible');
-                        return;
-                    }
+                    if (!deferredPrompt) return;
 
-                    // Mostrar el prompt de instalación
                     deferredPrompt.prompt();
-
-                    // Esperar a que el usuario responda
-                    const { outcome } = await deferredPrompt.userChoice;
-
-                    if (outcome === 'accepted') {
-                        console.log('Usuario aceptó la instalación');
-                    } else {
-                        console.log('Usuario rechazó la instalación');
-                    }
-
-                    // Limpiar el prompt
+                    await deferredPrompt.userChoice;
                     deferredPrompt = null;
                 }
 
@@ -3124,6 +3023,7 @@
                 const SECURITY_LIMITS = {
                     MAX_REGISTROS: 1000,
                     MAX_STRING_LENGTH: 100,
+                    MAX_NOTAS_LENGTH: 35,
                     MAX_JSON_SIZE: 4 * 1024 * 1024,
                     SCHEMA_VERSION: 3,
                 };
@@ -3131,7 +3031,8 @@
                 const REGEX_PATTERNS = {
                     FECHA: /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
                     HORA: /^([01]\d|2[0-3]):([0-5]\d)$/,
-                    ID: /^[a-zA-Z0-9-_]{10,100}$/
+                    ID: /^[a-zA-Z0-9-_]{10,100}$/,
+                    NOTAS: /[^a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ ]/g
                 };
 
                 function sanitizeString(str, maxLength = SECURITY_LIMITS.MAX_STRING_LENGTH) {
@@ -3149,6 +3050,12 @@
                         .replace(/&#/g, '')
                         .trim()
                         .substring(0, maxLength);
+                }
+
+                function sanitizeNotas(str, trim = false) {
+                    if (typeof str !== 'string') return '';
+                    const r = str.replace(REGEX_PATTERNS.NOTAS, '').substring(0, SECURITY_LIMITS.MAX_NOTAS_LENGTH);
+                    return trim ? r.trim() : r;
                 }
 
                 function validarFechaSegura(f) {
@@ -3218,11 +3125,15 @@
                         if (typeof r.credito !== 'string' || !REGEX_PATTERNS.HORA.test(r.credito)) return false;
                     }
 
+                    if (r.notas !== null && r.notas !== undefined && r.notas !== '') {
+                        if (typeof r.notas !== 'string' || r.notas.length > SECURITY_LIMITS.MAX_NOTAS_LENGTH) return false;
+                    }
+
                     if (!Number.isFinite(r.horas) || r.horas < 0 || r.horas > 24) return false;
                     if (!Number.isFinite(r.minutos) || r.minutos < 0 || r.minutos > 59) return false;
                     if (!Number.isFinite(r.total) || r.total < 0 || r.total > 24) return false;
 
-                    const propiedadesPermitidas = ['id', 'fecha', 'entrada', 'salida', 'tiempoFuera', 'horas', 'minutos', 'total', 'credito']; const propiedadesActuales = Object.keys(r);
+                    const propiedadesPermitidas = ['id', 'fecha', 'entrada', 'salida', 'tiempoFuera', 'horas', 'minutos', 'total', 'credito', 'notas']; const propiedadesActuales = Object.keys(r);
                     const tienePropiedadesSospechosas = propiedadesActuales.some(prop => !propiedadesPermitidas.includes(prop));
                     if (tienePropiedadesSospechosas) return false;
 
@@ -3246,6 +3157,7 @@
                     SECURITY_LIMITS,
                     REGEX_PATTERNS,
                     sanitizeString,
+                    sanitizeNotas,
                     validarFechaSegura,
                     validarHoraSegura,
                     generarIDSeguro,
@@ -3284,7 +3196,7 @@
                             perfiles['default'] = {
                                 nombre: 'Principal',
                                 registros: [],
-                                diasHabiles: [1, 2, 3, 4, 5], // <---  Array
+                                diasHabiles: [1, 2, 3, 4, 5],
                                 horasDiarias: 7
                             };
                         }
@@ -3910,182 +3822,128 @@
                     const btnGuardar = modal.querySelector('.btn-edit');
                     btnGuardar.disabled = true;
 
-                    // ============================================
-                    // 1. SANITIZACIÓN Y CAPTURA DE INPUTS
-                    // ============================================
-                    const nuevoTipo = S.sanitizeString($('edit-grupo-tipo').value.trim(), 20);
-                    const nuevaDesde = S.sanitizeString($('edit-grupo-desde').value.trim(), 10);
-                    const nuevaHasta = S.sanitizeString($('edit-grupo-hasta').value.trim(), 10);
+                    try {
+                        // --- 1. Sanitización y captura de inputs ---
+                        const nuevoTipo = S.sanitizeString($('edit-grupo-tipo').value.trim(), 20);
+                        const nuevaDesde = S.sanitizeString($('edit-grupo-desde').value.trim(), 10);
+                        const nuevaHasta = S.sanitizeString($('edit-grupo-hasta').value.trim(), 10);
 
-                    // ============================================
-                    // 2. VALIDACIONES BÁSICAS
-                    // ============================================
+                        // --- 2. Validaciones básicas ---
+                        if (!nuevaDesde || !nuevaHasta) {
+                            UILogic.mostrarToast('Verifica ambas fechas', 'error');
+                            return;
+                        }
+                        if (!S.validarFechaSegura(nuevaDesde)) {
+                            UILogic.mostrarToast('Fecha "Desde" inválida', 'error');
+                            return;
+                        }
+                        if (!S.validarFechaSegura(nuevaHasta)) {
+                            UILogic.mostrarToast('Fecha "Hasta" inválida', 'error');
+                            return;
+                        }
+                        if (nuevaDesde > nuevaHasta) {
+                            UILogic.mostrarToast('La fecha inicial debe ser inferior a la final', 'error');
+                            return;
+                        }
 
-                    // Validar existencia
-                    if (!nuevaDesde || !nuevaHasta) {
-                        UILogic.mostrarToast('Verifica ambas fechas', 'error');
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        // --- 3. Validación de rango razonable (2 años) ---
+                        const hoy = new Date();
+                        const fechaInicioObj = S.parsearFechaLocal(nuevaDesde);
+                        const fechaFinObj = S.parsearFechaLocal(nuevaHasta);
 
-                    // Validar formato
-                    if (!S.validarFechaSegura(nuevaDesde)) {
-                        UILogic.mostrarToast('Fecha "Desde" inválida', 'error');
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        const dosPasado = new Date(hoy);
+                        dosPasado.setFullYear(hoy.getFullYear() - 2);
+                        const dosFuturo = new Date(hoy);
+                        dosFuturo.setFullYear(hoy.getFullYear() + 2);
 
-                    if (!S.validarFechaSegura(nuevaHasta)) {
-                        UILogic.mostrarToast('Fecha "Hasta" inválida', 'error');
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        if (fechaInicioObj < dosPasado || fechaFinObj > dosFuturo) {
+                            UILogic.mostrarToast('El rango debe estar entre 2 años atrás y 2 años adelante', 'error');
+                            return;
+                        }
 
-                    // Validar orden
-                    if (nuevaDesde > nuevaHasta) {
-                        UILogic.mostrarToast('La fecha inicial debe ser inferior a la final', 'error');
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        // --- 4. Validación de tipo ---
+                        if (!TiposRegistro.validarTipoPermitido(nuevoTipo)) {
+                            UILogic.mostrarToast('Tipo de registro inválido', 'error');
+                            return;
+                        }
 
-                    // ============================================
-                    // 3. VALIDACIÓN DE RANGO RAZONABLE (2 AÑOS)
-                    // ============================================
-                    const hoy = new Date();
-                    const fechaInicioObj = S.parsearFechaLocal(nuevaDesde);
-                    const fechaFinObj = S.parsearFechaLocal(nuevaHasta);
+                        // --- 5. Validación de límite de 60 días ---
+                        const diffDays = Math.ceil(Math.abs(fechaFinObj - fechaInicioObj) / (1000 * 60 * 60 * 24)) + 1;
+                        if (diffDays > 60) {
+                            UILogic.mostrarToast(`El rango contiene ${diffDays} días.\n Máximo: 60 días por operación.`, 'error');
+                            return;
+                        }
 
-                    // Permitir hasta 2 años en el futuro
-                    const dosPasado = new Date(hoy);
-                    dosPasado.setFullYear(hoy.getFullYear() - 2);
-                    const dosFuturo = new Date(hoy);
-                    dosFuturo.setFullYear(hoy.getFullYear() + 2);
+                        // --- 6. Detección de cambios ---
+                        const huboCambios =
+                            nuevoTipo !== grupoEnEdicion.subtipo ||
+                            nuevaDesde !== grupoEnEdicion.fechaDesde ||
+                            nuevaHasta !== grupoEnEdicion.fechaHasta;
 
-                    if (fechaInicioObj < dosPasado || fechaFinObj > dosFuturo) {
-                        UILogic.mostrarToast(
-                            'El rango debe estar entre 2 años atrás y 2 años adelante',
-                            'error'
-                        );
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        if (!huboCambios) {
+                            UILogic.mostrarToast('Sin cambios', 'info');
+                            UILogic.cerrarEdicionGrupo();
+                            return;
+                        }
 
-                    // ============================================
-                    // 4. VALIDACIÓN DE TIPO
-                    // ============================================
-                    if (!TiposRegistro.validarTipoPermitido(nuevoTipo)) {
-                        UILogic.mostrarToast('Tipo de registro inválido', 'error');
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        // --- 7. Generar lista de fechas nuevas ---
+                        const fechasNuevas = [];
+                        let checkFecha = S.parsearFechaLocal(nuevaDesde);
+                        const checkFin = S.parsearFechaLocal(nuevaHasta);
 
-                    // ============================================
-                    // 5. VALIDACIÓN DE LÍMITE DE 60 DÍAS
-                    // ============================================
-                    const diffTime = Math.abs(fechaFinObj - fechaInicioObj);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                        while (checkFecha <= checkFin) {
+                            fechasNuevas.push(S.formatearFechaLocal(checkFecha));
+                            checkFecha.setDate(checkFecha.getDate() + 1);
+                        }
 
-                    if (diffDays > 60) {
-                        UILogic.mostrarToast(
-                            `El rango contiene ${diffDays} días.\n Máximo: 60 días por operación.`,
-                            'error'
-                        );
-                        btnGuardar.disabled = false;
-                        return;
-                    }
+                        // --- 8. Validación de conflictos ---
+                        const idsDelGrupo = new Set(grupoEnEdicion.registros.map(r => r.id));
+                        const fechasSet = new Set(fechasNuevas);
+                        const conflictos = registros.filter(r => fechasSet.has(r.fecha) && !idsDelGrupo.has(r.id));
 
-                    // ============================================
-                    // 6. DETECCIÓN DE CAMBIOS
-                    // ============================================
-                    const huboCambios =
-                        nuevoTipo !== grupoEnEdicion.subtipo ||
-                        nuevaDesde !== grupoEnEdicion.fechaDesde ||
-                        nuevaHasta !== grupoEnEdicion.fechaHasta;
+                        if (conflictos.length > 0) {
+                            const diasConflicto = conflictos
+                                .map(r => r.fecha.substring(8, 10))
+                                .sort((a, b) => a - b)
+                                .join(', ');
+                            UILogic.mostrarToast(`Conflicto en día(s): ${diasConflicto}\n Ya existen registros en esas fechas.`, 'error');
+                            return;
+                        }
 
-                    if (!huboCambios) {
-                        UILogic.mostrarToast('Sin cambios', 'info');
-                        btnGuardar.disabled = false;
-                        UILogic.cerrarEdicionGrupo();
-                        return;
-                    }
+                        // --- 9. Actualización ---
+                        registros = registros.filter(r => !idsDelGrupo.has(r.id));
 
-                    // ============================================
-                    // 7. GENERAR LISTA DE FECHAS NUEVAS
-                    // ============================================
-                    const fechasNuevas = [];
-                    let checkFecha = S.parsearFechaLocal(nuevaDesde);
-                    const checkFin = S.parsearFechaLocal(nuevaHasta);
+                        const codigosTipo = TiposRegistro.obtenerCodigosPorTipo(nuevoTipo);
+                        const { entrada, salida } = codigosTipo;
 
-                    while (checkFecha <= checkFin) {
-                        const y = checkFecha.getFullYear();
-                        const m = String(checkFecha.getMonth() + 1).padStart(2, '0');
-                        const d = String(checkFecha.getDate()).padStart(2, '0');
-                        fechasNuevas.push(`${y}-${m}-${d}`);
-                        checkFecha.setDate(checkFecha.getDate() + 1);
-                    }
-
-                    // ============================================
-                    // 8. VALIDACIÓN DE CONFLICTOS (OPTIMIZADA)
-                    // ============================================
-                    const idsDelGrupo = grupoEnEdicion.registros.map(r => r.id);
-                    const conflictos = registros.filter(r =>
-                        fechasNuevas.includes(r.fecha) && !idsDelGrupo.includes(r.id)
-                    );
-
-                    if (conflictos.length > 0) {
-                        const diasConflicto = conflictos
-                            .map(r => r.fecha.substring(8, 10))
-                            .sort((a, b) => a - b)
-                            .join(', ');
-
-                        UILogic.mostrarToast(
-                            `Conflicto en día(s): ${diasConflicto}\n Ya existen registros en esas fechas.`,
-                            'error'
-                        );
-                        btnGuardar.disabled = false;
-                        return;
-                    }
-
-                    // ============================================
-                    // 9. LÓGICA DE ACTUALIZACIÓN
-                    // ============================================
-                    registros = registros.filter(r => !idsDelGrupo.includes(r.id));
-
-                    const codigosTipo = TiposRegistro.obtenerCodigosPorTipo(nuevoTipo);
-                    const entrada = codigosTipo.entrada;
-                    const salida = codigosTipo.salida;
-                    const idsNuevos = [];
-
-                    fechasNuevas.forEach(fechaISO => {
-                        const t = calcularHoras(entrada, salida, null);
-                        const nuevoId = S.generarIDSeguro();
-                        idsNuevos.push(nuevoId);
-
-                        registros.push({
-                            id: nuevoId,
-                            fecha: fechaISO,
-                            entrada: entrada,
-                            salida: salida,
-                            tiempoFuera: null,
-                            horas: t?.horas || 0,
-                            minutos: t?.minutos || 0,
-                            total: t?.total || 0
+                        const nuevosRegistros = fechasNuevas.map(fechaISO => {
+                            const t = calcularHoras(entrada, salida, null);
+                            return {
+                                id: S.generarIDSeguro(),
+                                fecha: fechaISO,
+                                entrada,
+                                salida,
+                                tiempoFuera: null,
+                                horas: t?.horas || 0,
+                                minutos: t?.minutos || 0,
+                                total: t?.total || 0
+                            };
                         });
-                    });
 
-                    registros.sort((a, b) => {
-                        if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
-                        return (b.entrada || '').localeCompare(a.entrada || '');
-                    });
+                        registros.push(...nuevosRegistros);
+                        registros.sort((a, b) => {
+                            if (a.fecha !== b.fecha) return b.fecha.localeCompare(a.fecha);
+                            return (b.entrada || '').localeCompare(a.entrada || '');
+                        });
 
-                    HistoryManager.saveState(registros);
-                    const saved = await guardarYActualizar(idsNuevos);
+                        HistoryManager.saveState(registros);
+                        const saved = await guardarYActualizar(nuevosRegistros.map(r => r.id));
 
-                    if (saved) {
-                        UILogic.mostrarToast('Grupo actualizado', 'success');
-                        btnGuardar.disabled = false;
-                        UILogic.cerrarEdicionGrupo();
-                    } else {
+                        if (saved) {
+                            UILogic.mostrarToast('Grupo actualizado', 'success');
+                            UILogic.cerrarEdicionGrupo();
+                        }
+                    } finally {
                         btnGuardar.disabled = false;
                     }
                 }
@@ -4398,7 +4256,10 @@
                             // FEEDBACK VISUAL (solo salida manual)
                             const salidaManual = !usaHoraActual;
                             if (salidaManual) {
-                                UILogic.aplicarFeedbackRegistro(false, true); // Solo salida
+                                UILogic.aplicarFeedbackCampos([
+                                    { id: 'entrada', fallback: 'Entrada', mostrar: false },
+                                    { id: 'salida', fallback: 'Salida', mostrar: true }
+                                ]);
                             }
 
                             // Mensaje diferenciado según si había timer activo
@@ -4469,7 +4330,10 @@
                         const salidaManual = s && !usaHoraActual;
 
                         if (entradaManual || salidaManual) {
-                            UILogic.aplicarFeedbackRegistro(entradaManual, salidaManual);
+                            UILogic.aplicarFeedbackCampos([
+                                { id: 'entrada', fallback: 'Entrada', mostrar: entradaManual },
+                                { id: 'salida', fallback: 'Salida', mostrar: salidaManual }
+                            ]);
                         }
 
                         const mensaje = usaHoraActual ? 'Registro agregado con hora actual' : 'Registro agregado';
@@ -4532,6 +4396,7 @@
                     $('edit-entrada').value = r.entrada || '';
                     $('edit-salida').value = r.salida || '';
                     $('edit-tiempo-fuera').value = r.tiempoFuera || '';
+                    $('edit-notas').value = r.notas || '';
 
                     // 3. CONFIGURAR EL BOTÓN DE CRÉDITO
                     const btnCredito = document.getElementById('btn-toggle-credito');
@@ -4578,6 +4443,10 @@
 
                     let tf = S.sanitizeString($('edit-tiempo-fuera').value.trim(), 5);
                     if (tf === '') tf = null;
+
+                    let notas = S.sanitizeString($('edit-notas').value.trim(), S.SECURITY_LIMITS.MAX_NOTAS_LENGTH);
+                    if (notas) notas = S.sanitizeNotas(notas, true) || null;
+                    if (notas === '') notas = null;
 
                     // --- CALCULAR CRÉDITO SEGÚN EL BOTÓN ---
                     let cr = null;
@@ -4628,12 +4497,15 @@
                     // Comparar crédito también
                     const actualCR = r.credito || '';
                     const nuevoCR = cr || '';
+                    const actualNotas = r.notas || '';
+                    const nuevasNotas = notas || '';
 
                     if (r.fecha === f &&
                         actualEntrada === nuevaEntrada &&
                         actualSalida === nuevaSalida &&
                         actualTF === nuevoTF &&
-                        actualCR === nuevoCR) {
+                        actualCR === nuevoCR &&
+                        actualNotas === nuevasNotas) {
 
                         UILogic.mostrarToast('Sin cambios', 'info');
                         UILogic.restaurarBotonGuardarEdicion(btnGuardar);
@@ -4733,7 +4605,8 @@
 
                     r.salida = s || null;
                     r.tiempoFuera = tf;
-                    r.credito = cr; // Guardamos el crédito calculado
+                    r.credito = cr;
+                    r.notas = notas;
 
                     // --- 5. RECALCULAR TOTALES ---
                     const t = calcularHoras(r.entrada, r.salida, r.tiempoFuera, r.credito);
@@ -4819,7 +4692,6 @@
                 // ----------------------------------------------------------------
                 // HELPER COMPARTIDO: filtra, sanitiza y recalcula una lista de
                 // registros crudos (usada por importarDatos y gistBajar).
-                // calcularHorasFn: función calcularHoras del scope correcto.
                 // ----------------------------------------------------------------
                 function normalizarRegistrosImportados(rawList, calcularHorasFn) {
                     const validarHora = (h) => h && S.REGEX_PATTERNS.HORA.test(h) ? S.sanitizeString(h, 5) : null;
@@ -4836,6 +4708,9 @@
                             minutos: Math.max(0, Math.min(59, parseFloat(r.minutos) || 0)),
                             total: Math.max(0, Math.min(24, parseFloat(r.total) || 0)),
                             credito: validarHora(r.credito),
+                            notas: (r.notas && typeof r.notas === 'string')
+                                ? S.sanitizeString(r.notas, S.SECURITY_LIMITS.MAX_NOTAS_LENGTH) || null
+                                : null,
                         }));
 
                     // Recalcular totales para asegurar consistencia interna
@@ -5366,7 +5241,7 @@
                     }
 
                     if (registrosAEliminar.length === 0) {
-                        UILogic.mostrarToast('No hay registros normales en ese período', 'info');
+                        UILogic.mostrarToast('No hay registros de jornadas en ese período', 'info');
                         throw new Error('Sin registros');
                     }
 
@@ -5972,27 +5847,16 @@
                     let m = Math.round((abs - h) * 60);
                     if (m === 60) { h++; m = 0; }
                     const signo = totalHoras >= 0 ? '+' : '-';
-                    return m > 0 ? `${signo}${h}h ${m}m` : `${signo}${h}h`;
+                    return h > 0 ? `${signo}${h}h${m > 0 ? ' ' + m + 'm' : ''}` : `${signo}${m}m`;
                 }
 
                 function formatoDiferencia(tiempoTotalHoras) {
-                    const horasDiarias = D.horasDiarias();
-                    const objetivoMinutos = horasDiarias * 60;
-                    const actualMinutos = Math.round(tiempoTotalHoras * 60);
-                    let diferenciaMinutos = actualMinutos - objetivoMinutos;
-                    if (diferenciaMinutos === 0) return '';
-                    const signo = diferenciaMinutos > 0 ? '+' : '-';
-                    const absMinutos = Math.abs(diferenciaMinutos);
-                    const h = Math.floor(absMinutos / 60);
-                    const m = absMinutos % 60;
-                    let diferenciaTexto = '';
-                    if (h > 0) diferenciaTexto += `${h}h`;
-                    if (m > 0 || h === 0) {
-                        if (h > 0) diferenciaTexto += ' ';
-                        diferenciaTexto += `${m}m`;
-                    }
-                    if (diferenciaTexto === '') return '';
-                    return `${signo}${diferenciaTexto}`;
+                    const diffMinutos = Math.round(tiempoTotalHoras * 60) - D.horasDiarias() * 60;
+                    if (diffMinutos === 0) return '';
+                    const abs = Math.abs(diffMinutos);
+                    const h = Math.floor(abs / 60);
+                    const m = abs % 60;
+                    return (diffMinutos > 0 ? '+' : '-') + (h > 0 ? `${h}h` : '') + (h > 0 && m > 0 ? ' ' : '') + (m > 0 || h === 0 ? `${m}m` : '');
                 }
 
                 function formatoTituloMes(claveMes) {
@@ -6108,16 +5972,22 @@
                     return resultado;
                 }
 
-                function crearItemRegistroIndividual(r, horasDiarias, idResaltar = null) {
+                function _crearChevron() {
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.setAttribute('class', 'icon chevron-mes');
+                    svg.setAttribute('viewBox', '0 0 24 24');
+                    svg.style.cssText = 'width:1.2em;height:1.2em;vertical-align:middle';
+                    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+                    use.setAttribute('href', '#icon-chevron-down');
+                    svg.appendChild(use);
+                    return svg;
+                }
+
+                function crearItemRegistroIndividual(r, horasDiarias, idResaltar = null, hoy = obtenerFechaHoy()) {
                     const item = document.createElement('div');
-                    const hoy = obtenerFechaHoy();
 
                     let className = r.fecha === hoy ? 'registro-item hoy' : 'registro-item';
-
-                    if (idResaltar && r.id === idResaltar) {
-                        className += ' nuevo-registro-animacion';
-                    }
-
+                    if (idResaltar && r.id === idResaltar) className += ' nuevo-registro-animacion';
                     item.className = className;
                     item.dataset.registroId = r.id;
                     item.dataset.accion = 'editar-registro';
@@ -6129,14 +5999,9 @@
 
                     const fechaEl = document.createElement('div');
                     fechaEl.className = 'registro-fecha';
-
-                    let etiqueta = '';
-                    if (tipoEspecial) {
-                        etiqueta = ` ${tipoEspecial.emoji} (${tipoEspecial.label})`;
-                    }
-
+                    const etiqueta = tipoEspecial ? ` ${tipoEspecial.emoji} (${tipoEspecial.label})` : '';
                     fechaEl.textContent = `${obtenerNombreDia(r.fecha)} ${r.fecha.substring(8)}${etiqueta}`;
-                    // --- VISUALIZACIÓN DE EXTRAS ---
+
                     const tfText = (() => {
                         if (!r.tiempoFuera || r.tiempoFuera === '' || r.tiempoFuera === '00:00') return '';
                         const [tfH, tfM] = r.tiempoFuera.split(':').map(Number);
@@ -6147,38 +6012,26 @@
 
                     const horasEl = document.createElement('div');
                     horasEl.className = 'registro-horas';
-
-                    if (tipoEspecial) {
-                        horasEl.textContent = tipoEspecial.descripcion;
-                    } else {
-                        horasEl.textContent = `${r.entrada || '-'} → ${r.salida || '-'}${tfText}${crText}`;
-                    }
+                    horasEl.textContent = tipoEspecial
+                        ? tipoEspecial.descripcion
+                        : `${r.entrada || '-'} → ${r.salida || '-'}${tfText}${crText}`;
 
                     const totalEl = document.createElement('div');
                     totalEl.className = 'registro-total';
                     let totalText = 'Incompleto';
-                    totalEl.classList.remove('green-text', 'red-text', 'purple-text');
 
                     if (tipoEspecial) {
                         totalText = 'Justificado';
                         totalEl.classList.add(`${tipoEspecial.color}-text`);
                     } else if (r.entrada && r.salida) {
                         totalText = `${r.horas}h ${r.minutos}m`;
-
-                        if (horasDiarias === 0) {
-                            // Sin color
-                        } else {
+                        if (horasDiarias > 0) {
                             const diffText = formatoDiferencia(r.total);
-                            if (r.total >= horasDiarias) {
-                                totalEl.classList.add('green-text');
-                            } else {
-                                totalEl.classList.add('red-text');
-                            }
+                            totalEl.classList.add(r.total >= horasDiarias ? 'green-text' : 'red-text');
                             if (diffText) totalText += ` (${diffText})`;
                         }
                     } else if (r.entrada && !r.salida) {
-                        const esHoy = r.fecha === hoy;
-                        if (esHoy) {
+                        if (r.fecha === hoy) {
                             totalText = 'En curso . . .';
                             totalEl.classList.add('blue-text');
                         } else {
@@ -6198,14 +6051,7 @@
                     return item;
                 }
 
-                function setProgressBarColor(progressEl, status) {
-                    if (!progressEl) return;
-                    progressEl.className = 'progress-fill';
-                    progressEl.classList.add(status);
-                    if (status === 'blue') progressEl.classList.add('shimmer');
-                }
-
-                function crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy) {
+                function crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy, hoy) {
                     const grupos = agruparRegistrosConsecutivos(registrosDelMes);
 
                     const contenedorMesActual = document.createElement('div');
@@ -6214,20 +6060,12 @@
                     const headerMes = document.createElement('h3');
                     headerMes.className = 'registro-mes-header';
                     headerMes.dataset.mesId = claveMes;
+                    headerMes.dataset.accion = 'toggle-mes';
+                    headerMes.dataset.mesContainer = claveMes;
 
-                    const chevron = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                    chevron.setAttribute('class', 'icon chevron-mes');
-                    chevron.setAttribute('viewBox', '0 0 24 24');
-                    chevron.style.width = '1.2em';
-                    chevron.style.height = '1.2em';
-                    chevron.style.verticalAlign = 'middle';
-                    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-                    use.setAttribute('href', '#icon-chevron-down');
-                    chevron.appendChild(use);
-
-                    const textoMes = document.createTextNode(' ' + formatoTituloMes(claveMes));
+                    const chevron = _crearChevron();
                     headerMes.appendChild(chevron);
-                    headerMes.appendChild(textoMes);
+                    headerMes.appendChild(document.createTextNode(' ' + formatoTituloMes(claveMes)));
 
                     const detalleMesActual = document.createElement('div');
                     detalleMesActual.className = 'registro-mes-detalle';
@@ -6235,13 +6073,9 @@
                     let debeEstarExpandido = false;
                     try {
                         const estadoGuardado = localStorage.getItem(`mes-${claveMes}-expandido`);
-                        if (estadoGuardado !== null) {
-                            debeEstarExpandido = estadoGuardado === 'true';
-                        } else {
-                            debeEstarExpandido = (claveMes === mesHoy);
-                        }
+                        debeEstarExpandido = estadoGuardado !== null ? estadoGuardado === 'true' : claveMes === mesHoy;
                     } catch (e) {
-                        debeEstarExpandido = (claveMes === mesHoy);
+                        debeEstarExpandido = claveMes === mesHoy;
                     }
 
                     if (debeEstarExpandido) {
@@ -6251,33 +6085,24 @@
 
                     let semanaAnterior = null;
                     grupos.forEach(grupo => {
-                        if (grupo.tipo === 'grupo') {
-                            const primerRegistro = grupo.registros[grupo.registros.length - 1];
-                            const semanaActual = obtenerLunesSemana(primerRegistro.fecha);
-                            if (semanaAnterior && semanaActual !== semanaAnterior) {
-                                const separador = document.createElement('div');
-                                separador.className = 'separador-semana';
-                                detalleMesActual.appendChild(separador);
-                            }
-                            const container = crearGrupoExpandible(grupo, horasDiarias, idNuevo);
-                            detalleMesActual.appendChild(container);
-                            semanaAnterior = semanaActual;
-                        } else {
-                            const r = grupo.registros[0];
-                            const semanaActual = obtenerLunesSemana(r.fecha);
-                            if (semanaAnterior && semanaActual !== semanaAnterior) {
-                                const separador = document.createElement('div');
-                                separador.className = 'separador-semana';
-                                detalleMesActual.appendChild(separador);
-                            }
-                            const item = crearItemRegistroIndividual(r, horasDiarias, idNuevo);
-                            detalleMesActual.appendChild(item);
-                            semanaAnterior = semanaActual;
+                        const esGrupo = grupo.tipo === 'grupo';
+                        const r = esGrupo ? grupo.registros[grupo.registros.length - 1] : grupo.registros[0];
+                        const semanaActual = obtenerLunesSemana(r.fecha);
+
+                        if (semanaAnterior && semanaActual !== semanaAnterior) {
+                            const sep = document.createElement('div');
+                            sep.className = 'separador-semana';
+                            detalleMesActual.appendChild(sep);
                         }
+
+                        detalleMesActual.appendChild(
+                            esGrupo
+                                ? crearGrupoExpandible(grupo, horasDiarias, idNuevo)
+                                : crearItemRegistroIndividual(r, horasDiarias, idNuevo, hoy)
+                        );
+                        semanaAnterior = semanaActual;
                     });
 
-                    headerMes.dataset.accion = 'toggle-mes';
-                    headerMes.dataset.mesContainer = claveMes;
                     contenedorMesActual.appendChild(headerMes);
                     contenedorMesActual.appendChild(detalleMesActual);
                     return contenedorMesActual;
@@ -6292,9 +6117,7 @@
                         const detalle = container.querySelector('.registro-mes-detalle');
                         if (detalle && detalle.classList.contains('expanded')) {
                             const header = container.querySelector('.registro-mes-header');
-                            if (header && header.dataset.mesId) {
-                                mesesExpandidos.add(header.dataset.mesId);
-                            }
+                            if (header && header.dataset.mesId) mesesExpandidos.add(header.dataset.mesId);
                         }
                     });
 
@@ -6307,14 +6130,12 @@
                         return;
                     }
 
-                    const gruposPorMes = agruparRegistrosPorMes(registrosAMostrar);
-                    const fragmento = document.createDocumentFragment();
-
                     const hoy = obtenerFechaHoy();
                     const mesHoy = hoy.substring(0, 7);
                     const anioHoy = hoy.substring(0, 4);
+                    const gruposPorMes = agruparRegistrosPorMes(registrosAMostrar);
+                    const fragmento = document.createDocumentFragment();
 
-                    // Separar meses del año actual de los anteriores
                     const mesesAnioActual = new Map();
                     const mesesPorAnio = new Map();
 
@@ -6328,17 +6149,14 @@
                         }
                     });
 
-                    // --- AÑO ACTUAL: mostrar meses normalmente ---
                     mesesAnioActual.forEach((registrosDelMes, claveMes) => {
-                        fragmento.appendChild(crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy));
+                        fragmento.appendChild(crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy, hoy));
                     });
 
-                    // --- AÑOS ANTERIORES: agrupar por año ---
                     const aniosOrdenados = Array.from(mesesPorAnio.keys()).sort().reverse();
                     aniosOrdenados.forEach(anio => {
                         const mesesDelAnio = mesesPorAnio.get(anio);
 
-                        // Contenedor año (mismo estilo que mes)
                         const contenedorAnio = document.createElement('div');
                         contenedorAnio.className = 'registro-mes-container';
 
@@ -6347,26 +6165,16 @@
                         headerAnio.dataset.anioId = anio;
                         headerAnio.dataset.accion = 'toggle-anio';
 
-                        const chevronAnio = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        chevronAnio.setAttribute('class', 'icon chevron-mes');
-                        chevronAnio.setAttribute('viewBox', '0 0 24 24');
-                        chevronAnio.style.width = '1.2em';
-                        chevronAnio.style.height = '1.2em';
-                        chevronAnio.style.verticalAlign = 'middle';
-                        const useAnio = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-                        useAnio.setAttribute('href', '#icon-chevron-down');
-                        chevronAnio.appendChild(useAnio);
+                        const chevronAnio = _crearChevron();
                         headerAnio.appendChild(chevronAnio);
                         headerAnio.appendChild(document.createTextNode(' ' + anio));
 
                         const detalleAnio = document.createElement('div');
                         detalleAnio.className = 'registro-mes-detalle';
 
-                        // Persistencia estado año
                         let anioExpandido = false;
                         try {
-                            const estadoAnio = localStorage.getItem(`anio-${anio}-expandido`);
-                            anioExpandido = estadoAnio === 'true';
+                            anioExpandido = localStorage.getItem(`anio-${anio}-expandido`) === 'true';
                         } catch (e) { }
 
                         if (anioExpandido) {
@@ -6374,9 +6182,8 @@
                             chevronAnio.style.transform = 'rotate(180deg)';
                         }
 
-                        // Meses dentro del año
                         mesesDelAnio.forEach((registrosDelMes, claveMes) => {
-                            detalleAnio.appendChild(crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy));
+                            detalleAnio.appendChild(crearContenedorMes(claveMes, registrosDelMes, horasDiarias, idNuevo, mesHoy, hoy));
                         });
 
                         contenedorAnio.appendChild(headerAnio);
@@ -6385,6 +6192,13 @@
                     });
 
                     lista.appendChild(fragmento);
+                }
+
+                function setProgressBarColor(progressEl, status) {
+                    if (!progressEl) return;
+                    progressEl.className = 'progress-fill';
+                    progressEl.classList.add(status);
+                    if (status === 'blue') progressEl.classList.add('shimmer');
                 }
 
                 function crearGrupoExpandible(grupo, horasDiarias, idResaltar = null) {
@@ -6469,21 +6283,15 @@
                 function _calcularEstadisticasRango(registrosRango, opciones = {}) {
                     const { regularidadPorMes = false } = opciones;
 
-                    const contarPorTipo = (tipoId) => {
-                        const tipo = TiposRegistro.obtenerTipoPorId(tipoId);
-                        if (!tipo) return 0;
-                        return registrosRango.filter(r => r.entrada === tipo.codigo && r.salida === tipo.codigo).length;
-                    };
+                    // Contar cada tipo especial dinámicamente desde TiposRegistro
+                    const conteosPorTipo = {};
+                    TiposRegistro.obtenerTodosLosTipos().forEach(t => {
+                        conteosPorTipo[t.labelPlural.toLowerCase()] = registrosRango.filter(
+                            r => r.entrada === t.codigo && r.salida === t.codigo
+                        ).length;
+                    });
 
-                    const feriados = contarPorTipo('feriado');
-                    const ausencias = contarPorTipo('ausencia');
-                    const vacaciones = contarPorTipo('vacaciones');
-                    const enfermedades = contarPorTipo('enfermedad');
-                    const asuetosDiaCompleto = contarPorTipo('asueto');
-                    const paros = contarPorTipo('paro');
-                    const remotos = contarPorTipo('remoto');
-                    const capacitaciones = contarPorTipo('capacitacion');
-                    const compensatorios = contarPorTipo('compensatorio');
+                    // Compensaciones (crédito) — no es un tipo especial, se mantiene aparte
                     const compensaciones = registrosRango.filter(r => r.credito && r.credito !== '00:00').length;
 
                     let tiempoFueraTotalMinutos = 0;
@@ -6504,8 +6312,7 @@
                         entradaPromedio: '--:--', salidaPromedio: '--:--',
                         diasTrabajados: 0, promedioDiario: '--:--',
                         tiempoFueraTotal: '--:--', tiempoTotal: '--:--',
-                        feriados, ausencias, vacaciones, enfermedades,
-                        asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones, compensatorios,
+                        ...conteosPorTipo, compensaciones,
                         regularidadEntrada: '--:--', regularidadJornada: '--:--',
                         bufferPeriodo: null
                     };
@@ -6517,6 +6324,7 @@
                     const promedioSalida = avgMin(registrosValidos.map(r => toMin(r.salida)));
 
                     const horasDiariasParaRemoto = D.horasDiarias();
+                    const remotos = conteosPorTipo['remotos'] || 0;
                     const totalHorasTrabajadas = registrosValidos.reduce((s, r) => s + r.total, 0);
                     const totalHoras = totalHorasTrabajadas + (remotos * horasDiariasParaRemoto);
                     const promDiario = totalHorasTrabajadas / registrosValidos.length;
@@ -6588,8 +6396,7 @@
                         promedioDiario: `${hPromedio}h ${mPromedio}m`,
                         tiempoFueraTotal: hTiempoFuera > 0 ? `${hTiempoFuera}h ${mTiempoFuera}m` : `${mTiempoFuera}m`,
                         tiempoTotal: `${hTotal}h ${mTotal}m`,
-                        feriados, ausencias, vacaciones, enfermedades,
-                        asuetosDiaCompleto, compensaciones, paros, remotos, capacitaciones, compensatorios,
+                        ...conteosPorTipo, compensaciones,
                         regularidadEntrada: regEntrada,
                         regularidadJornada: regJornada,
                         bufferPeriodo
@@ -6611,16 +6418,14 @@
                         if (si) { if (value === 0) { si.style.display = 'none'; } else { si.style.display = ''; el.textContent = value; } }
                     };
                     toggleStatItem('stat-dias-trabajados', stats.diasTrabajados);
-                    toggleStatItem('stat-feriados', stats.feriados);
-                    toggleStatItem('stat-ausencias', stats.ausencias);
-                    toggleStatItem('stat-vacaciones', stats.vacaciones);
-                    toggleStatItem('stat-enfermedades', stats.enfermedades);
-                    toggleStatItem('stat-asuetos-dia', stats.asuetosDiaCompleto);
+
+                    // Tipos especiales — dinámico desde TiposRegistro
+                    TiposRegistro.obtenerTodosLosTipos().forEach(t => {
+                        const clave = t.labelPlural.toLowerCase();
+                        toggleStatItem(`stat-${clave}`, stats[clave] || 0);
+                    });
+
                     toggleStatItem('stat-compensaciones', stats.compensaciones);
-                    toggleStatItem('stat-paros', stats.paros);
-                    toggleStatItem('stat-remotos', stats.remotos);
-                    toggleStatItem('stat-capacitaciones', stats.capacitaciones);
-                    toggleStatItem('stat-compensatorios', stats.compensatorios);
 
                     const elProm = $('stat-promedio-diario');
                     if (elProm) elProm.textContent = stats.promedioDiario || '--:--';
@@ -6642,16 +6447,7 @@
                         } else {
                             itemSaldo.style.display = '';
                             const b = stats.bufferPeriodo;
-                            const abs = Math.abs(b);
-                            let h = Math.floor(abs);
-                            let m = Math.round((abs - h) * 60);
-                            if (m === 60) { h++; m = 0; }
-                            const signo = b >= 0 ? '+' : '-';
-                            const texto = h > 0 && m > 0 ? `${signo}${h}h ${m}m`
-                                : h > 0 ? `${signo}${h}h`
-                                    : m > 0 ? `${signo}${m}m`
-                                        : '0h';
-                            elSaldo.textContent = b === 0 ? '0h' : texto;
+                            elSaldo.textContent = b === 0 ? '0h' : horasATextoCorto(b);
                             elSaldo.style.color = b > 0 ? 'var(--c-green)' : b < 0 ? 'var(--c-red)' : 'var(--text-main)';
                         }
                     }
@@ -6949,7 +6745,7 @@
                     // SIN REGISTRO
                     if (!regHoy || !regHoy.entrada) {
                         return {
-                            titulo: `<svg class="icon"><use href="#icon-clock" /></svg> Hoy`,
+                            titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
                             stats: esDiaHabil ? '🎒' : '🌞',
                             mensaje: esDiaHabil
                                 ? (horasDiarias === 0 ? '' : 'Esperando registro...')
@@ -6964,7 +6760,7 @@
                     // DÍA ESPECIAL
                     if (tipoEspecialHoy) {
                         return {
-                            titulo: `<svg class="icon"><use href="#icon-clock" /></svg> Hoy`,
+                            titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
                             stats: `${tipoEspecialHoy.emoji} ${tipoEspecialHoy.label}`,
                             mensaje: `¡${tipoEspecialHoy.descripcion}!`,
                             mostrarMensaje: true,
@@ -7050,7 +6846,7 @@
                     }
 
                     return {
-                        titulo: `<svg class="icon"><use href="#icon-clock" /></svg> Hoy`,
+                        titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
                         stats: horasATexto(tiempoHoy),
                         mensaje, mostrarMensaje,
                         colorBarra, anchoBarra: prog,
@@ -7380,8 +7176,9 @@
 
                 function limpiarCampo(id) {
                     const c = document.getElementById(id);
-                    if (c) c.value = '';
-
+                    if (!c) return;
+                    c.value = '';
+                    c.dispatchEvent(new Event('input'));
                 }
 
                 function formatearInput(e) {
@@ -7794,14 +7591,19 @@
                     _renderizarStats(stats, { mostrarBtnReporte: true });
                 }
 
+                function _getLunes(fecha = new Date()) {
+                    const dow = fecha.getDay();
+                    const diff = (dow === 0) ? -6 : 1 - dow;
+                    const lunes = new Date(fecha);
+                    lunes.setDate(fecha.getDate() + diff);
+                    return lunes;
+                }
+
                 function _obtenerSemanas() {
                     const semanas = new Map();
                     D.registros().forEach(r => {
                         const d = new Date(r.fecha + 'T00:00:00');
-                        const dow = d.getDay();
-                        const diff = (dow === 0) ? -6 : 1 - dow;
-                        const lunes = new Date(d);
-                        lunes.setDate(d.getDate() + diff);
+                        const lunes = _getLunes(d);
                         const key = S.formatearFechaLocal(lunes);
                         if (!semanas.has(key)) semanas.set(key, lunes);
                     });
@@ -7836,24 +7638,38 @@
                         actualizarEstadisticasSemana(null);
                         return;
                     }
+                    // Agrupar semanas por año
+                    const semanasPorAnio = new Map();
                     semanas.forEach(key => {
-                        const opt = document.createElement('option');
-                        opt.value = key;
-                        opt.textContent = _formatearSemana(key);
-                        select.appendChild(opt);
+                        const anio = key.substring(0, 4);
+                        if (!semanasPorAnio.has(anio)) semanasPorAnio.set(anio, []);
+                        semanasPorAnio.get(anio).push(key);
                     });
+
+                    // Determinar valor a seleccionar
+                    let seleccionar;
                     if (selActual && semanas.includes(selActual)) {
-                        select.value = selActual;
+                        seleccionar = selActual;
                     } else {
-                        const hoy = new Date();
-                        const dow = hoy.getDay();
-                        const diff = (dow === 0) ? -6 : 1 - dow;
-                        const lunes = new Date(hoy);
-                        lunes.setDate(hoy.getDate() + diff);
-                        const lunesISO = S.formatearFechaLocal(lunes);
-                        select.value = semanas.includes(lunesISO) ? lunesISO : semanas[0];
+                        const lunesISO = S.formatearFechaLocal(_getLunes());
+                        seleccionar = semanas.includes(lunesISO) ? lunesISO : semanas[0];
                     }
-                    actualizarEstadisticasSemana(select.value);
+
+                    // Crear opciones agrupadas por año
+                    semanasPorAnio.forEach((keys, anio) => {
+                        const grupo = document.createElement('optgroup');
+                        grupo.label = anio;
+                        keys.forEach(key => {
+                            const opt = document.createElement('option');
+                            opt.value = key;
+                            opt.textContent = _formatearSemana(key);
+                            if (key === seleccionar) opt.selected = true;
+                            grupo.appendChild(opt);
+                        });
+                        select.appendChild(grupo);
+                    });
+
+                    actualizarEstadisticasSemana(seleccionar);
                 }
 
                 function calcularEstadisticasSemana(lunesISO) {
@@ -7867,52 +7683,39 @@
                 }
 
                 function actualizarEstadisticasSemana(lunesISO) {
-                    const select = $('select-semana-stats');
-                    if (!lunesISO && select) lunesISO = select.value;
-
-                    // Al quitar el return, si no hay registros calcularEstadisticasSemana devolverá 
-                    // las estadísticas vacías y _renderizarStats se encargará de ocultar los "0"
                     const stats = calcularEstadisticasSemana(lunesISO);
                     _renderizarStats(stats, { mostrarBtnReporte: false });
                 }
 
-                function cambiarSemanaStats() {
-                    const select = $('select-semana-stats');
+                function _animarCambioStats(fn) {
                     const formStats = $('form-stats');
-                    if (!select || !formStats) return;
+                    if (!formStats) return;
                     formStats.classList.add('fade-out');
-                    setTimeout(() => {
-                        actualizarEstadisticasSemana(select.value);
-                        formStats.classList.remove('fade-out');
-                    }, 300);
+                    setTimeout(() => { fn(); formStats.classList.remove('fade-out'); }, 300);
+                }
+
+                function cambiarSemanaStats() {
+                    const v = $('select-semana-stats')?.value;
+                    if (v !== undefined) _animarCambioStats(() => actualizarEstadisticasSemana(v));
                 }
 
                 function cambiarAnioStats() {
-                    const selectAnio = $('select-anio-stats');
-                    const formStats = $('form-stats');
-                    if (!selectAnio || !formStats) return;
-                    const anioSeleccionado = selectAnio.value;
-                    formStats.classList.add('fade-out');
-                    setTimeout(() => {
-                        actualizarEstadisticasAnio(anioSeleccionado);
-                        formStats.classList.remove('fade-out');
-                    }, 300);
+                    const v = $('select-anio-stats')?.value;
+                    if (v !== undefined) _animarCambioStats(() => actualizarEstadisticasAnio(v));
                 }
 
                 function togglePeriodoStats(direccion = 1) {
                     const selectMes = $('select-mes-stats');
                     const selectAnio = $('select-anio-stats');
                     const label = $('label-periodo-toggle');
-                    const formStats = $('form-stats');
+                    const selectSemana = $('select-semana-stats');
 
                     const orden = ['mensual', 'anual', 'semanal'];
                     const idx = orden.indexOf(modoEstadisticas);
                     modoEstadisticas = orden[(idx + direccion + orden.length) % orden.length];
                     try { localStorage.setItem('modoEstadisticas', modoEstadisticas); } catch (e) { }
 
-                    const selectSemana = $('select-semana-stats');
-                    formStats.classList.add('fade-out');
-                    setTimeout(() => {
+                    _animarCambioStats(() => {
                         selectMes.classList.add('hidden');
                         selectAnio.classList.add('hidden');
                         if (selectSemana) selectSemana.classList.add('hidden');
@@ -7929,8 +7732,7 @@
                             if (label) label.textContent = 'Mensual';
                             poblarSelectorMeses();
                         }
-                        formStats.classList.remove('fade-out');
-                    }, 300);
+                    });
                 }
 
                 function poblarSelectorMeses() {
@@ -8017,34 +7819,31 @@
                 }
 
                 function cambiarMesStats() {
-                    const selectMes = $('select-mes-stats');
-                    const formStats = $('form-stats');
-                    const icon = $('icon-indicator-stats');
-
-                    if (!selectMes || !formStats) return;
-
-                    const mesSeleccionado = selectMes.value;
-
-                    // 1. Iniciamos fade-out del contenido
-                    formStats.classList.add('fade-out');
-
-                    // 2. Esperamos a que termine la animación de fade-out
-                    setTimeout(() => {
-                        // Actualizamos los datos mientras está invisible
-                        actualizarEstadisticas(mesSeleccionado);
-
-                        // 3. Removemos fade-out para que vuelva a aparecer
-                        formStats.classList.remove('fade-out');
-                    }, 300);
+                    const v = $('select-mes-stats')?.value;
+                    if (v !== undefined) _animarCambioStats(() => actualizarEstadisticas(v));
                 }
 
                 function generarReporte() {
                     const esAnual = modoEstadisticas === 'anual';
                     const horasDiariasObjetivo = D.horasDiarias();
-                    const nombresDias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+                    // Helper local: evita triplicar el mismo cálculo de h/m
+                    const fmtHM = (total) => {
+                        let h = Math.floor(total), m = Math.round((total - h) * 60);
+                        if (m === 60) { h++; m = 0; }
+                        return `${h}h ${String(m).padStart(2, '0')}m`;
+                    };
+
+                    // Helper local: suma horas de un array de registros
+                    const sumarHoras = (regs) => regs.reduce((sum, r) => {
+                        const t = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
+                        if (t && t.id === 'remoto') return sum + horasDiariasObjetivo;
+                        if (!t) return sum + r.total;
+                        return sum;
+                    }, 0);
 
                     // --- PERÍODO Y REGISTROS ---
-                    let periodoLabel, registrosPeriodo, stats, nombreArchivo;
+                    let periodoLabel, registrosPeriodo, stats, nombreArchivo, mesSeleccionado;
 
                     if (esAnual) {
                         const selectAnio = $('select-anio-stats');
@@ -8057,7 +7856,7 @@
                         stats = calcularEstadisticasAnio(anioSeleccionado);
                     } else {
                         const selectMes = $('select-mes-stats');
-                        const mesSeleccionado = selectMes ? selectMes.value : null;
+                        mesSeleccionado = selectMes ? selectMes.value : null;
                         if (!mesSeleccionado) { mostrarToast('No hay mes seleccionado', 'error'); return; }
                         periodoLabel = selectMes.options[selectMes.selectedIndex].text;
                         nombreArchivo = `reporte_${mesSeleccionado}.txt`;
@@ -8068,17 +7867,6 @@
                         });
                         stats = calcularEstadisticasMes(mesSeleccionado);
                     }
-
-                    // --- TOTAL HORAS ---
-                    let totalHoras = 0;
-                    registrosPeriodo.forEach(r => {
-                        const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
-                        if (tipoEspecial && tipoEspecial.id === 'remoto') totalHoras += horasDiariasObjetivo;
-                        else if (!tipoEspecial) totalHoras += r.total;
-                    });
-                    let hTotal = Math.floor(totalHoras);
-                    let mTotal = Math.round((totalHoras - hTotal) * 60);
-                    if (mTotal === 60) { hTotal++; mTotal = 0; }
 
                     // ============================================
                     // ESTRUCTURA MODULAR DEL REPORTE
@@ -8095,35 +7883,32 @@ REPORTE DE HORAS TRABAJADAS
 
 ────────────────────────────────────────────────────────────────`,
 
-                        resumenGeneral: () => `
+                        resumenGeneral: () => {
+                            const lineasTipos = TiposRegistro.obtenerTodosLosTipos()
+                                .map(t => `   • ${(t.label + ':').padEnd(24)}${stats[t.labelPlural.toLowerCase()] || 0}`)
+                                .join('\n');
+                            return `
 
 📈 RESUMEN GENERAL
 ────────────────────────────────────────────────────────────────
 
    • Jornadas:               ${stats.diasTrabajados}
-   • Feriados:               ${stats.feriados}
-   • Licencias:              ${stats.ausencias}
-   • Vacaciones:             ${stats.vacaciones}
-   • Enfermedades:           ${stats.enfermedades}
-   • Asuetos:                ${stats.asuetosDiaCompleto}
+${lineasTipos}
    • Salidas Temprano:       ${stats.compensaciones}
-   • Paros:                  ${stats.paros}
-   • Remotos:                ${stats.remotos}
-   • Capacitaciones:         ${stats.capacitaciones}
-   • Compensatorios:         ${stats.compensatorios}
    • Entrada promedio:       ${stats.entradaPromedio}
    • Salida promedio:        ${stats.salidaPromedio}
    • Promedio diario:        ${stats.promedioDiario}
    
-   • Total horas trabajadas: ${hTotal}h ${mTotal}m
-   • Saldo:                  ${stats.bufferPeriodo !== null ? horasATextoCorto(stats.bufferPeriodo) : 'N/A'}`,
+   • Total horas trabajadas: ${fmtHM(sumarHoras(registrosPeriodo))}
+   • Saldo:                  ${stats.bufferPeriodo !== null ? horasATextoCorto(stats.bufferPeriodo) : 'N/A'}`;
+                        },
 
                         detallePeriodo: () => {
                             if (esAnual) {
                                 // --- TOTALES POR MES ---
-                                const mesesUnicos = new Set();
-                                registrosPeriodo.forEach(r => mesesUnicos.add(r.fecha.substring(0, 7)));
-                                const mesesOrdenados = Array.from(mesesUnicos).sort();
+                                const mesesOrdenados = Array.from(
+                                    new Set(registrosPeriodo.map(r => r.fecha.substring(0, 7)))
+                                ).sort();
 
                                 let seccion = `
 
@@ -8133,37 +7918,25 @@ REPORTE DE HORAS TRABAJADAS
 ────────────────────────────────────────────────────────────────
 
 `;
-                                mesesOrdenados.forEach(mesAnio => {
-                                    const [a, m] = mesAnio.split('-').map(Number);
-                                    const regsM = registrosPeriodo.filter(r => parseInt(r.fecha.substring(5, 7)) === m);
-
-                                    let totalMes = 0;
-                                    regsM.forEach(r => {
-                                        const t = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
-                                        if (t && t.id === 'remoto') totalMes += horasDiariasObjetivo;
-                                        else if (!t) totalMes += r.total;
-                                    });
-                                    let hM = Math.floor(totalMes);
-                                    let mM = Math.round((totalMes - hM) * 60);
-                                    if (mM === 60) { hM++; mM = 0; }
-
-                                    const nombreMes = new Date(a, m - 1, 1).toLocaleDateString('es-ES', { month: 'long' });
-                                    const nombreMesCap = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+                                mesesOrdenados.forEach(claveMes => {
+                                    const regsM = registrosPeriodo.filter(r => r.fecha.startsWith(claveMes));
                                     const normales = regsM.filter(r => !TiposRegistro.esRegistroEspecial(r.entrada, r.salida) && r.entrada && r.salida);
                                     const especiales = regsM.filter(r => TiposRegistro.esRegistroEspecial(r.entrada, r.salida));
 
-                                    const notas = [];
-                                    const ct = (id) => especiales.filter(r => { const t = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida); return t && t.id === id; }).length;
-                                    const f = ct('feriado'); if (f) notas.push(`${f} feriado(s)`);
-                                    const au = ct('ausencia'); if (au) notas.push(`${au} ausencia(s)`);
-                                    const v = ct('vacaciones'); if (v) notas.push(`${v} vacacion(es)`);
-                                    const en = ct('enfermedad'); if (en) notas.push(`${en} enfermedad(es)`);
-                                    const as = ct('asueto'); if (as) notas.push(`${as} asueto(s)`);
-                                    const pa = ct('paro'); if (pa) notas.push(`${pa} paro(s)`);
-                                    const re = ct('remoto'); if (re) notas.push(`${re} remoto(s)`);
-                                    const ca = ct('capacitacion'); if (ca) notas.push(`${ca} capacitacion(es)`);
+                                    const notas = TiposRegistro.obtenerTodosLosTipos()
+                                        .map(t => {
+                                            const n = especiales.filter(r => {
+                                                const tipo = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
+                                                return tipo && tipo.id === t.id;
+                                            }).length;
+                                            return n ? `${n} ${t.labelPlural.toLowerCase()}` : null;
+                                        })
+                                        .filter(Boolean);
 
-                                    seccion += `   ${nombreMesCap.padEnd(12)} ${String(hM).padStart(3)}h ${String(mM).padStart(2, '0')}m   (${normales.length} jornadas)`;
+                                    // Usa formatoTituloMes — ya existe para esto
+                                    const nombreMesCap = formatoTituloMes(claveMes).split(' ')[0];
+
+                                    seccion += `   ${nombreMesCap.padEnd(12)} ${fmtHM(sumarHoras(regsM)).padEnd(10)}  (${normales.length} jornadas)`;
                                     if (notas.length > 0) seccion += `  [${notas.join(', ')}]`;
                                     seccion += '\n';
                                 });
@@ -8191,7 +7964,7 @@ REPORTE DE HORAS TRABAJADAS
                                     } else {
                                         const entrada = r.entrada || '--:--';
                                         const salida = r.salida || '--:--';
-                                        const total = r.salida ? `${r.horas}h ${r.minutos}m` : 'Incompleto';
+                                        const total = r.salida ? fmtHM(r.total) : 'Incompleto';
                                         const tiempoFuera = r.tiempoFuera ? ` (${r.tiempoFuera} fuera)` : '';
                                         const infoAsueto = (r.credito && r.credito !== '00:00') ? ' [SALIDA TEMPRANO]' : '';
                                         let indicador = '  ';
@@ -8205,11 +7978,8 @@ REPORTE DE HORAS TRABAJADAS
                         },
 
                         totalesPorSemana: () => {
-                            if (esAnual) return '';
-
-                            const selectMes = $('select-mes-stats');
-                            const mesSeleccionado = selectMes ? selectMes.value : null;
-                            if (!mesSeleccionado) return '';
+                            // mesSeleccionado ya está disponible en el closure, no hace falta releer el DOM
+                            if (esAnual || !mesSeleccionado) return '';
 
                             const [añoActual, mesActual] = mesSeleccionado.split('-').map(Number);
                             const primerDiaMes = `${añoActual}-${String(mesActual).padStart(2, '0')}-01`;
@@ -8219,15 +7989,20 @@ REPORTE DE HORAS TRABAJADAS
                             const semanas = new Map();
                             registrosPeriodo.forEach(r => {
                                 const lunes = obtenerLunesSemana(r.fecha);
-                                if (!semanas.has(lunes)) semanas.set(lunes, { trabajados: [], feriados: [], ausencias: [], vacaciones: [], enfermedades: [], asuetos: [], paros: [], remotos: [], capacitaciones: [] });
+                                if (!semanas.has(lunes)) {
+                                    const _base = { trabajados: [] };
+                                    TiposRegistro.obtenerTodosLosTipos().forEach(t => _base[t.labelPlural.toLowerCase()] = []);
+                                    semanas.set(lunes, _base);
+                                }
                                 const semana = semanas.get(lunes);
                                 const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
                                 if (tipoEspecial) {
-                                    const categoria = tipoEspecial.id + 's';
+                                    const categoria = tipoEspecial.labelPlural.toLowerCase();
                                     if (semana[categoria]) semana[categoria].push(r);
                                 } else {
                                     semana.trabajados.push(r);
-                                    if (r.credito && r.credito !== '00:00') semana.asuetos.push(r);
+                                    // Nota: registros con crédito son jornadas normales (salida temprana),
+                                    // no se clasifican como asuetos
                                 }
                             });
 
@@ -8244,19 +8019,16 @@ REPORTE DE HORAS TRABAJADAS
 `;
                             const semanasIncompletas = [];
 
-                            semanasOrdenadas.forEach(([lunes, datos], index) => {
+                            semanasOrdenadas.forEach(([lunesOriginal, datos], index) => {
                                 let totalSemanal = datos.trabajados.reduce((sum, r) => sum + r.total, 0);
                                 if (datos.remotos && datos.remotos.length > 0) totalSemanal += datos.remotos.length * horasDiariasObjetivo;
 
-                                let horasSem = Math.floor(totalSemanal);
-                                let minutosSem = Math.round((totalSemanal - horasSem) * 60);
-                                if (minutosSem === 60) { horasSem++; minutosSem = 0; }
-
-                                const fechaLunes = S.parsearFechaLocal(lunes);
+                                const fechaLunes = S.parsearFechaLocal(lunesOriginal);
                                 const fechaDomingo = new Date(fechaLunes);
                                 fechaDomingo.setDate(fechaLunes.getDate() + 6);
                                 const domingo = S.formatearFechaLocal(fechaDomingo);
 
+                                let lunes = lunesOriginal;
                                 let fechaFin = domingo;
                                 let esIncompleta = false;
                                 let continuaEn = '';
@@ -8264,35 +8036,33 @@ REPORTE DE HORAS TRABAJADAS
                                 if (domingo > ultimaFechaMes) {
                                     fechaFin = ultimaFechaMes;
                                     esIncompleta = true;
-                                    const mesSiguiente = mesActual === 12 ? 1 : mesActual + 1;
-                                    const añoSiguiente = mesActual === 12 ? añoActual + 1 : añoActual;
-                                    continuaEn = `continúa en ${new Date(añoSiguiente, mesSiguiente - 1, 1).toLocaleDateString('es-ES', { month: 'long' })}`;
+                                    const mesSig = mesActual === 12 ? 1 : mesActual + 1;
+                                    const añoSig = mesActual === 12 ? añoActual + 1 : añoActual;
+                                    continuaEn = `continúa en ${new Date(añoSig, mesSig - 1, 1).toLocaleDateString('es-ES', { month: 'long' })}`;
                                 }
 
                                 if (lunes < primerDiaMes) {
                                     lunes = primerDiaMes;
                                     esIncompleta = true;
-                                    const mesAnterior = mesActual === 1 ? 12 : mesActual - 1;
-                                    const añoAnterior = mesActual === 1 ? añoActual - 1 : añoActual;
-                                    continuaEn = `viene de ${new Date(añoAnterior, mesAnterior - 1, 1).toLocaleDateString('es-ES', { month: 'long' })}`;
+                                    const mesAnt = mesActual === 1 ? 12 : mesActual - 1;
+                                    const añoAnt = mesActual === 1 ? añoActual - 1 : añoActual;
+                                    continuaEn = `viene de ${new Date(añoAnt, mesAnt - 1, 1).toLocaleDateString('es-ES', { month: 'long' })}`;
                                 }
 
-                                const lunesFormato = (lunes < primerDiaMes ? primerDiaMes : lunes).split('-').reverse().join('/');
+                                const lunesFormato = lunes.split('-').reverse().join('/');
                                 const finFormato = fechaFin.split('-').reverse().join('/');
                                 const asterisco = esIncompleta ? '*' : '';
 
                                 seccion += `   Semana ${index + 1} (${lunesFormato} - ${finFormato})${asterisco}:\n`;
-                                seccion += `      └─ ${horasSem}h ${minutosSem}m`;
+                                seccion += `      └─ ${fmtHM(totalSemanal)}`;
 
-                                const notasExtras = [];
-                                if (datos.feriados.length > 0) notasExtras.push(`${datos.feriados.length} feriado(s)`);
-                                if (datos.ausencias.length > 0) notasExtras.push(`${datos.ausencias.length} ausencia(s)`);
-                                if (datos.vacaciones.length > 0) notasExtras.push(`${datos.vacaciones.length} vacacion(es)`);
-                                if (datos.enfermedades.length > 0) notasExtras.push(`${datos.enfermedades.length} enfermedad(es)`);
-                                if (datos.asuetos.length > 0) notasExtras.push(`${datos.asuetos.length} asueto(s)`);
-                                if (datos.paros.length > 0) notasExtras.push(`${datos.paros.length} paro(s)`);
-                                if (datos.remotos.length > 0) notasExtras.push(`${datos.remotos.length} remoto(s)`);
-                                if (datos.capacitaciones.length > 0) notasExtras.push(`${datos.capacitaciones.length} capacitacion(es)`);
+                                const notasExtras = TiposRegistro.obtenerTodosLosTipos()
+                                    .map(t => {
+                                        const clave = t.labelPlural.toLowerCase();
+                                        return datos[clave]?.length > 0 ? `${datos[clave].length} ${clave}` : null;
+                                    })
+                                    .filter(Boolean);
+
                                 if (notasExtras.length > 0) seccion += ` [${notasExtras.join(', ')}]`;
                                 seccion += '\n\n';
 
@@ -8311,7 +8081,7 @@ REPORTE DE HORAS TRABAJADAS
 ────────────────────────────────────────────────────────────────
 
    • Horas diarias:          ${D.horasDiarias()}
-   • Días hábiles/semana:    ${D.diasHabiles().map(d => nombresDias[d]).join(', ')}
+   • Días hábiles/semana:    ${D.diasHabiles().map(d => ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][d]).join(', ')}
    • Horas semanales:        ${D.horasSemanales()}`,
 
                         footer: () => `
@@ -8346,6 +8116,7 @@ Generado por Sistema Lushibosca
                         mostrarToast('Error al generar reporte', 'error');
                     }
                 }
+
                 // Función auxiliar para sumar minutos a un formato HH:MM
                 function sumarMinutosAHora(horaString, minutosASumar) {
                     let totalMinutos = minutosASumar;
@@ -8423,7 +8194,7 @@ Generado por Sistema Lushibosca
                                 ? '<svg class="icon"><use href="#icon-calendar-simple"/></svg>'
                                 : '<svg class="icon"><use href="#icon-clock"/></svg>';
 
-                            const contexto = vistaActual === 'semana' ? 'Esta Semana' : 'Hoy';
+                            const contexto = vistaActual === 'semana' ? 'Esta Semana' : obtenerNombreDia(obtenerFechaHoy());
 
                             if (titulo) {
                                 titulo.innerHTML = `${icono} ${contexto} - <svg class="icon"><use href="#icon-exit"/></svg> Tiempo fuera <span id="break-counter" style="font-size:0.8em; font-weight:500; color:var(--c-red); margin-left:0.3em;"></span>`;
@@ -8563,7 +8334,7 @@ Generado por Sistema Lushibosca
                     }
 
                     // Bloquear Inputs (Menos el botón de crédito, que se maneja aparte)
-                    const inputs = ['edit-fecha', 'edit-entrada', 'edit-salida', 'edit-tiempo-fuera'];
+                    const inputs = ['edit-fecha', 'edit-entrada', 'edit-salida', 'edit-tiempo-fuera', 'edit-notas'];
                     inputs.forEach(id => {
                         const el = $(id);
                         if (el) el.disabled = bloqueado;
@@ -9081,6 +8852,7 @@ Generado por Sistema Lushibosca
                             modoNormal.classList.remove('fade-out');
 
                             btnTexto.textContent = 'Fichar';
+                            btn.style.color = '';
                             btnTimer.style.opacity = '1';
 
                             actualizarEstadoBotonTimerMain();
@@ -9173,7 +8945,10 @@ Generado por Sistema Lushibosca
                         try {
                             await DataManagement.registrarDiaEspecial(desde, tipo);
                             // Solo limpiar si fue exitoso
-                            aplicarFeedbackLote(true, false);
+                            aplicarFeedbackCampos([
+                                { id: 'lote-fecha-desde', fallback: 'Desde', mostrar: true },
+                                { id: 'lote-fecha-hasta', fallback: 'Hasta', mostrar: false }
+                            ]);
                             document.getElementById('lote-fecha-desde').value = '';
                             document.getElementById('lote-fecha-hasta').value = '';
                         } catch (error) {
@@ -9190,7 +8965,7 @@ Generado por Sistema Lushibosca
                     }
 
                     if (desde > hasta) {
-                        mostrarToast('La fecha inicial debe ser superior a la final', 'error');
+                        mostrarToast('La fecha inicial debe ser inferior a la final', 'error');
                         return;
                     }
 
@@ -9230,7 +9005,10 @@ Generado por Sistema Lushibosca
                         }
 
                         // Solo limpiar campos si la operación fue exitosa
-                        aplicarFeedbackLote(true, true);
+                        aplicarFeedbackCampos([
+                            { id: 'lote-fecha-desde', fallback: 'Desde', mostrar: true },
+                            { id: 'lote-fecha-hasta', fallback: 'Hasta', mostrar: true }
+                        ]);
                         document.getElementById('lote-fecha-desde').value = '';
                         document.getElementById('lote-fecha-hasta').value = '';
                     } catch (error) {
@@ -9260,14 +9038,14 @@ Generado por Sistema Lushibosca
                         });
                         const optNormal = document.createElement('option');
                         optNormal.value = 'normal';
-                        optNormal.textContent = '🕒 Normales (borrar)';
+                        optNormal.textContent = '🕒 Jornadas (borrar)';
                         selectLote.appendChild(optNormal);
                     }
 
                     // filtro-tipo: "Todos" + "Normales" + tipos especiales en plural
                     const selectFiltro = $('filtro-tipo');
                     if (selectFiltro) {
-                        selectFiltro.innerHTML = '<option value="">Todos</option><option value="normal">🕒 Normales</option>';
+                        selectFiltro.innerHTML = '<option value="">Todos</option><option value="normal">🕒 Jornadas</option>';
                         tipos.forEach(t => {
                             const opt = document.createElement('option');
                             opt.value = t.id;
@@ -9430,7 +9208,7 @@ Generado por Sistema Lushibosca
 
                     btn.dataset.activo = estaActivo ? "false" : "true";
                     _setBtnActivo('btn-toggle-credito', !estaActivo);
-                    mostrarToast(!estaActivo ? 'Compensación/Asueto activado' : 'Compensación/Asueto desactivado', 'info');
+                    mostrarToast(!estaActivo ? 'Asueto | Salida temprano activado' : 'Asueto | Salida temprano desactivado', 'info');
                 }
 
                 function mostrarExportar(desdeLista = false) {
@@ -10132,7 +9910,7 @@ Generado por Sistema Lushibosca
                         eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                         iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
                         toggleCredito, init, toggleFormulario, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo,
-                        mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro,
+                        mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackCampos,
                         iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                         togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, navegarCalendario, toggleGistMerge,
                         actualizarEstadoBotonesGist, togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico,
@@ -10171,7 +9949,21 @@ Generado por Sistema Lushibosca
 
                     // C) Otros inputs
                     const tf = document.getElementById('edit-tiempo-fuera');
-                    if (tf) tf.addEventListener('input', formatearInput);
+                    if (tf) tf.addEventListener('input', (e) => {
+                        formatearInput(e);
+                        verificarBloqueCreditoDebounced();
+                    });
+
+                    const notasEl = document.getElementById('edit-notas');
+                    if (notasEl) notasEl.addEventListener('input', () => {
+                        const v = notasEl.value;
+                        const filtrado = S.sanitizeNotas(v);
+                        if (filtrado !== v) {
+                            const pos = notasEl.selectionStart - (v.length - filtrado.length);
+                            notasEl.value = filtrado;
+                            notasEl.setSelectionRange(pos, pos);
+                        }
+                    });
 
                     // D) modal gist
                     ['gist-rango-desde', 'gist-rango-hasta'].forEach(id => {
@@ -10322,6 +10114,25 @@ Generado por Sistema Lushibosca
 
                     // Swipe en form-registro para alternar modo normal/lote (ignora si hay un campo con foco)
                     registrarSwipe(document.getElementById('form-registro'), () => toggleModoLote(), { ignoreInputs: true });
+
+                    // Generar stat-items de tipos especiales dinámicamente desde TiposRegistro
+                    const anchor = document.getElementById('stat-items-tipos-anchor');
+                    if (anchor) {
+                        TiposRegistro.obtenerTodosLosTipos().forEach(t => {
+                            const item = document.createElement('div');
+                            item.className = 'stat-item';
+                            const label = document.createElement('div');
+                            label.className = 'stat-label';
+                            label.textContent = t.labelPlural;
+                            const value = document.createElement('div');
+                            value.className = 'stat-value';
+                            value.id = `stat-${t.labelPlural.toLowerCase()}`;
+                            value.textContent = '0';
+                            item.appendChild(label);
+                            item.appendChild(value);
+                            anchor.parentNode.insertBefore(item, anchor);
+                        });
+                    }
 
                     // CARGAR CONFIGURACIÓN
                     const config = D.cargarConfiguracion();
@@ -10979,7 +10790,7 @@ Generado por Sistema Lushibosca
                         timerAutoCierreBotones = null;
                     }
 
-                    // Iniciar nuevo timer de 5 segundos
+                    // Iniciar nuevo timer 
                     timerAutoCierreBotones = setTimeout(() => {
                         const botones = $('botones-historico');
                         const contenido = $('contenido-historico');
@@ -11178,9 +10989,9 @@ Generado por Sistema Lushibosca
                         const esHoy = reg.fecha === obtenerFechaHoy();
                         infoHtml = esHoy
                             ? `<div class="cal-popup-info" style="color:var(--c-blue)">En curso</div>
-                               <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${_esc(reg.entrada)}</div>`
+                               <div class="cal-popup-3l">Entrada: ${_esc(reg.entrada)}</div>`
                             : `<div class="cal-popup-info" style="color:var(--c-gold)">Incompleto</div>
-                               <div style="font-size:0.82rem;color:var(--text-muted)">Entrada: ${_esc(reg.entrada)}</div>`;
+                               <div class="cal-popup-3l">Entrada: ${_esc(reg.entrada)}</div>`;
                     } else {
                         const totalHoras = reg.total || 0;
                         const h = Math.floor(totalHoras);
@@ -11191,17 +11002,23 @@ Generado por Sistema Lushibosca
                             const [tfH, tfM] = reg.tiempoFuera.split(':').map(Number);
                             tfStr = tfH > 0 ? `${tfH}h${tfM > 0 ? ' ' + tfM + 'm' : ''} fuera` : `${tfM}m fuera`;
                         }
-                        infoHtml = `<div class="cal-popup-info">${totalStr}</div>
-                    <div style="font-size:0.82rem;color:var(--text-muted)">${_esc(reg.entrada)} – ${_esc(reg.salida)}</div>
-                    ${tfStr ? `<div style="font-size:0.82rem;color:var(--text-muted)">${_esc(tfStr)}</div>` : ''}`;
+                        const horasDiarias = D.horasDiarias();
+                        let totalConDiff = totalStr;
+                        let diffColor = '';
+                        if (horasDiarias > 0) {
+                            const diffText = formatoDiferencia(totalHoras);
+                            if (diffText) totalConDiff += ` (${diffText})`;
+                            diffColor = totalHoras >= horasDiarias ? 'var(--c-green)' : 'var(--c-red)';
+                        }
+                        infoHtml = `<div class="cal-popup-info"${diffColor ? ` style="color:${diffColor}"` : ''}>${totalConDiff}</div>
+                    <div class="cal-popup-3l">${_esc(reg.entrada)} – ${_esc(reg.salida)}</div>
+                    ${tfStr ? `<div class="cal-popup-3l">${_esc(tfStr)}</div>` : ''}`;
                     }
 
                     // Botón editar grupo (solo si pertenece a uno)
                     const btnGrupoHtml = grupoDelRegistro ? `
         <button class="cal-popup-btn-edit" onclick="DataManagement.editarGrupo(window._calPopupGrupo);document.getElementById('_cal-popup')?.remove()">
-            <svg class="icon icon-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-            </svg>
+            <svg class="icon"><use href="#icon-grid-group"/></svg>
             Editar grupo
         </button>` : '';
 
@@ -11218,10 +11035,7 @@ Generado por Sistema Lushibosca
         <div class="cal-popup-fecha">${fechaLabel}</div>
         ${infoHtml}
         <button class="cal-popup-btn-edit" onclick="DataManagement.editarRegistro('${reg.id}');document.getElementById('_cal-popup')?.remove()">
-            <svg class="icon icon-line" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
+            <svg class="icon"><use href="#icon-edit"/></svg>
             Editar
         </button>
         ${btnGrupoHtml}
@@ -11444,36 +11258,39 @@ Generado por Sistema Lushibosca
                     const btnCredito = document.getElementById('btn-toggle-credito');
                     if (!btnCredito) return; // Seguridad
 
-                    // 1. Verificamos estado del candado global
-                    const bloqueoGlobal = document.getElementById('edit-fecha').disabled;
-
-                    // 2. Obtenemos valores
-                    const e = document.getElementById('edit-entrada').value.trim();
-                    const s = document.getElementById('edit-salida').value.trim();
-
-                    // 3. Validamos que el horario esté VISUALMENTE completo (5 caracteres: HH:MM)
-                    const horarioCompleto = e.length === 5 && s.length === 5;
-
-                    // 4. Detectamos si son días especiales (para bloquear también)
-                    const esEspecial = TiposRegistro.esRegistroEspecial(e, s);
-
-                    // Si hay candado O es día especial O el horario NO está completo...
-                    if (bloqueoGlobal || esEspecial || !horarioCompleto) {
-                        // ... APAGAMOS EL BOTÓN
+                    const _bloquear = () => {
                         btnCredito.disabled = true;
                         btnCredito.style.opacity = '0.5';
                         btnCredito.style.cursor = 'not-allowed';
-
-                        // Si el usuario borra la hora, visualmente desactivamos el toggle verde para no confundir
-                        if (!horarioCompleto && btnCredito.dataset.activo === "true") {
-                            toggleCredito(); // Esto lo vuelve gris automáticamente
-                        }
-                    } else {
-                        // ... HABILITAMOS EL BOTÓN
+                    };
+                    const _habilitar = () => {
                         btnCredito.disabled = false;
                         btnCredito.style.opacity = '1';
                         btnCredito.style.cursor = 'pointer';
+                    };
+
+                    // 1. Candado global: si el modal está bloqueado, cortar directo
+                    if (document.getElementById('edit-fecha').disabled) return _bloquear();
+
+                    // 2. Obtenemos valores y validamos horario completo
+                    const e = document.getElementById('edit-entrada').value.trim();
+                    const s = document.getElementById('edit-salida').value.trim();
+                    const tf = document.getElementById('edit-tiempo-fuera').value.trim() || null;
+
+                    const horarioCompleto = e.length === 5 && s.length === 5;
+                    if (!horarioCompleto) {
+                        if (btnCredito.dataset.activo === "true") toggleCredito();
+                        return _bloquear();
                     }
+
+                    // 3. Días especiales
+                    if (TiposRegistro.esRegistroEspecial(e, s)) return _bloquear();
+
+                    // 4. Horas trabajadas (sin crédito) deben ser menores al objetivo diario
+                    const calcTemp = D.calcularHoras(e, s, tf, null);
+                    if (!calcTemp || calcTemp.total >= D.horasDiarias()) return _bloquear();
+
+                    _habilitar();
                 }
 
                 function setBloqueoEdicionGrupo(bloqueado) {
@@ -11512,68 +11329,7 @@ Generado por Sistema Lushibosca
                     });
                 }
 
-                function aplicarFeedbackRegistro(mostrarEntrada, mostrarSalida) {
-                    const inputEntrada = $('entrada');
-                    const inputSalida = $('salida');
-
-                    const labelEntrada = inputEntrada?.closest('.form-group')?.querySelector('label');
-                    const labelSalida = inputSalida?.closest('.form-group')?.querySelector('label');
-
-                    // Guardar textos originales
-                    const textoOriginalEntrada = labelEntrada ? labelEntrada.textContent : 'Entrada';
-                    const textoOriginalSalida = labelSalida ? labelSalida.textContent : 'Salida';
-
-                    // Función helper para animar cambio de texto
-                    const cambiarTextoSuave = (label, nuevoTexto, color) => {
-                        if (!label) return;
-
-                        // Fade out
-                        label.style.opacity = '0';
-                        label.style.transform = 'translateY(-3px)';
-
-                        setTimeout(() => {
-                            label.textContent = nuevoTexto;
-                            label.style.color = color;
-                            // Fade in
-                            label.style.opacity = '1';
-                            label.style.transform = 'translateY(0)';
-                        }, 150); // Mitad del tiempo de transición
-                    };
-
-                    if (mostrarEntrada && inputEntrada && labelEntrada) {
-                        inputEntrada.classList.add('input-agregado-animacion');
-                        cambiarTextoSuave(labelEntrada, '✓ Agregado', 'var(--c-green)');
-                    }
-
-                    if (mostrarSalida && inputSalida && labelSalida) {
-                        inputSalida.classList.add('input-agregado-animacion');
-                        cambiarTextoSuave(labelSalida, '✓ Agregado', 'var(--c-green)');
-                    }
-
-                    // Remover después de 2 segundos
-                    setTimeout(() => {
-                        if (mostrarEntrada && inputEntrada && labelEntrada) {
-                            inputEntrada.classList.remove('input-agregado-animacion');
-                            cambiarTextoSuave(labelEntrada, textoOriginalEntrada, '');
-                        }
-
-                        if (mostrarSalida && inputSalida && labelSalida) {
-                            inputSalida.classList.remove('input-agregado-animacion');
-                            cambiarTextoSuave(labelSalida, textoOriginalSalida, '');
-                        }
-                    }, 2000);
-                }
-
-                function aplicarFeedbackLote(mostrarDesde, mostrarHasta) {
-                    const inputDesde = document.getElementById('lote-fecha-desde');
-                    const inputHasta = document.getElementById('lote-fecha-hasta');
-
-                    const labelDesde = inputDesde?.closest('.form-group')?.querySelector('label');
-                    const labelHasta = inputHasta?.closest('.form-group')?.querySelector('label');
-
-                    const textoOriginalDesde = labelDesde ? labelDesde.textContent : 'Desde';
-                    const textoOriginalHasta = labelHasta ? labelHasta.textContent : 'Hasta';
-
+                function aplicarFeedbackCampos(campos) {
                     const cambiarTextoSuave = (label, nuevoTexto, color) => {
                         if (!label) return;
                         label.style.opacity = '0';
@@ -11586,25 +11342,26 @@ Generado por Sistema Lushibosca
                         }, 150);
                     };
 
-                    if (mostrarDesde && inputDesde) {
-                        inputDesde.classList.add('input-agregado-animacion');
-                        cambiarTextoSuave(labelDesde, '✓ Agregado', 'var(--c-green)');
-                    }
-
-                    if (mostrarHasta && inputHasta) {
-                        inputHasta.classList.add('input-agregado-animacion');
-                        cambiarTextoSuave(labelHasta, '✓ Agregado', 'var(--c-green)');
-                    }
+                    const activos = campos
+                        .filter(c => c.mostrar)
+                        .map(c => {
+                            const input = document.getElementById(c.id);
+                            const label = input?.closest('.form-group')?.querySelector('label');
+                            const textoOriginal = label ? label.textContent : c.fallback;
+                            if (input && label) {
+                                input.classList.add('input-agregado-animacion');
+                                cambiarTextoSuave(label, '✓ Agregado', 'var(--c-green)');
+                            }
+                            return { input, label, textoOriginal };
+                        });
 
                     setTimeout(() => {
-                        if (mostrarDesde && inputDesde) {
-                            inputDesde.classList.remove('input-agregado-animacion');
-                            cambiarTextoSuave(labelDesde, textoOriginalDesde, '');
-                        }
-                        if (mostrarHasta && inputHasta) {
-                            inputHasta.classList.remove('input-agregado-animacion');
-                            cambiarTextoSuave(labelHasta, textoOriginalHasta, '');
-                        }
+                        activos.forEach(({ input, label, textoOriginal }) => {
+                            if (input && label) {
+                                input.classList.remove('input-agregado-animacion');
+                                cambiarTextoSuave(label, textoOriginal, '');
+                            }
+                        });
                     }, 2000);
                 }
 
@@ -11620,7 +11377,7 @@ Generado por Sistema Lushibosca
                     eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
                     iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
                     toggleCredito, setBloqueoEdicionGrupo, toggleBloqueoEdicionGrupo, cerrarEdicionGrupo, poblarSelectoresTipos,
-                    mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackRegistro, aplicarFeedbackLote,
+                    mostrarExportar, cerrarExportar, ejecutarExportacion, toggleCamposRangoExport, aplicarFeedbackCampos,
                     iniciarTimerAutoCierreBotones, cancelarTimerAutoCierreBotones, toggleIgnorarTiempoFuera, actualizarEstadoBotonIgnorarTF,
                     togglePeriodoStats, cambiarAnioStats, cambiarSemanaStats, toggleFondoCard, setFondoCard, toggleVisibilidadCard, aplicarVisibilidadCards,
                     togglePersistirTarjetas, actualizarEstadoBotonPersistir, toggleVistaHistorico, actualizarHintGrupo,
@@ -11645,7 +11402,7 @@ Generado por Sistema Lushibosca
                             newWorker.addEventListener('statechange', () => {
                                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                                     // Lógica visual para avisar al usuario
-                                    if (window.UILogic) UILogic.mostrarToast('Nueva versión disponible. Recargar.', 'info');
+                                    if (window.UILogic) UILogic.mostrarToast('Se actualizará la versión al recargar', 'info');
                                 }
                             });
                         });
@@ -11659,13 +11416,11 @@ Generado por Sistema Lushibosca
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 274
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 295
     // ====================================================================
     
       - CAMBIOS:
-    1) Correccion bug: no aparecia el boton tiempo fuera luego de la refactorizacion,
-    idem en 2 lugares distintos
-    2) se agrega swipe a la tarjeta de fichaje
+    1) Refactor de la funcion GenerarReporte
 
      - BUGS CONOCIDOS:
     1)
