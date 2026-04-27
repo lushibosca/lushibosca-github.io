@@ -16,7 +16,7 @@
         frame-ancestors 'none';
         upgrade-insecure-requests;">
     <meta name="referrer" content="no-referrer">
-    <title>CCTV — Control de Activos v188</title>
+    <title>CCTV — Control de Activos v190</title>
 
     <style>
         /* ============================================================
@@ -31,6 +31,9 @@
             --text-disabled: #444746a2;
             --border: #dde3ea;
             --input-bg: #dde3ea;
+            /* aliases semánticos usados en inline styles */
+            --surface: var(--bg-card);
+            --text: var(--text-main);
             --c-blue: rgba(76, 114, 172, 0.8);
             --c-green: rgba(76, 172, 140, 0.8);
             --c-red: rgba(172, 90, 76, 0.8);
@@ -45,6 +48,9 @@
             --c-white: #ffffff;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             --radius: 20px;
+            --radius-sm: 12px;
+            --radius-pill: 999px;
+            --bg-toast: #1f2937;
             --hover: brightness(0.9);
         }
 
@@ -58,12 +64,13 @@
             --border: #313333;
             --input-bg: #313333;
             --c-gray-btn: #313333;
+            --bg-toast: #2d3748;
             --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
             --hover: brightness(1.2);
         }
 
         body.modal-open {
-            overflow: hidden !important;
+            overflow: hidden;
         }
 
         /* ============================================================
@@ -279,16 +286,6 @@
         }
 
         /* hovers — idéntico a Horarios */
-        @media (hover: hover) and (pointer: fine) {
-
-            .btn-edit:hover:not(:disabled),
-            .btn-delete:hover:not(:disabled),
-            .btn-backup:hover:not(:disabled),
-            .btn-cancel:hover:not(:disabled),
-            .icon-btn:hover:not(:disabled) {
-                filter: var(--hover);
-            }
-        }
 
         /* ============================================================
            ICONS
@@ -350,8 +347,8 @@
             left: 50%;
             transform: translateX(-50%) translateY(80px);
             transition: opacity 0.3s, transform 0.3s;
-            background: #1f2937;
-            color: white;
+            background: var(--bg-toast);
+            color: var(--c-white);
             padding: 1rem 1.5rem;
             border-radius: var(--radius);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -561,12 +558,6 @@
             border: 1px solid var(--text-muted);
         }
 
-        @media (hover: hover) and (pointer: fine) {
-            .dispositivo-item:hover {
-                filter: var(--hover);
-            }
-        }
-
         /* ============================================================
            PRODUCCIÓN — grilla de canales
         ============================================================ */
@@ -641,7 +632,7 @@
 
         .canal-slot {
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             padding: 0.55rem 0.65rem;
             background: var(--bg-card);
             height: 72px;
@@ -660,12 +651,6 @@
         .canal-slot.vacio {
             border-style: dashed;
             opacity: 0.65;
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-            .canal-slot:hover {
-                filter: var(--hover);
-            }
         }
 
         .canal-numero {
@@ -716,27 +701,20 @@
             opacity: 1;
         }
 
-        #btn-estado-averiado.activo {
+        .btn-estado-averiado.activo {
             background: var(--c-red);
             color: var(--c-white);
         }
 
-        #btn-estado-revisar.activo {
+        .btn-estado-revisar.activo {
             background: var(--c-purple);
             color: var(--c-white);
         }
 
-        #btn-estado-desafectado.activo {
+        .btn-estado-desafectado.activo {
             background: var(--c-gray-btn);
             color: var(--text-muted);
             border: 1px solid var(--text-muted);
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-            .btn-estado-disp:hover:not(:disabled) {
-                filter: var(--hover);
-                opacity: 1;
-            }
         }
 
         /* ============================================================
@@ -834,13 +812,6 @@
 
         .stat-chip-tipo:active {
             transform: scale(0.97);
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-            .stat-chip-tipo:hover {
-                filter: var(--hover);
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-            }
         }
 
         .stat-chip-tipo.activo {
@@ -1071,7 +1042,7 @@
         .filtro-toggle-track {
             position: absolute;
             inset: 0;
-            border-radius: 16px;
+            border-radius: var(--radius-pill);
             background: var(--border);
             transition: background 0.2s;
         }
@@ -1087,7 +1058,7 @@
             height: 10px;
             left: 3px;
             top: 3px;
-            background: white;
+            background: var(--c-white);
             border-radius: 50%;
             transition: transform 0.2s;
         }
@@ -1156,6 +1127,48 @@
         .canal-disp-item-vaciobtn {
             color: var(--text-muted);
             font-style: italic;
+        }
+
+        /* ============================================================
+           MODAL CONTENT — variante flex (sticky header/footer)
+        ============================================================ */
+        .modal-content--flex {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* ============================================================
+           HOVERS (todos agrupados — solo pointer: fine)
+        ============================================================ */
+        @media (hover: hover) and (pointer: fine) {
+
+            .btn-edit:hover:not(:disabled),
+            .btn-delete:hover:not(:disabled),
+            .btn-backup:hover:not(:disabled),
+            .btn-cancel:hover:not(:disabled),
+            .icon-btn:hover:not(:disabled) {
+                filter: var(--hover);
+            }
+
+            .dispositivo-item:hover {
+                filter: var(--hover);
+            }
+
+            .canal-slot:hover {
+                filter: var(--hover);
+            }
+
+            .btn-estado-disp:hover:not(:disabled) {
+                filter: var(--hover);
+                opacity: 1;
+            }
+
+            .stat-chip-tipo:hover {
+                filter: var(--hover);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            }
         }
     </style>
 </head>
@@ -1259,6 +1272,17 @@
         <symbol id="icon-cancelar" viewBox="0 0 24 24">
             <line x1="18" y1="6" x2="6" y2="18" class="icon-line" stroke="currentColor"></line>
             <line x1="6" y1="6" x2="18" y2="18" class="icon-line" stroke="currentColor"></line>
+        </symbol>
+        <symbol id="icon-sliders" viewBox="0 0 24 24">
+            <line x1="4" y1="21" x2="4" y2="14" class="icon-line" stroke="currentColor"></line>
+            <line x1="4" y1="10" x2="4" y2="3" class="icon-line" stroke="currentColor"></line>
+            <line x1="12" y1="21" x2="12" y2="12" class="icon-line" stroke="currentColor"></line>
+            <line x1="12" y1="8" x2="12" y2="3" class="icon-line" stroke="currentColor"></line>
+            <line x1="20" y1="21" x2="20" y2="16" class="icon-line" stroke="currentColor"></line>
+            <line x1="20" y1="12" x2="20" y2="3" class="icon-line" stroke="currentColor"></line>
+            <line x1="1" y1="14" x2="7" y2="14" class="icon-line" stroke="currentColor"></line>
+            <line x1="9" y1="8" x2="15" y2="8" class="icon-line" stroke="currentColor"></line>
+            <line x1="17" y1="16" x2="23" y2="16" class="icon-line" stroke="currentColor"></line>
         </symbol>
         <symbol id="icon-external-link" viewBox="0 0 24 24">
             <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" fill="none" stroke="currentColor"
@@ -1375,9 +1399,15 @@
                     </svg>
                     Dispositivos
                     <span id="contador-dispositivos"
-                        style="font-size:0.78rem;font-weight:600;color:var(--text-muted);background:var(--input-bg);border-radius:99px;padding:0.1rem 0.6rem;margin-left:0.25rem"></span>
-                    <button class="icon-btn btn-edit" onclick="UI.abrirNuevoDispositivo()" title="Agregar dispositivo"
+                        style="font-size:0.78rem;font-weight:600;color:var(--text-muted);background:var(--input-bg);border-radius:var(--radius-pill);padding:0.1rem 0.6rem;margin-left:0.25rem"></span>
+                    <button class="icon-btn" onclick="UI.abrirVistaActivos()" title="Opciones de vista"
                         style="margin-left:auto;width:auto">
+                        <svg class="icon icon-line">
+                            <use href="#icon-sliders" />
+                        </svg>
+                    </button>
+                    <button class="icon-btn btn-edit" onclick="UI.abrirNuevoDispositivo()" title="Agregar dispositivo"
+                        style="width:auto">
                         <svg class="icon icon-line">
                             <use href="#icon-plus" />
                         </svg>
@@ -1485,7 +1515,7 @@
          MODAL — Tipos de dispositivo
     ============================================================ -->
     <div class="modal" id="modal-tipos-dispositivo">
-        <div class="modal-content" style="display:flex;flex-direction:column;padding:0;overflow:hidden">
+        <div class="modal-content modal-content--flex">
             <h3
                 style="padding:1.5rem 0.75rem 1rem;margin:0;position:sticky;top:0;background:var(--bg-card);z-index:2;border-bottom:1px solid var(--border)">
                 <svg class="icon icon-line">
@@ -1521,8 +1551,8 @@
 
     <!-- ====== BOTÓN SCROLL TOP ====== -->
     <button id="btn-scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Ir arriba"
-        style="display:none;position:fixed;bottom:1.5rem;right:1.25rem;z-index:80;width:44px;height:44px;min-width:unset;padding:0;border-radius:50%;background:var(--c-blue);color:white;box-shadow:0 2px 8px rgba(0,0,0,0.25);opacity:0;transition:opacity 0.25s,transform 0.25s;transform:translateY(8px)">
-        <svg style="width:1.1rem;height:1.1rem;stroke:white;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"
+        style="display:none;position:fixed;bottom:1.5rem;right:1.25rem;z-index:80;width:44px;height:44px;min-width:unset;padding:0;border-radius:50%;background:var(--c-blue);color:var(--c-white);box-shadow:0 2px 8px rgba(0,0,0,0.25);opacity:0;transition:opacity 0.25s,transform 0.25s;transform:translateY(8px)">
+        <svg style="width:1.1rem;height:1.1rem;stroke:var(--c-white);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"
             viewBox="0 0 24 24">
             <polyline points="18 15 12 9 6 15" />
         </svg>
@@ -1611,7 +1641,7 @@
          MODAL — Editar Dispositivo
     ============================================================ -->
     <div class="modal" id="modal-editar-disp">
-        <div class="modal-content" style="display:flex;flex-direction:column;padding:0;overflow:hidden">
+        <div class="modal-content modal-content--flex">
             <h3
                 style="padding:1.5rem 0.75rem 1rem;margin:0;position:sticky;top:0;background:var(--bg-card);z-index:2;border-bottom:1px solid var(--border)">
                 <svg class="icon icon-line">
@@ -1685,21 +1715,21 @@
             <div
                 style="padding:0.75rem;border-top:1px solid var(--border);position:sticky;bottom:0;background:var(--bg-card);z-index:2;display:flex;flex-direction:column;gap:0.5rem">
                 <div class="btn-group" style="margin-top:0">
-                    <button id="btn-estado-averiado" class="icon-btn btn-estado-disp"
+                    <button id="btn-estado-averiado" class="icon-btn btn-estado-disp btn-estado-averiado"
                         onclick="UI.toggleEstadoDisp('averiado')" title="Averiado" style="flex:1">
                         <svg class="icon icon-line">
                             <use href="#icon-alert" />
                         </svg>
                         Averiado
                     </button>
-                    <button id="btn-estado-revisar" class="icon-btn btn-estado-disp"
+                    <button id="btn-estado-revisar" class="icon-btn btn-estado-disp btn-estado-revisar"
                         onclick="UI.toggleEstadoDisp('revisar')" title="A revisar" style="flex:1">
                         <svg class="icon icon-line">
                             <use href="#icon-trash" />
                         </svg>
                         A revisar
                     </button>
-                    <button id="btn-estado-desafectado" class="icon-btn btn-estado-disp"
+                    <button id="btn-estado-desafectado" class="icon-btn btn-estado-disp btn-estado-desafectado"
                         onclick="UI.toggleEstadoDisp('desafectado')" title="Desafectado" style="flex:1">
                         <svg class="icon icon-line">
                             <use href="#icon-cancelar" />
@@ -1825,7 +1855,7 @@
          MODAL — Asignar dispositivo a canal
     ============================================================ -->
     <div class="modal" id="modal-canal">
-        <div class="modal-content" style="display:flex;flex-direction:column;padding:0;overflow:hidden">
+        <div class="modal-content modal-content--flex">
             <h3
                 style="padding:1.5rem 0.75rem 1rem;margin:0;position:sticky;top:0;background:var(--bg-card);z-index:2;border-bottom:1px solid var(--border)">
                 <svg class="icon icon-line">
@@ -1857,7 +1887,7 @@
                                     left:0; right:0;
                                     background:var(--bg-card);
                                     border:1px solid var(--border);
-                                    border-radius:12px;
+                                    border-radius:var(--radius-sm);
                                     box-shadow:0 4px 16px rgba(0,0,0,0.15);
                                     max-height:220px;
                                     overflow-y:auto;
@@ -1903,7 +1933,7 @@
                 <div class="form-group">
                     <label>Comentarios</label>
                     <textarea id="canal-comentarios" placeholder="Notas adicionales…" rows="2" maxlength="300"
-                        style="resize:vertical;width:100%;box-sizing:border-box;padding:0.5rem;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit;font-size:0.9rem"></textarea>
+                        style="resize:vertical;width:100%;box-sizing:border-box;padding:0.5rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-main);font-family:inherit;font-size:0.9rem"></textarea>
                 </div>
             </div>
 
@@ -1963,6 +1993,29 @@
                 </button>
                 <button class="btn-cancel" onclick="UI.cerrarImportar()">Cancelar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         MODAL — Vista de activos
+    ============================================================ -->
+    <div class="modal" id="modal-vista-activos">
+        <div class="modal-content" style="max-width:360px">
+            <h3>
+                <svg class="icon icon-line">
+                    <use href="#icon-sliders" />
+                </svg>
+                Vista de activos
+            </h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);line-height:1.5;margin-bottom:1.5rem">
+                Próximamente: opciones para personalizar cómo se muestran los dispositivos.
+            </p>
+            <button class="btn-cancel" onclick="UI.cerrarVistaActivos()">
+                <svg class="icon icon-line">
+                    <use href="#icon-cancelar" />
+                </svg>
+                Cerrar
+            </button>
         </div>
     </div>
 
@@ -2520,8 +2573,8 @@
                             <span style="margin-left:auto;font-size:0.78rem;color:var(--text-muted)">${g.ip ? esc(g.ip) : ''}</span>
                         </div>
                         <div style="font-size:0.8rem;color:var(--text-muted)">${ocup}/${g.canales_n} canales ocupados · ${libre} libres</div>
-                        <div style="height:4px;background:var(--border);border-radius:99px;margin-top:0.4rem;overflow:hidden">
-                            <div style="height:100%;width:${pct}%;background:var(--c-blue);border-radius:99px;transition:width 0.4s"></div>
+                        <div style="height:4px;background:var(--border);border-radius:var(--radius-pill);margin-top:0.4rem;overflow:hidden">
+                            <div style="height:100%;width:${pct}%;background:var(--c-blue);border-radius:var(--radius-pill);transition:width 0.4s"></div>
                         </div>
                     </div>`;
                     }).join('');
@@ -2546,8 +2599,8 @@
                         <span style="font-size:1.2rem;font-weight:700;color:var(--c-green)">${disponibles}</span>
                     </div>
                     ${camarasDisps.length > 0 ? `
-                    <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden">
-                        <div style="height:100%;width:${camarasDisps.length ? Math.round((enProd / camarasDisps.length) * 100) : 0}%;background:var(--c-blue);border-radius:99px;transition:width 0.4s"></div>
+                    <div style="height:4px;background:var(--border);border-radius:var(--radius-pill);overflow:hidden">
+                        <div style="height:100%;width:${camarasDisps.length ? Math.round((enProd / camarasDisps.length) * 100) : 0}%;background:var(--c-blue);border-radius:var(--radius-pill);transition:width 0.4s"></div>
                     </div>` : ''}
                     ${camarasDisps.length === 0 ? `<div style="color:var(--text-disabled);font-size:0.85rem">Sin cámaras registradas</div>` : ''}
                 </div>`;
@@ -2869,6 +2922,14 @@
                     MM.abrir('modal-ajustes');
                 },
 
+                abrirVistaActivos() {
+                    MM.abrir('modal-vista-activos');
+                },
+
+                cerrarVistaActivos() {
+                    MM.cerrar('modal-vista-activos');
+                },
+
                 abrirFiltrosBusqueda() {
                     const lista = document.getElementById('filtros-busqueda-lista');
                     lista.innerHTML = BUSQ_CAMPOS.map(f => `
@@ -2963,7 +3024,7 @@
                         <div style="display:flex;align-items:center;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid var(--border)">
                             <span style="font-size:1.1rem;width:28px;text-align:center">${v.emoji}</span>
                             <span style="flex:1;font-size:0.9rem">${esc(v.label)}</span>
-                            <button onclick="UI.eliminarTipoCustom('${esc(k)}')" class="icon-btn btn-delete" style="width:32px;height:32px;min-width:unset;color:white" title="Eliminar tipo">
+                            <button onclick="UI.eliminarTipoCustom('${esc(k)}')" class="icon-btn btn-delete" style="width:32px;height:32px;min-width:unset;color:var(--c-white)" title="Eliminar tipo">
                                 <svg class="icon icon-line" style="width:14px;height:14px"><use href="#icon-trash"/></svg>
                             </button>
                         </div>`).join('');
@@ -3155,16 +3216,16 @@
                     // aviso de restricciones
                     let avisoHtml = '';
                     if (enProduccionComoGrab && canalesOcupados > 0) {
-                        avisoHtml = `<div id="aviso-prod-disp" style="font-size:0.8rem;background:var(--input-bg);border-radius:12px;padding:0.6rem 0.75rem;margin-bottom:0.75rem;line-height:1.45">
+                        avisoHtml = `<div id="aviso-prod-disp" style="font-size:0.8rem;background:var(--input-bg);border-radius:var(--radius-sm);padding:0.6rem 0.75rem;margin-bottom:0.75rem;line-height:1.45">
                             ⚠️ Este grabador está en producción con <strong>${canalesOcupados} canal(es) ocupado(s)</strong>.<br>
                             No se puede cambiar el tipo, canales ni eliminar mientras tenga cámaras asignadas.
                         </div>`;
                     } else if (enProduccionComoGrab) {
-                        avisoHtml = `<div id="aviso-prod-disp" style="font-size:0.8rem;background:var(--input-bg);border-radius:12px;padding:0.6rem 0.75rem;margin-bottom:0.75rem;line-height:1.45">
+                        avisoHtml = `<div id="aviso-prod-disp" style="font-size:0.8rem;background:var(--input-bg);border-radius:var(--radius-sm);padding:0.6rem 0.75rem;margin-bottom:0.75rem;line-height:1.45">
                             ℹ️ Este grabador está en producción. No se puede eliminar
                         </div>`;
                     } else if (enProduccionComoCanal) {
-                        avisoHtml = `<div id="aviso-prod-disp" style="font-size:0.8rem;background:var(--input-bg);border-radius:12px;padding:0.6rem 0.75rem;margin-bottom:0.75rem;line-height:1.45">
+                        avisoHtml = `<div id="aviso-prod-disp" style="font-size:0.8rem;background:var(--input-bg);border-radius:var(--radius-sm);padding:0.6rem 0.75rem;margin-bottom:0.75rem;line-height:1.45">
                             ℹ️ Este dispositivo está asignado a un grabador en producción. No se puede eliminar
                         </div>`;
                     }
@@ -3335,7 +3396,7 @@
                         }
                         if (grabConCanal && slotConCanal) {
                             const LABELS = { averiado: 'Averiado', revisar: 'A revisar', desafectado: 'Desafectado' };
-                            const msg = `Marcar como "${LABELS[_estadoEditando]}" quitará este dispositivo del Canal ${slotConCanal.canal} del grabador "${grabConCanal.descripcion}".\n¿Confirmar?`;
+                            const msg = `Marcar como "${LABELS[_estadoEditando]}" quitará este dispositivo del Canal ${slotConCanal.canal} del ${grabConCanal.descripcion}\n ¿Confirmar?`;
                             const ok = await confirmarModal(msg, 'Guardar');
                             if (!ok) return;
                             // desasignar: limpiar solo el dispositivoId del slot, conservar el resto
@@ -4140,7 +4201,7 @@
 
 <!--
 // ====================================================================
-//         NOTAS CCTV ACTIVOS VERSION 188
+//         NOTAS CCTV ACTIVOS VERSION 189
 // ====================================================================
 
  - PENDIENTE (futuras iteraciones):
