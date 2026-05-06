@@ -26,15 +26,15 @@
     <style>
         :root {
             /* --- Variables de Color (Tema Claro) --- */
-            --bg-body: #ffffff;
-            --bg-card: #f0f4f9;
-            --bg-header: #ffffff;
+            --bg-body: #f5f6fa;
+            --bg-card: #ffffff;
+            --bg-header: #ffffffee;
             --bg-toast: #1f2937;
             --text-main: #1f1f1f;
             --text-muted: #444746;
             --text-disabled: #444746a2;
             --border: #dde3ea;
-            --input-bg: #dde3ea;
+            --input-bg: #f0f2f8;
             --input-focus: #dde3ea;
             --c-blue: rgba(76, 114, 172, 0.8);
             --c-green: rgba(76, 172, 140, 0.8);
@@ -44,9 +44,9 @@
             --c-purple: rgba(129, 76, 172, 0.8);
             --c-gold: rgba(172, 155, 76, 0.8);
             --c-orange: rgba(210, 120, 50, 0.8);
-            --c-gray-btn: #dde3ea;
+            --c-gray-btn: #f0f2f8;
             --c-white: #ffffff;
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow: 0 1px 4px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
             --radius: 20px;
             --hover: brightness(0.9);
             --transition-anim: opacity 0.3s ease, transform 0.3s ease;
@@ -66,7 +66,7 @@
             --input-bg: #313333;
             --input-focus: #313333;
             --c-gray-btn: #313333;
-            --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             --hover: brightness(1.2);
         }
 
@@ -707,6 +707,7 @@
             backdrop-filter: blur(3px);
             width: calc(100% - 4rem);
             max-width: 400px;
+            text-align: center;
         }
 
         .toast.show {
@@ -1550,46 +1551,31 @@
 
         /* --- Hovers de botones --- */
         @media (hover: hover) and (pointer: fine) {
+            /* Grupo 1: Elementos con estado disabled (Buttons e IDs de control) */
+            :is([id^="btn-toggle-"],
+                #btn-reporte, .icon-btn, .time-btn, .btn-increment, .filter-btn,
+                .btn-delete, .btn-cancel, .btn-export, .btn-backup, .btn-edit,
+                .calendario-nav button):hover:not(:disabled),
 
-            #btn-toggle-fondo:hover:not(:disabled),
-            #btn-toggle-gist-backup:hover:not(:disabled),
-            #btn-toggle-gist-merge:hover:not(:disabled),
-            #btn-toggle-ignorar-tf:hover:not(:disabled),
-            #btn-toggle-hover-popup:hover:not(:disabled),
-            #btn-toggle-persistir-tarjetas:hover:not(:disabled),
-            #btn-reporte:hover:not(:disabled),
-            .icon-btn:hover:not(:disabled),
-            .time-btn:hover:not(:disabled),
-            .btn-increment:hover:not(:disabled),
-            .filter-btn:hover:not(:disabled),
-            .btn-delete:hover:not(:disabled),
-            .btn-cancel:hover:not(:disabled),
-            .btn-export:hover:not(:disabled),
-            .btn-backup:hover:not(:disabled),
-            .btn-edit:hover:not(:disabled),
-            .registro-item:hover,
-            .header-profile-btn:hover,
-            .btn-perfil-select:hover,
-            .day-checkbox:hover span,
-            .btn-perfil-edit:hover,
-            .registro-mes-header:hover,
-            .btn-mes-calendario:hover,
-            .calendario-titulo:hover {
+            /* Grupo 2: Elementos simples (Items, headers, etc.) */
+            :is(.registro-item, .header-profile-btn, .btn-perfil-select,
+                .btn-perfil-edit, .registro-mes-header, .btn-mes-calendario,
+                .calendario-titulo):hover,
+
+            /* Grupo 3: Casos especiales (Selectores anidados) */
+            .day-checkbox:hover span {
                 filter: var(--hover);
             }
 
-            .calendario-dia:not(.vacio):not(.dia-sin-registro) {
+            /* Refactor de Calendario Día */
+            .calendario-dia:not(.vacio, .dia-sin-registro) {
                 transition: filter 0.3s ease;
-            }
 
-            .calendario-dia:not(.vacio):not(.dia-sin-registro):hover {
-                filter: var(--hover);
-                z-index: 2;
-                position: relative;
-            }
-
-            .calendario-nav button:hover:not(:disabled) {
-                filter: var(--hover);
+                &:hover {
+                    filter: var(--hover);
+                    z-index: 2;
+                    position: relative;
+                }
             }
         }
 
@@ -1838,17 +1824,16 @@
         </symbol>
         <symbol id="icon-cloud-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <path
-                d="M12 2C9.5 2 7.3 3.4 6.2 5.5C4.9 5.2 3 6.3 3 8.5C3 10.4 4.6 12 6.5 12H17.5C19.4 12 21 10.4 21 8.5C21 6.5 19.3 5 17.5 5C17.1 3.3 15.7 2 14 2" />
             <polyline points="16 16 12 12 8 16" />
             <line x1="12" y1="12" x2="12" y2="21" />
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
         </symbol>
+        <!-- Cloud sync down -->
         <symbol id="icon-cloud-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
-            <path
-                d="M12 2C9.5 2 7.3 3.4 6.2 5.5C4.9 5.2 3 6.3 3 8.5C3 10.4 4.6 12 6.5 12H17.5C19.4 12 21 10.4 21 8.5C21 6.5 19.3 5 17.5 5C17.1 3.3 15.7 2 14 2" />
-            <polyline points="8 17 12 21 16 17" />
-            <line x1="12" y1="12" x2="12" y2="21" />
+            <polyline points="8 16 12 20 16 16" />
+            <line x1="12" y1="20" x2="12" y2="11" />
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
         </symbol>
         <symbol id="icon-exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -1875,6 +1860,27 @@
                 stroke-linejoin="round"></polyline>
             <line x1="10" y1="14" x2="21" y2="3" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round"></line>
+        </symbol>
+        <symbol id="icon-gist" viewBox="0 0 24 24">
+            <path
+                d="M12 2C6.477 2 2 6.484 2 12.021c0 4.428 2.865 8.184 6.839 9.504.5.092.682-.217.682-.483 0-.237-.009-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.021C22 6.484 17.522 2 12 2z" />
+        </symbol>
+        <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+        </symbol>
+        <!-- Eye-off (ocultar token) -->
+        <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+                d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+            <line x1="1" y1="1" x2="23" y2="23" />
+        </symbol>
+        <symbol id="icon-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l4-4m-4 4l4 4" />
+            <path d="M3 9h13a5 5 0 010 10h-4" />
         </symbol>
     </svg>
     <div class="header">
@@ -1968,7 +1974,7 @@
                                 <div class="input-with-btn">
                                     <input type="text" id="salida" inputmode="numeric" maxlength="5" />
                                     <button class="time-btn" onclick="UILogic.pegarHoraActual('salida')"
-                                        title="Pegar hora actual o limpiar" s>
+                                        title="Pegar hora actual o limpiar">
                                         <svg class="icon">
                                             <use href="#icon-clock" />
                                         </svg>
@@ -2203,7 +2209,7 @@
                         </svg>
                         Ajustes
                     </span>
-                    <span class="version-text">LUSHIBOSCA build_295</span>
+                    <span class="version-text">LUSHIBOSCA-299</span>
                 </h3>
             </div>
             <div class="modal-panel-body custom-scroll">
@@ -2338,7 +2344,7 @@
                             <label>Datos</label>
                             <button class="btn-edit" onclick="UILogic.abrirModalGist()">
                                 <svg class="icon">
-                                    <use href="#icon-cloud" />
+                                    <use href="#icon-gist" />
                                 </svg>
                                 GitHub Gist
                             </button>
@@ -2383,7 +2389,7 @@
                 <h3>
                     <span class="modal-title-block">
                         <svg class="icon">
-                            <use href="#icon-cloud" />
+                            <use href="#icon-gist" />
                         </svg>
                         GitHub Gist
                     </span>
@@ -2398,7 +2404,7 @@
                         <button class="time-btn" id="btn-toggle-token" onclick="UILogic.toggleVerToken()"
                             title="Mostrar/ocultar token">
                             <svg class="icon">
-                                <use href="#icon-lock-open" />
+                                <use href="#icon-eye" />
                             </svg>
                         </button>
                         <button class="time-btn"
@@ -4182,24 +4188,25 @@
                     btn.disabled = true;
                     let usaHoraActual = false;
 
-                    const f = S.sanitizeString($('fecha').value, 10);
+                    // --- cambiamos 'const' por 'let' para reescribir la fecha si es necesario ---
+                    let f = S.sanitizeString($('fecha').value, 10);
                     let e = S.sanitizeString($('entrada').value.trim(), 5);
                     let s = S.sanitizeString($('salida').value.trim(), 5);
 
-                    // --- VALIDACIÓN DE FUTURO PARA NORMALES ---
-                    const hoy = UILogic.obtenerFechaHoy();
-                    if (f > hoy) {
-                        // Verificamos si es un registro especial (estos SÍ se permiten en el futuro)
-                        const esEspecial = TiposRegistro.esRegistroEspecial(e, s);
+                    // --- Interceptar si no hay entrada (incluso si llenó la salida manual) ---
+                    if (!e) {
+                        const { ayerStr: ayer, ayerAbierto } = detectarAyerAbierto(UILogic.obtenerFechaHoy(), registros);
+                        const regHoy = registros.find(r => r.fecha === f);
 
-                        if (!esEspecial) {
-                            UILogic.resetearBoton(btn);
-                            UILogic.mostrarToast('Fecha futura no permitida en registro regular', 'warning');
-                            return;
+                        // Si ayer está abierto, hoy está vacío, Y no pasaron 24hs → redirigir a ayer
+                        if (ayerAbierto && !regHoy) {
+                            f = ayer;
+                            $('fecha').value = f; // Sincronizamos la UI con ayer
                         }
                     }
 
-                    const registroExistente = registros.find(r => r.fecha === f);
+                    // --- cambiamos 'const' por 'let' ---
+                    let registroExistente = registros.find(r => r.fecha === f);
 
                     if (!e && !s) {
                         const now = new Date();
@@ -5039,6 +5046,32 @@
                     return true; // Timer detenido exitosamente
                 }
 
+                // ---------------------------------------------------------
+                // HELPER: detectarAyerAbierto(fechaHoy, registros)
+                // Centraliza la detección de turno activo cruzando medianoche.
+                // Acepta registros como Array o Map.
+                // Retorna: { ayerStr, regAyer, ayerAbierto }
+                // ---------------------------------------------------------
+                function detectarAyerAbierto(fechaHoy, regs) {
+                    const ayerObj = S.parsearFechaLocal(fechaHoy);
+                    ayerObj.setDate(ayerObj.getDate() - 1);
+                    const ayerStr = S.formatearFechaLocal(ayerObj);
+
+                    const regAyer = regs instanceof Map
+                        ? (regs.get(ayerStr) ?? null)
+                        : (regs.find(r => r.fecha === ayerStr) ?? null);
+
+                    let ayerAbierto = false;
+                    if (regAyer?.entrada && !regAyer.salida) {
+                        const [hE, mE] = regAyer.entrada.split(':').map(Number);
+                        const fechaEntrada = S.parsearFechaLocal(ayerStr);
+                        fechaEntrada.setHours(hE, mE, 0, 0);
+                        ayerAbierto = (Date.now() - fechaEntrada.getTime()) <= 86400000;
+                    }
+
+                    return { ayerStr, regAyer, ayerAbierto };
+                }
+
                 function calcularBufferSemanal(inicioSemana, fechaHoy) {
                     const horasDiariasLocal = horasDiarias;
                     let buffer = 0;
@@ -5048,6 +5081,9 @@
 
                     let fechaIteracion = S.parsearFechaLocal(inicioSemana);
                     let fechaLimite = S.parsearFechaLocal(fechaHoy);
+
+                    // --- Detectar si ayer quedó en Standby ---
+                    const { ayerStr, ayerAbierto } = detectarAyerAbierto(fechaHoy, registrosMap);
 
                     while (fechaIteracion <= fechaLimite) {
                         const y = fechaIteracion.getFullYear();
@@ -5061,18 +5097,25 @@
                         let horasHechasDia = 0;
                         const esEspecial = r && TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
                         const tieneSalida = r && r.salida && !esEspecial;
-                        const esDiaPasado = isoDate < fechaHoy;
                         const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
 
+                        // --- NUEVO: ¿El día está cerrado para contabilizarlo? ---
+                        let diaTerminado = false;
+                        if (isoDate === fechaHoy) {
+                            diaTerminado = tieneSalida;
+                        } else if (ayerAbierto && isoDate === ayerStr) {
+                            diaTerminado = false; // ¡Standby!
+                        } else {
+                            diaTerminado = true; // Pasado normal
+                        }
+
                         if (esRemoto) {
-                            // Remoto: neutro en día hábil, extra en día no hábil
-                            if (esDiaLaboralConfigurado) {
-                                horasObjetivoDia = horasDiariasLocal;
-                            }
+                            if (esDiaLaboralConfigurado) horasObjetivoDia = horasDiariasLocal;
                             horasHechasDia = horasDiariasLocal;
                         } else {
                             if (esDiaLaboralConfigurado && !esEspecial) {
-                                if (esDiaPasado || (isoDate === fechaHoy && tieneSalida)) {
+                                // Solo sumamos el objetivo si el día ya se dio por terminado
+                                if (diaTerminado) {
                                     horasObjetivoDia = horasDiariasLocal;
                                 }
                             }
@@ -5082,8 +5125,6 @@
                         }
 
                         buffer += (horasHechasDia - horasObjetivoDia);
-
-                        // Sumar 1 día
                         fechaIteracion.setDate(fechaIteracion.getDate() + 1);
                     }
                     return buffer;
@@ -5294,6 +5335,7 @@
                     exportarJSON,
                     importarDatos,
                     calcularBufferSemanal,
+                    detectarAyerAbierto,
                     aplicarFiltrosInmediato,
                     limpiarFiltros,
                     obtenerRegistrosFiltrados,
@@ -5723,8 +5765,12 @@
                     const textoLimpio = S.sanitizeString(mensaje, 200);
                     const ultimo = _toastQueue[_toastQueue.length - 1];
                     const actual = _toastRunning ? $('toast')?.textContent : null;
+
+                    // Previene mostrar exactamente el mismo toast 2 veces seguidas
                     if ((ultimo && ultimo.mensaje === textoLimpio) || actual === textoLimpio) return;
-                    _toastQueue.push({ mensaje: textoLimpio, tipo });
+
+                    // Encolamos agregando el parámetro de tiempo
+                    _toastQueue.push({ mensaje: textoLimpio, tipo, duracionBase: 3000 });
                     if (!_toastRunning) _procesarToastQueue();
                 }
 
@@ -5733,13 +5779,20 @@
                         _toastRunning = false;
                         return;
                     }
+
                     _toastRunning = true;
-                    const { mensaje, tipo } = _toastQueue.shift();
+                    const actual = _toastQueue.shift();
                     const toast = $('toast');
 
                     toast.classList.remove('show');
-                    toast.textContent = mensaje;
-                    toast.className = `toast ${tipo}`;
+                    toast.textContent = actual.mensaje;
+                    toast.className = `toast ${actual.tipo}`;
+
+                    // --- LÓGICA DE ACELERACIÓN ---
+                    let duracionFinal = actual.duracionBase || 3000;
+                    if (_toastQueue.length >= 3) { // Si quedan 3 o más en cola (eran 4+)
+                        duracionFinal = Math.floor(duracionFinal / 2);
+                    }
 
                     setTimeout(() => {
                         toast.classList.add('show');
@@ -5748,12 +5801,15 @@
                             toastTimeout = null;
                             // Esperar a que termine la animación de salida antes del siguiente
                             setTimeout(() => _procesarToastQueue(), 350);
-                        }, 3000);
+                        }, duracionFinal); // Usamos el tiempo dinámico aquí
                     }, 10);
                 }
 
                 function resetearBoton(btn) {
                     btn.disabled = false;
+                    btn.style.background = '';
+                    btn.style.color = '';
+                    btn.style.borderColor = '';
                     btn.innerHTML = '<svg class="icon"><use href="#icon-save"/></svg> <span id="btn-registrar-texto">Fichar</span>';
                 }
 
@@ -6362,6 +6418,10 @@
                         const diasHabilesConfig = D.diasHabiles();
                         const regsPorFecha = new Map(registrosRango.map(r => [r.fecha, r]));
                         const hoy = obtenerFechaHoy();
+
+                        // --- Standby para estadísticas ---
+                        const { ayerStr, ayerAbierto } = D.detectarAyerAbierto(hoy, regsPorFecha);
+
                         let objetivo = 0;
                         let hechas = 0;
                         let fechaIt = S.parsearFechaLocal(opciones.desde);
@@ -6373,8 +6433,16 @@
                             const r = regsPorFecha.get(iso);
                             const esEspecial = r && TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
                             const esHoy = iso === hoy;
-                            const diaTerminado = esHoy ? (r && r.salida) : true;
                             const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
+
+                            // --- NUEVO: Evaluar terminación ---
+                            let diaTerminado = true;
+                            if (esHoy) {
+                                diaTerminado = (r && r.salida);
+                            } else if (ayerAbierto && iso === ayerStr) {
+                                diaTerminado = false; // ¡Standby!
+                            }
+
                             if (esDiaHabil && (!esEspecial || esRemoto) && diaTerminado) {
                                 objetivo += horasDiariasObj;
                             }
@@ -6583,6 +6651,7 @@
                     const horasDiarias = D.horasDiarias();
                     const horasSemanales = D.horasSemanales();
                     const diasHabiles = D.diasHabiles();
+                    const { ayerStr: ayer, regAyer, ayerAbierto } = D.detectarAyerAbierto(hoy, registros);
 
                     // --- Día hábil hoy (compatible array v6.63 y fallback numérico) ---
                     const diaSemanaHoy = new Date().getDay();
@@ -6660,7 +6729,13 @@
 
                     // --- Tiempo transcurrido hoy ---
                     let tiempoHoy = 0;
-                    if (regHoy && regHoy.entrada && !tipoEspecialHoy) {
+                    if (ayerAbierto && !regHoy) {
+                        // Si ayer está abierto y hoy no hay nada, el timer sigue contando desde la entrada de ayer
+                        const ahora = new Date();
+                        const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
+                        const t = D.calcularHoras(regAyer.entrada, horaActual, regAyer.tiempoFuera || null, null, true);
+                        tiempoHoy = t ? t.total : 0;
+                    } else if (regHoy && regHoy.entrada && !tipoEspecialHoy) {
                         if (regHoy.salida) {
                             tiempoHoy = regHoy.total;
                         } else {
@@ -6675,11 +6750,12 @@
                         hoy, ini, fn,
                         registros, regHoy,
                         horasDiarias, horasSemanales,
-                        diasHabiles, esDiaHabil,
+                        diasHabiles, esDiaHabil, // Asegurate de que esDiaHabil esté definido como en tu código
                         semanaAbierta, bufferSemanal,
                         totalSemana, objetivoSemana,
                         tipoEspecialHoy, tiempoHoy,
                         todosEspeciales,
+                        ayerAbierto, ayerStr: ayer, regAyer // turno cruzando medianoche
                     };
                 }
 
@@ -6742,8 +6818,91 @@
                     const { regHoy, tiempoHoy, horasDiarias, esDiaHabil, tipoEspecialHoy, bufferSemanal, diasHabiles } = est;
                     const objetivoDiario = horasDiarias;
 
-                    // SIN REGISTRO
+                    // SIN REGISTRO HOY
                     if (!regHoy || !regHoy.entrada) {
+
+                        // --- NUEVO: Mostrar tarjeta contando el turno de ayer ---
+                        if (est.ayerAbierto) {
+                            const prog = objetivoDiario > 0 ? Math.min((tiempoHoy / objetivoDiario) * 100, 100) : 100;
+                            const cumplido = objetivoDiario === 0 || tiempoHoy >= objetivoDiario;
+
+                            let colorBarra = cumplido ? 'green' : 'blue';
+                            let colorBorde = cumplido ? 'green' : 'blue';
+                            let mensaje = '';
+
+                            if (objetivoDiario === 0) {
+                                mensaje = 'En curso (cruce de medianoche)';
+                            } else if (cumplido) {
+                                const extra = tiempoHoy - objetivoDiario;
+                                if (bufferSemanal < 0 && Math.abs(bufferSemanal) > extra) {
+                                    mensaje = 'Te podes ir, pero debés tiempo';
+                                } else {
+                                    mensaje = extra > 0 ? `Te podes ir (+${horasATexto(extra)})` : 'Te podes ir';
+                                }
+                            } else {
+                                const faltante = objetivoDiario - tiempoHoy;
+                                const faltanteTexto = `Faltan ${horasATexto(faltante)}`;
+                                mensaje = bufferSemanal >= faltante ? `${faltanteTexto}, pero te podés ir` : faltanteTexto;
+                            }
+
+                            // --- CALCULAR NOMBRE DEL DÍA DE AYER ---
+                            const nombreDiaAyer = obtenerNombreDia(est.ayerStr);
+
+                            // --- CALCULAR SALIDA ESTIMADA PARA AYER ---
+                            let hint = 'Toca Fichar para registrar salida';
+                            let hintEsHTML = false;
+
+                            const regAyer = est.regAyer;
+
+                            if (regAyer && regAyer.entrada && objetivoDiario > 0 && !TiposRegistro.esRegistroEspecial(regAyer.entrada, regAyer.salida)) {
+                                const [hE, mE] = regAyer.entrada.split(':').map(Number);
+                                let minutosTotal = (hE * 60) + mE + (objetivoDiario * 60);
+
+                                if (regAyer.tiempoFuera && !D.getIgnorarTiempoFuera()) {
+                                    const [hF, mF] = regAyer.tiempoFuera.split(':').map(Number);
+                                    minutosTotal += (hF * 60) + mF;
+                                }
+
+                                const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
+                                const inicioBreak = localStorage.getItem(`breakStartTime_${perfilId}`);
+                                if (inicioBreak && !D.getIgnorarTiempoFuera()) {
+                                    const mins = Math.floor((Date.now() - parseInt(inicioBreak)) / 60000);
+                                    if (mins > 0) minutosTotal += mins;
+                                }
+
+                                let hS = Math.floor(minutosTotal / 60) % 24;
+                                const mS = Math.round(minutosTotal % 60);
+                                const horaSalida = `${String(hS).padStart(2, '0')}:${String(mS).padStart(2, '0')}`;
+
+                                const esLaborable = Array.isArray(diasHabiles) && diasHabiles.includes(new Date().getDay());
+                                const mostrarBuffer = Math.abs(bufferSemanal) > 0.01 && esLaborable;
+
+                                if (mostrarBuffer) {
+                                    const minutosConBuffer = minutosTotal - (bufferSemanal * 60);
+                                    let hSB = Math.floor(minutosConBuffer / 60) % 24;
+                                    const mSB = Math.round(minutosConBuffer % 60);
+                                    const horaBuf = `${String(hSB).padStart(2, '0')}:${String(mSB).padStart(2, '0')}`;
+                                    const colorBuffer = bufferSemanal > 0 ? 'var(--c-green)' : bufferSemanal < 0 ? 'var(--c-red)' : 'var(--text-main)';
+                                    hint = `Salida estimada: <strong>${horaSalida}</strong> <span style="color: ${colorBuffer};">(<strong>${horaBuf}</strong>)</span>`;
+                                } else {
+                                    hint = `Salida estimada: <strong>${horaSalida}</strong>`;
+                                }
+                                hintEsHTML = true;
+                            }
+
+                            return {
+                                titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${nombreDiaAyer} (ayer)`,
+                                stats: horasATexto(tiempoHoy),
+                                mensaje: mensaje,
+                                mostrarMensaje: true,
+                                colorBarra: colorBarra, anchoBarra: prog,
+                                colorBorde: colorBorde, estadoFondo: 'en_curso', estadoFondoColor: null,
+                                hint: hint,
+                                hintEsHTML: hintEsHTML,
+                            };
+                        }
+
+                        // DIA NORMAL SIN REGISTRO
                         return {
                             titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
                             stats: esDiaHabil ? '🎒' : '🌞',
@@ -6757,7 +6916,7 @@
                         };
                     }
 
-                    // DÍA ESPECIAL
+                    // DÍA ESPECIAL HOY
                     if (tipoEspecialHoy) {
                         return {
                             titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
@@ -6771,7 +6930,7 @@
                         };
                     }
 
-                    // DÍA NORMAL
+                    // DÍA NORMAL CON REGISTRO (HOY)
                     const dayClosed = !!regHoy.salida;
                     const prog = objetivoDiario > 0 ? Math.min((tiempoHoy / objetivoDiario) * 100, 100) : 100;
                     const cumplido = objetivoDiario === 0 || tiempoHoy >= objetivoDiario;
@@ -6790,7 +6949,6 @@
                         mensaje = dif >= 0 ? `${horasATexto(dif)} extras` : `Faltaron ${horasATexto(Math.abs(dif))}`;
                         mostrarMensaje = true;
                     } else {
-                        // Día abierto con objetivo
                         colorBarra = cumplido ? 'green' : 'blue';
                         colorBorde = cumplido ? 'green' : 'blue';
                         estadoFondo = 'en_curso';
@@ -6809,7 +6967,6 @@
                         }
                     }
 
-                    // --- Hint: salida estimada ---
                     let hint = 'Toca para ver la Semana';
                     let hintEsHTML = false;
                     if (regHoy.entrada && !dayClosed && objetivoDiario > 0 && !TiposRegistro.esRegistroEspecial(regHoy.entrada, regHoy.salida)) {
@@ -7372,126 +7529,148 @@
                     const lista = document.getElementById('lista-orden-cards');
                     if (!lista) return;
 
-                    let draggingEl = null;
+                    let draggingEl = null;   // Original (actúa como hueco en la lista)
+                    let dragClone = null;    // Clon visual que sigue al dedo
                     let startY = 0;
-                    let longPressTimer = null;
-                    const LONG_PRESS_MS = 300;
+                    let initialYOffset = 0;
+                    let dragTimer = null;
+                    const DRAG_DELAY = 150; // Corto: se siente instantáneo pero permite hacer scroll
 
-                    function getItemFromHandle(el) { return el.closest('.orden-card-item'); }
                     function getCardFromItem(el) {
                         const handle = el?.classList?.contains('drag-handle') ? el : el?.querySelector('.drag-handle');
                         return handle?.dataset?.card;
                     }
-                    function getItemAtY(y) {
-                        return [...lista.querySelectorAll('.orden-card-item')].find(item => {
+
+                    // Inicializa el clon y oculta el original
+                    function initDrag(item, clientY) {
+                        draggingEl = item;
+                        const rect = item.getBoundingClientRect();
+                        initialYOffset = clientY - rect.top;
+
+                        // 1. Clon visual DENTRO DEL BODY para evadir el bug del transform del modal
+                        dragClone = item.cloneNode(true);
+                        dragClone.style.position = 'fixed';
+                        dragClone.style.top = `${rect.top}px`;
+                        dragClone.style.left = `${rect.left}px`;
+                        dragClone.style.width = `${rect.width}px`;
+                        dragClone.style.height = `${rect.height}px`;
+                        dragClone.style.zIndex = '999999';
+                        dragClone.style.pointerEvents = 'none'; // Clave para que los eventos pasen al fondo
+                        dragClone.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
+                        dragClone.style.margin = '0';
+                        dragClone.style.transform = 'scale(1.02)';
+                        dragClone.style.opacity = '0.9';
+                        document.body.appendChild(dragClone);
+
+                        // 2. El original se vuelve fantasma (ocupa espacio, pero es invisible)
+                        draggingEl.style.opacity = '0';
+
+                        if (navigator.vibrate) navigator.vibrate(30);
+                    }
+
+                    function moveDrag(clientY) {
+                        if (!dragClone || !draggingEl) return;
+
+                        // Mover el clon en la pantalla
+                        dragClone.style.top = `${clientY - initialYOffset}px`;
+
+                        // Detectar qué tarjeta estamos sobrevolando
+                        const target = [...lista.querySelectorAll('.orden-card-item')].find(item => {
                             if (item === draggingEl) return false;
                             const r = item.getBoundingClientRect();
-                            return y >= r.top && y <= r.bottom;
+                            return clientY >= r.top && clientY <= r.bottom;
                         });
-                    }
-                    function aplicarCambioOrden(desde, hasta) {
-                        const orden = obtenerOrdenCards();
-                        const fromIdx = orden.indexOf(desde);
-                        const toIdx = orden.indexOf(hasta);
-                        if (fromIdx === -1 || toIdx === -1) return;
-                        orden.splice(fromIdx, 1);
-                        orden.splice(toIdx, 0, desde);
-                        try { localStorage.setItem(_perfilKey('ordenCards'), JSON.stringify(orden)); } catch (e) { }
-                        aplicarOrdenCards(orden);
+
+                        // Desplazar el elemento original (fantasma) por el DOM
+                        if (target) {
+                            const targetRect = target.getBoundingClientRect();
+                            const targetMiddle = targetRect.top + targetRect.height / 2;
+
+                            // Flexbox reacomoda automáticamente en tiempo real
+                            if (clientY < targetMiddle) {
+                                lista.insertBefore(draggingEl, target);
+                            } else {
+                                lista.insertBefore(draggingEl, target.nextSibling);
+                            }
+                        }
                     }
 
-                    // Touch
-                    let dragActivado = false;
+                    function endDrag() {
+                        clearTimeout(dragTimer);
+                        if (!draggingEl) return;
 
+                        // Destruir el clon y hacer visible el original
+                        if (dragClone) {
+                            dragClone.remove();
+                            dragClone = null;
+                        }
+                        draggingEl.style.opacity = '';
+
+                        // Guardar nuevo orden leyendo el estado final del DOM
+                        const itemsDOM = Array.from(lista.querySelectorAll('.orden-card-item'));
+                        const nuevoOrden = itemsDOM.map(i => getCardFromItem(i)).filter(Boolean);
+
+                        try {
+                            // Usamos el helper existente _perfilKey
+                            localStorage.setItem(_perfilKey('ordenCards'), JSON.stringify(nuevoOrden));
+                        } catch (e) { }
+
+                        if (typeof aplicarOrdenCards === 'function') {
+                            aplicarOrdenCards(nuevoOrden);
+                        }
+
+                        draggingEl = null;
+                    }
+
+                    // --- TOUCH EVENTS (CELULARES) ---
                     lista.addEventListener('touchstart', (e) => {
                         const handle = e.target.closest('.drag-handle');
                         if (!handle) return;
-                        const item = getItemFromHandle(handle);
+                        const item = handle.closest('.orden-card-item');
                         if (!item) return;
+
                         startY = e.touches[0].clientY;
-                        dragActivado = false;
-                        longPressTimer = setTimeout(() => {
-                            draggingEl = item;
-                            dragActivado = true;
-                            item.classList.add('dragging');
-                            navigator.vibrate && navigator.vibrate(30);
-                        }, LONG_PRESS_MS);
+                        dragTimer = setTimeout(() => {
+                            initDrag(item, startY);
+                        }, DRAG_DELAY);
                     }, { passive: true });
 
                     lista.addEventListener('touchmove', (e) => {
                         if (!draggingEl) {
-                            if (Math.abs(e.touches[0].clientY - startY) > 10) clearTimeout(longPressTimer);
+                            // Si mueve mucho el dedo antes del delay, es scroll: cancelar drag
+                            if (Math.abs(e.touches[0].clientY - startY) > 10) clearTimeout(dragTimer);
                             return;
                         }
-                        e.preventDefault();
-                        const y = e.touches[0].clientY;
-                        const deltaY = y - startY;
-                        draggingEl.style.transform = `translateY(${deltaY}px)`;
-                        draggingEl.style.zIndex = '10';
-                        draggingEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-                        lista.querySelectorAll('.orden-card-item').forEach(i => {
-                            if (i !== draggingEl) i.classList.remove('drag-over');
-                        });
-                        const target = getItemAtY(y);
-                        if (target && target !== draggingEl) target.classList.add('drag-over');
+                        e.preventDefault(); // Evita que se scrollee el modal mientras arrastramos
+                        moveDrag(e.touches[0].clientY);
                     }, { passive: false });
 
-                    lista.addEventListener('touchend', (e) => {
-                        clearTimeout(longPressTimer);
-                        if (!draggingEl) return;
-                        const target = getItemAtY(e.changedTouches[0].clientY);
-                        draggingEl.style.transform = '';
-                        draggingEl.style.zIndex = '';
-                        draggingEl.style.boxShadow = '';
-                        lista.querySelectorAll('.orden-card-item').forEach(i => {
-                            i.classList.remove('drag-over');
-                            i.classList.remove('dragging');
-                        });
-                        if (target && target !== draggingEl) {
-                            aplicarCambioOrden(getCardFromItem(draggingEl), getCardFromItem(target));
-                        }
-                        draggingEl = null;
-                    });
+                    lista.addEventListener('touchend', endDrag);
+                    lista.addEventListener('touchcancel', endDrag);
 
-                    // Mouse (desktop)
+                    // --- MOUSE EVENTS (PC) ---
                     lista.addEventListener('mousedown', (e) => {
                         const handle = e.target.closest('.drag-handle');
                         if (!handle) return;
-                        e.preventDefault();
-                        draggingEl = getItemFromHandle(handle);
-                        if (!draggingEl) return;
+                        const item = handle.closest('.orden-card-item');
+                        if (!item) return;
+
                         startY = e.clientY;
-                        draggingEl.classList.add('dragging');
+                        dragTimer = setTimeout(() => {
+                            initDrag(item, startY);
+                        }, DRAG_DELAY);
                     });
 
                     document.addEventListener('mousemove', (e) => {
-                        if (!draggingEl) return;
-                        const deltaY = e.clientY - startY;
-                        draggingEl.style.transform = `translateY(${deltaY}px)`;
-                        draggingEl.style.zIndex = '10';
-                        draggingEl.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-                        lista.querySelectorAll('.orden-card-item').forEach(i => {
-                            if (i !== draggingEl) i.classList.remove('drag-over');
-                        });
-                        const target = getItemAtY(e.clientY);
-                        if (target && target !== draggingEl) target.classList.add('drag-over');
+                        if (!draggingEl) {
+                            if (Math.abs(e.clientY - startY) > 10) clearTimeout(dragTimer);
+                            return;
+                        }
+                        e.preventDefault();
+                        moveDrag(e.clientY);
                     });
 
-                    document.addEventListener('mouseup', (e) => {
-                        if (!draggingEl) return;
-                        const target = getItemAtY(e.clientY);
-                        draggingEl.style.transform = '';
-                        draggingEl.style.zIndex = '';
-                        draggingEl.style.boxShadow = '';
-                        lista.querySelectorAll('.orden-card-item').forEach(i => {
-                            i.classList.remove('drag-over');
-                            i.classList.remove('dragging');
-                        });
-                        if (target && target !== draggingEl) {
-                            aplicarCambioOrden(getCardFromItem(draggingEl), getCardFromItem(target));
-                        }
-                        draggingEl = null;
-                    });
+                    document.addEventListener('mouseup', endDrag);
                 }
 
                 function cerrarEdicion() {
@@ -8815,10 +8994,7 @@ Generado por Sistema Lushibosca
                         setTimeout(() => {
                             modoNormal.style.display = 'none';
                             modoLote.style.display = 'block';
-
-                            // Forzar reflow
                             modoLote.offsetHeight;
-
                             modoLote.classList.remove('fade-out');
 
                             // Limpiar campos
@@ -8845,16 +9021,10 @@ Generado por Sistema Lushibosca
                         setTimeout(() => {
                             modoLote.style.display = 'none';
                             modoNormal.style.display = 'block';
-
-                            // Forzar reflow
                             modoNormal.offsetHeight;
-
                             modoNormal.classList.remove('fade-out');
-
-                            btnTexto.textContent = 'Fichar';
-                            btn.style.color = '';
+                            UILogic.resetearBoton(btn);
                             btnTimer.style.opacity = '1';
-
                             actualizarEstadoBotonTimerMain();
                         }, 300);
                     }
@@ -11416,11 +11586,18 @@ Generado por Sistema Lushibosca
 </html>
 
 <!--// ====================================================================
-    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 295
+    //                 NOTAS SISTEMA LUSHIBOSCA VERSION 299
     // ====================================================================
     
       - CAMBIOS:
-    1) Refactor de la funcion GenerarReporte
+    1) Se agrega deteccion de dia anterior incompleto
+    2) Refactor: helper detectarAyerAbierto() centraliza la detección
+       de turno activo cruzando medianoche (reemplaza 4 bloques inline idénticos)
+    3) calcularEstadoCard() exporta ayerStr y regAyer en su return
+       para evitar recálculo redundante en derivarVistaHoy()
+    4) Se centra el toast cuando pasa la segunda linea
+    5) Se agrega moviemiento en tiempo real en la configuracion de orden de tarjetas
+    6) Se actualiza la funcion de toast para que los muestre mas rapidos si hay varios en cola
 
      - BUGS CONOCIDOS:
     1)
