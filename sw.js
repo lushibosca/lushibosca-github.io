@@ -1,9 +1,11 @@
-const CACHE_NAME = 'horarios-v299-cache';
+const CACHE_NAME = 'horarios-v300-cache';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
-  './icon.svg'
+  './icon.svg',
+  './app.js',
+  './styles.css'
 ];
 
 // Instalación
@@ -11,34 +13,29 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Abriendo cache');
         return cache.addAll(urlsToCache).catch(err => {
-            console.error('CRÍTICO: Falló la carga de archivos en el install:', err);
-            throw err; 
+          console.error('CRÍTICO: Falló la carga de archivos en el install:', err);
+          throw err;
         });
       })
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Activación
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Borrando cache viejo:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then(cacheNames => Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      ))
+      .then(() => self.clients.claim())
   );
-  return self.clients.claim();
 });
 
-// Fetch
+// Fetch — cache-first, fallback a network
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
 
@@ -47,24 +44,25 @@ self.addEventListener('fetch', event => {
 
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
-        if (response) {
-          return response;
-        }
+      .then(cached => {
+        if (cached) return cached;
+
         return fetch(event.request)
           .then(networkResponse => {
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+            if (
+              !networkResponse ||
+              networkResponse.status !== 200 ||
+              networkResponse.type !== 'basic'
+            ) {
               return networkResponse;
             }
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => {
-              cache.put(event.request, responseClone);
-            });
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
             return networkResponse;
           })
           .catch(() => {
             if (event.request.mode === 'navigate') {
-              return caches.match('./index.html');
+              return caches.match('./') || caches.match('./index.html');
             }
           });
       })
