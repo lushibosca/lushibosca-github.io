@@ -1,5 +1,5 @@
 
-(function () { //Evitar parpadeo al actualizar, (modo oscuro)
+(function () {
     try {
         var stored = localStorage.getItem('temaOscuro');
         if (stored === 'true' || stored === null) {
@@ -12,6 +12,12 @@
 
     const $ = id => document.getElementById(id);
 
+    function _applyDataColors(root) {
+        root.querySelectorAll('[data-color]').forEach(el => {
+            el.style.color = el.dataset.color;
+        });
+    }
+
     // ====================================================================
     // PWA INSTALLER MODULE
     // ====================================================================
@@ -20,33 +26,23 @@
         const btnInstall = document.getElementById('btn-install');
 
         function init() {
-            // Detectar si ya está instalada
             if (window.matchMedia('(display-mode: standalone)').matches ||
                 window.navigator.standalone === true) {
-                // Ya está instalada, no mostrar botón
                 if (btnInstall) btnInstall.style.display = 'none';
                 return;
             }
 
-            // Capturar el evento beforeinstallprompt
             window.addEventListener('beforeinstallprompt', (e) => {
-                // Prevenir el prompt automático
                 e.preventDefault();
-                // Guardar el evento para usarlo después
                 deferredPrompt = e;
-                // Mostrar el botón de instalación
                 if (btnInstall) {
                     btnInstall.style.display = 'flex';
                 }
             });
 
-            // Detectar cuando se instala la app
             window.addEventListener('appinstalled', () => {
-                // Ocultar el botón
                 if (btnInstall) btnInstall.style.display = 'none';
                 deferredPrompt = null;
-
-                // Mostrar notificación de éxito
                 if (window.UILogic) {
                     UILogic.mostrarToast('¡App instalada con éxito!', 'success');
                 }
@@ -224,7 +220,7 @@
     // PERFIL MANAGER MODULE
     // ====================================================================
     const PerfilManager = (function (S) {
-        const MAX_PERFILES = 7; // cantidad maxima de perfiles permitida (1 de 3)
+        const MAX_PERFILES = 7;
         let perfilActual = 'default';
         let perfiles = {};
 
@@ -252,7 +248,6 @@
                     };
                 }
 
-                // Determinar perfil activo
                 perfilActual = localStorage.getItem('perfilActivo') || 'default';
                 if (!perfiles[perfilActual]) {
                     const availableIds = Object.keys(perfiles);
@@ -298,7 +293,6 @@
                 registros: [...window.DataManagement.registros()],
                 diasHabiles: window.DataManagement.diasHabiles(),
                 horasDiarias: window.DataManagement.horasDiarias(),
-                // Preservar datos de Gist si existen
                 ...(actual.gistId && { gistId: actual.gistId }),
                 ...(actual.gistLastSync && { gistLastSync: actual.gistLastSync }),
                 ...(actual.gistAutoSync != null && { gistAutoSync: actual.gistAutoSync }),
@@ -316,7 +310,6 @@
         function cargarDatosPerfilActual() { return perfiles[perfilActual]; }
 
         function actualizarSelector() {
-            // Actualiza el TEXTO del botón del header en lugar del select
             const btnTexto = document.getElementById('nombre-perfil-header');
             if (btnTexto && perfiles[perfilActual]) {
                 btnTexto.textContent = perfiles[perfilActual].nombre;
@@ -337,7 +330,7 @@
         }
 
         function cambiarPerfil(nuevoId) {
-            if (!nuevoId) return; // Si viene del select antiguo (ya no existe)
+            if (!nuevoId) return;
             if (nuevoId === perfilActual) return;
 
             guardarDatosPerfilActual();
@@ -374,11 +367,13 @@
     // MODAL MANAGER MODULE
     // ====================================================================
     const ModalManager = (function () {
-
-        // Mapa de relaciones hijo → padre registradas vía alternar()
         const _padres = {};
 
-        // Mapa de acciones "volver" por modal (se poblará después de que UILogic esté listo)
+        let _navegandoHaciaAtras = false;
+        let _ignorandoPopstate = false;
+        let _enAlternanciaHaciaAdelante = false;
+        let _enAlternanciaHaciaAtras = false;
+
         function _getAccionVolver(modalId) {
             const acciones = {
                 'modal-gist': () => window.UILogic?.cerrarModalGist(),
@@ -396,8 +391,29 @@
             return acciones[modalId] || null;
         }
 
-        // Función para manejar clics fuera del modal
-        // Solo cierra si el mousedown también ocurrió en el overlay (no en un drag desde adentro)
+        window.addEventListener('popstate', (event) => {
+            if (_ignorandoPopstate) {
+                _ignorandoPopstate = false;
+                return;
+            }
+
+            _navegandoHaciaAtras = true;
+
+            const modalesAbiertos = Array.from(document.querySelectorAll('.modal.show'));
+            if (modalesAbiertos.length > 0) {
+                const topModal = modalesAbiertos[modalesAbiertos.length - 1];
+                const accionVolver = _getAccionVolver(topModal.id);
+
+                if (accionVolver) {
+                    accionVolver();
+                } else {
+                    cerrar(topModal.id);
+                }
+            }
+
+            setTimeout(() => { _navegandoHaciaAtras = false; }, 50);
+        });
+
         let _mousedownEnOverlay = false;
 
         function _handleOverlayMousedown(event) {
@@ -408,8 +424,6 @@
             if (!_mousedownEnOverlay) return;
             if (event.target.classList.contains('modal') && event.target.classList.contains('show')) {
                 const modalId = event.target.id;
-
-                // Si este modal fue abierto desde otro, el overlay actúa como "volver"
                 const accionVolver = _getAccionVolver(modalId);
                 if (accionVolver) {
                     accionVolver();
@@ -421,13 +435,14 @@
 
         function abrir(modalId, callback = null) {
             const modal = document.getElementById(modalId);
-            if (!modal) {
-                console.warn(`Modal ${modalId} no encontrado`);
-                return;
-            }
+            if (!modal) return;
 
             modal.classList.add('show');
             document.body.classList.add('modal-open');
+
+            if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAtras) {
+                history.pushState({ modalId: modalId }, "");
+            }
 
             setTimeout(() => {
                 modal.addEventListener('mousedown', _handleOverlayMousedown);
@@ -439,29 +454,43 @@
 
         function cerrar(modalId, callback = null) {
             const modal = document.getElementById(modalId);
-            if (!modal) {
-                console.warn(`Modal ${modalId} no encontrado`);
-                return;
-            }
+            if (!modal) return;
 
             modal.classList.remove('show');
-            document.body.classList.remove('modal-open');
+
+            if (document.querySelectorAll('.modal.show').length === 0) {
+                document.body.classList.remove('modal-open');
+            }
+
             modal.removeEventListener('mousedown', _handleOverlayMousedown);
             modal.removeEventListener('click', handleOutsideClick);
 
-            // Limpiar relación padre si existía
-            delete _padres[modalId];
+            if (!_navegandoHaciaAtras && !_enAlternanciaHaciaAdelante) {
+                _ignorandoPopstate = true;
+                history.back();
+            }
 
             if (callback) callback();
         }
 
         function alternar(modalIdCerrar, modalIdAbrir, callbackCerrar = null, callbackAbrir = null) {
-            // Si hay un modal padre cerrándose para abrir un hijo, registrar la relación
-            if (modalIdCerrar && modalIdAbrir) {
-                _padres[modalIdAbrir] = modalIdCerrar;
+            const esHaciaAtras = (_padres[modalIdCerrar] === modalIdAbrir);
+
+            if (esHaciaAtras) {
+                _enAlternanciaHaciaAtras = true;
+                delete _padres[modalIdCerrar]; 
+            } else {
+                _enAlternanciaHaciaAdelante = true;
+                if (modalIdCerrar && modalIdAbrir) {
+                    _padres[modalIdAbrir] = modalIdCerrar;
+                }
             }
+
             cerrar(modalIdCerrar, callbackCerrar);
             abrir(modalIdAbrir, callbackAbrir);
+
+            _enAlternanciaHaciaAdelante = false;
+            _enAlternanciaHaciaAtras = false;
         }
 
         function cerrarTodos() {
@@ -470,7 +499,6 @@
                 modal.removeEventListener('mousedown', _handleOverlayMousedown);
                 modal.removeEventListener('click', handleOutsideClick);
             });
-            // Limpiar todas las relaciones
             Object.keys(_padres).forEach(k => delete _padres[k]);
             document.body.classList.remove('modal-open');
         }
@@ -499,19 +527,14 @@
         }
 
         function saveState(registros) {
-            // CRÍTICO: Hacer copia profunda INMEDIATAMENTE
             const copiaSegura = deepClone(registros);
 
-            // Si estamos en medio del historial (después de un undo),
-            // eliminar todos los estados "futuros"
             if (currentIndex < history.length - 1) {
                 history.splice(currentIndex + 1);
             }
 
-            // Guardar la copia profunda
             history.push(copiaSegura);
 
-            // Limitar tamaño del historial
             if (history.length > MAX_HISTORY) {
                 history.shift();
                 currentIndex = MAX_HISTORY - 1;
@@ -520,7 +543,6 @@
             }
 
             updateButtons();
-            // Guardar en localStorage
             saveToLocalStorage();
         }
 
@@ -594,22 +616,18 @@
                         return value;
                     });
 
-                    // Verificar que el historial no tenga más de 24 horas
                     const ahora = Date.now();
                     const tiempoTranscurrido = ahora - (historyData.timestamp || 0);
                     const limiteEnMs = 24 * 60 * 60 * 1000;
 
                     if (tiempoTranscurrido < limiteEnMs) {
-                        // Historial válido - restaurar
                         history = historyData.history || [];
                         currentIndex = historyData.currentIndex !== undefined ? historyData.currentIndex : -1;
 
                         console.log(`✓ Historial restaurado: ${history.length} estados, índice actual: ${currentIndex}`);
 
-                        // CRÍTICO: Si hay estados y el índice es válido, retornar TRUE
                         return history.length > 0 && currentIndex >= 0;
                     } else {
-                        // Historial expirado - limpiar
                         console.log('Historial expirado (más de 24hs), limpiando...');
                         localStorage.removeItem(storageKey);
                         history = [];
@@ -623,7 +641,7 @@
             }
 
             updateButtons();
-            return false; // No se cargó historial válido
+            return false;
         }
 
         function clearStorage() {
@@ -870,7 +888,6 @@
             $('edit-grupo-desde').value = grupoEnEdicion.fechaDesde;
             $('edit-grupo-hasta').value = grupoEnEdicion.fechaHasta;
 
-            // Hint con cantidad de registros y tipo
             UILogic.actualizarHintGrupo();
 
             ModalManager.abrir('modal-editar-grupo');
@@ -885,12 +902,10 @@
             btnGuardar.disabled = true;
 
             try {
-                // --- 1. Sanitización y captura de inputs ---
                 const nuevoTipo = S.sanitizeString($('edit-grupo-tipo').value.trim(), 20);
                 const nuevaDesde = S.sanitizeString($('edit-grupo-desde').value.trim(), 10);
                 const nuevaHasta = S.sanitizeString($('edit-grupo-hasta').value.trim(), 10);
 
-                // --- 2. Validaciones básicas ---
                 if (!nuevaDesde || !nuevaHasta) {
                     UILogic.mostrarToast('Verifica ambas fechas', 'error');
                     return;
@@ -908,7 +923,6 @@
                     return;
                 }
 
-                // --- 3. Validación de rango razonable (2 años) ---
                 const hoy = new Date();
                 const fechaInicioObj = S.parsearFechaLocal(nuevaDesde);
                 const fechaFinObj = S.parsearFechaLocal(nuevaHasta);
@@ -923,20 +937,17 @@
                     return;
                 }
 
-                // --- 4. Validación de tipo ---
                 if (!TiposRegistro.validarTipoPermitido(nuevoTipo)) {
                     UILogic.mostrarToast('Tipo de registro inválido', 'error');
                     return;
                 }
 
-                // --- 5. Validación de límite de 60 días ---
                 const diffDays = Math.ceil(Math.abs(fechaFinObj - fechaInicioObj) / (1000 * 60 * 60 * 24)) + 1;
                 if (diffDays > 60) {
                     UILogic.mostrarToast(`El rango contiene ${diffDays} días.\n Máximo: 60 días por operación.`, 'error');
                     return;
                 }
 
-                // --- 6. Detección de cambios ---
                 const huboCambios =
                     nuevoTipo !== grupoEnEdicion.subtipo ||
                     nuevaDesde !== grupoEnEdicion.fechaDesde ||
@@ -948,7 +959,6 @@
                     return;
                 }
 
-                // --- 7. Generar lista de fechas nuevas ---
                 const fechasNuevas = [];
                 let checkFecha = S.parsearFechaLocal(nuevaDesde);
                 const checkFin = S.parsearFechaLocal(nuevaHasta);
@@ -958,7 +968,6 @@
                     checkFecha.setDate(checkFecha.getDate() + 1);
                 }
 
-                // --- 8. Validación de conflictos ---
                 const idsDelGrupo = new Set(grupoEnEdicion.registros.map(r => r.id));
                 const fechasSet = new Set(fechasNuevas);
                 const conflictos = registros.filter(r => fechasSet.has(r.fecha) && !idsDelGrupo.has(r.id));
@@ -972,7 +981,6 @@
                     return;
                 }
 
-                // --- 9. Actualización ---
                 registros = registros.filter(r => !idsDelGrupo.has(r.id));
 
                 const codigosTipo = TiposRegistro.obtenerCodigosPorTipo(nuevoTipo);
@@ -1010,7 +1018,6 @@
         async function eliminarGrupoActual() {
             if (!grupoEnEdicion) return;
 
-            // VALIDACIÓN DE LÍMITE
             if (grupoEnEdicion.registros.length > 60) {
                 UILogic.mostrarToast(`Este grupo contiene ${grupoEnEdicion.registros.length} registros.\nMáximo permitido: 60 registros por operación.`, 'error');
                 return;
@@ -1031,7 +1038,6 @@
         function setGrupoEnEdicion(val) { grupoEnEdicion = val; }
 
         async function registrarDiaEspecial(fecha, tipo) {
-            // Verificar si ya existe un registro para hoy
             const registroExistente = registros.find(r => r.fecha === fecha);
 
             if (registroExistente) {
@@ -1039,7 +1045,6 @@
                 throw new Error('Registro ya existe');
             }
 
-            // Obtener códigos del tipo especial
             const tipoConfig = TiposRegistro.obtenerTipoPorId(tipo);
             if (!tipoConfig) {
                 UILogic.mostrarToast('Tipo inválido', 'error');
@@ -1050,13 +1055,11 @@
             const salida = tipoConfig.codigo;
             const tipoTexto = `${tipoConfig.emoji} ${tipoConfig.label}`;
 
-            // Verificar límite
             if (registros.length >= S.SECURITY_LIMITS.MAX_REGISTROS) {
                 UILogic.mostrarToast('Límite de registros alcanzado', 'error');
                 throw new Error('Límite alcanzado');
             }
 
-            // Crear registro
             const nuevoId = S.generarIDSeguro();
             const t = calcularHoras(entrada, salida, null);
 
@@ -1145,7 +1148,6 @@
             const tfMinutos = tfEfectivo ? tiempoEnMinutos(tfEfectivo) : 0;
             const crMinutos = cr ? tiempoEnMinutos(cr) : 0;
 
-            // NO verificar tipo especial si es cálculo temporal (hora actual)
             if (!esCalculoTemporal) {
                 const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(e, s);
                 if (tipoEspecial) {
@@ -1185,11 +1187,9 @@
             registros.forEach(r => {
                 const tipoEspecial = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
 
-                // Solo descontar si es especial Y NO es remoto
                 if (r.fecha >= inicio && r.fecha <= fin && tipoEspecial) {
-                    // Si es remoto, NO descontar (porque suma horas al total)
                     if (tipoEspecial.id === 'remoto') {
-                        return; // Saltar este registro
+                        return;
                     }
 
                     const fechaObj = S.parsearFechaLocal(r.fecha);
@@ -1238,24 +1238,20 @@
             btn.disabled = true;
             let usaHoraActual = false;
 
-            // --- cambiamos 'const' por 'let' para reescribir la fecha si es necesario ---
             let f = S.sanitizeString($('fecha').value, 10);
             let e = S.sanitizeString($('entrada').value.trim(), 5);
             let s = S.sanitizeString($('salida').value.trim(), 5);
 
-            // --- Interceptar si no hay entrada (incluso si llenó la salida manual) ---
             if (!e) {
                 const { ayerStr: ayer, ayerAbierto } = detectarAyerAbierto(UILogic.obtenerFechaHoy(), registros);
                 const regHoy = registros.find(r => r.fecha === f);
 
-                // Si ayer está abierto, hoy está vacío, Y no pasaron 24hs → redirigir a ayer
                 if (ayerAbierto && !regHoy) {
                     f = ayer;
-                    $('fecha').value = f; // Sincronizamos la UI con ayer
+                    $('fecha').value = f;
                 }
             }
 
-            // --- cambiamos 'const' por 'let' ---
             let registroExistente = registros.find(r => r.fecha === f);
 
             if (!e && !s) {
@@ -1296,7 +1292,6 @@
             }
 
             if (registroExistente && !e && s && registroExistente.entrada && !registroExistente.salida) {
-                // Capturamos si el timer fue detenido
                 const timerDetenido = detenerYRegistrarTimer(registroExistente);
 
                 registroExistente.salida = s;
@@ -1307,10 +1302,8 @@
 
                 HistoryManager.saveState(registros);
 
-                // PASAMOS EL ID DEL REGISTRO ACTUALIZADO PARA ANIMARLO
                 const saved = await guardarYActualizar(registroExistente.id);
                 if (saved) {
-                    // FEEDBACK VISUAL (solo salida manual)
                     const salidaManual = !usaHoraActual;
                     if (salidaManual) {
                         UILogic.aplicarFeedbackCampos([
@@ -1319,17 +1312,13 @@
                         ]);
                     }
 
-                    // Mensaje diferenciado según si había timer activo
                     let mensaje;
                     if (timerDetenido && usaHoraActual) {
-                        // Caso: Salida con hora actual Y timer activo
                         const tiempoFuera = registroExistente.tiempoFuera || '00:00';
                         mensaje = `Salida registrada con hora actual \nDescanso finalizado: +${tiempoFuera} \n(entrada: ${registroExistente.entrada})`;
                     } else if (usaHoraActual) {
-                        // Caso: Salida con hora actual SIN timer
                         mensaje = `Salida registrada con hora actual \n(entrada: ${registroExistente.entrada})`;
                     } else {
-                        // Caso: Salida manual
                         mensaje = `Salida ${s} agregada \n(entrada: ${registroExistente.entrada})`;
                     }
 
@@ -1356,7 +1345,6 @@
                 return;
             }
 
-            // GENERAMOS ID
             const nuevoId = S.generarIDSeguro();
 
             const t = calcularHoras(e || null, s || null, null);
@@ -1375,11 +1363,9 @@
 
             HistoryManager.saveState(registros);
 
-            // PASAMOS EL ID NUEVO AQUI
             const saved = await guardarYActualizar(nuevoId);
 
             if (saved) {
-                // FEEDBACK VISUAL (entrada y/o salida manual)
                 const entradaManual = e && !usaHoraActual;
                 const salidaManual = s && !usaHoraActual;
 
@@ -1409,7 +1395,6 @@
                 const hoy = UILogic.obtenerFechaHoy();
 
                 if (registroABorrar && registroABorrar.fecha === hoy) {
-                    // LIMPIAR TIMER DEL PERFIL ACTUAL
                     const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
                     const storageKey = `breakStartTime_${perfilId}`;
                     if (localStorage.getItem(storageKey)) {
@@ -1428,7 +1413,6 @@
                 if (saved) {
                     UILogic.mostrarToast('Registro eliminado', 'success');
                     UILogic.cerrarEdicion();
-                    // Forzamos actualización del botón visualmente
                     UILogic.actualizarEstadoBotonTimerMain();
 
                     if (window.UILogic && window.UILogic.actualizarBotonLote) {
@@ -1439,12 +1423,10 @@
         }
 
         function editarRegistro(id) {
-            // 1. Validaciones iniciales (si ya se está editando o no existe el ID)
             if (editandoId !== null) return;
             const r = registros.find(x => x.id === id);
             if (!r) return;
 
-            // 2. Cargar datos en los inputs
             editandoId = id;
             $('edit-fecha').value = r.fecha;
             $('edit-entrada').value = r.entrada || '';
@@ -1452,15 +1434,12 @@
             $('edit-tiempo-fuera').value = r.tiempoFuera || '';
             $('edit-notas').value = r.notas || '';
 
-            // 3. CONFIGURAR EL BOTÓN DE CRÉDITO
             const btnCredito = document.getElementById('btn-toggle-credito');
 
-            // A) Limpieza total
             btnCredito.style.background = '';
             btnCredito.style.color = '';
             btnCredito.style.border = '';
 
-            // B) Decidir si se pinta de verde o se queda gris
             if (r.credito && r.credito !== '00:00') {
                 btnCredito.dataset.activo = "true";
                 btnCredito.classList.add('btn-activo');
@@ -1469,7 +1448,6 @@
                 btnCredito.classList.remove('btn-activo');
             }
 
-            // 4. Mostrar el modal y activar bloqueos
             ModalManager.abrir('modal-editar');
 
             UILogic.setBloqueoEdicion(true);
@@ -1490,7 +1468,6 @@
             const btnGuardar = modal.querySelector('.btn-edit');
             btnGuardar.disabled = true;
 
-            // --- 1. OBTENER VALORES DE LOS INPUTS ---
             const f = S.sanitizeString($('edit-fecha').value, 10);
             const e = S.sanitizeString($('edit-entrada').value.trim(), 5);
             const s = S.sanitizeString($('edit-salida').value.trim(), 5);
@@ -1502,33 +1479,26 @@
             if (notas) notas = S.sanitizeNotas(notas, true) || null;
             if (notas === '') notas = null;
 
-            // --- CALCULAR CRÉDITO SEGÚN EL BOTÓN ---
             let cr = null;
             const btnCredito = document.getElementById('btn-toggle-credito');
 
-            // Solo calculamos si el botón existe y está marcado como activo
             if (btnCredito && btnCredito.dataset.activo === "true") {
-                // Calculamos las horas trabajadas reales (sin crédito)
                 const calcTemp = calcularHoras(e, s, tf, null);
 
                 if (calcTemp) {
                     const horasTrabajadas = calcTemp.total;
-                    const horasObjetivo = horasDiarias; // Variable global de configuración
+                    const horasObjetivo = horasDiarias;
 
-                    // Diferencia: Lo que falta para llegar al objetivo
                     const diferencia = horasObjetivo - horasTrabajadas;
 
-                    if (diferencia > 0.01) { // Usamos 0.01 para evitar errores de redondeo pequeños
-                        // Convertimos la diferencia a formato HH:MM
+                    if (diferencia > 0.01) {
                         let h = Math.floor(diferencia);
                         let m = Math.round((diferencia - h) * 60);
                         if (m === 60) { h++; m = 0; }
                         cr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
                     }
-                    // Si diferencia <= 0, significa que ya cumplió el horario, así que cr se queda en null
                 }
             }
-            // --- VALIDACIÓN DE FUTURO PARA NORMALES ---
             const hoy = UILogic.obtenerFechaHoy();
             if (f > hoy) {
                 const esEspecial = TiposRegistro.esRegistroEspecial(e, s);
@@ -1540,15 +1510,12 @@
                 }
             }
 
-            // --- 2. DETECTAR SI HUBO CAMBIOS ---
             const actualEntrada = r.entrada || '';
             const nuevaEntrada = e || '';
             const actualSalida = r.salida || '';
             const nuevaSalida = s || '';
             const actualTF = r.tiempoFuera || '';
             const nuevoTF = tf || '';
-
-            // Comparar crédito también
             const actualCR = r.credito || '';
             const nuevoCR = cr || '';
             const actualNotas = r.notas || '';
@@ -1567,7 +1534,6 @@
                 return;
             }
 
-            // --- 3. VALIDACIONES DE SEGURIDAD ---
             if (!S.validarFechaSegura(f)) {
                 UILogic.restaurarBotonGuardarEdicion(btnGuardar);
                 UILogic.mostrarToast('Fecha inválida', 'error');
@@ -1598,7 +1564,6 @@
                 return;
             }
 
-            // Caso: Borrar registro si todo está vacío
             if (!e && !s) {
                 const registroABorrar = registros.find(r => r.id === editandoId);
                 if (registroABorrar && registroABorrar.fecha === UILogic.obtenerFechaHoy()) {
@@ -1620,7 +1585,6 @@
                 return;
             }
 
-            // Verificar duplicados de fecha
             const existeFecha = registros.some(reg => reg.fecha === f && reg.id !== editandoId);
             if (existeFecha) {
                 UILogic.restaurarBotonGuardarEdicion(btnGuardar);
@@ -1628,7 +1592,6 @@
                 return;
             }
 
-            // Tiempo Fuera no puede superar tiempo trabajado
             if (e && s && tf) {
                 const [hE, mE] = e.split(':').map(Number);
                 const [hS, mS] = s.split(':').map(Number);
@@ -1648,7 +1611,6 @@
                 }
             }
 
-            // --- 4. ACTUALIZAR EL OBJETO ---
             r.fecha = f;
             r.entrada = e || null;
 
@@ -1662,14 +1624,12 @@
             r.credito = cr;
             r.notas = notas;
 
-            // --- 5. RECALCULAR TOTALES ---
             const t = calcularHoras(r.entrada, r.salida, r.tiempoFuera, r.credito);
 
             r.horas = t?.horas || 0;
             r.minutos = t?.minutos || 0;
             r.total = t?.total || 0;
 
-            // Ordenar
             ordenarRegistros();
 
             HistoryManager.saveState(registros);
@@ -1677,7 +1637,6 @@
             const saved = await guardarYActualizar(null, true);
 
             if (saved) {
-                // Mensaje personalizado si se aplicó compensación
                 if (cr) {
                     UILogic.mostrarToast(`Guardado con Salida Temprano (+${cr})`, 'success');
                 } else {
@@ -1700,13 +1659,11 @@
 
             const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
 
-            // Resetear variables locales del módulo directamente
             diasHabiles = [1, 2, 3, 4, 5];
             horasDiarias = 7;
             registros.splice(0, registros.length);
             ignorarTiempoFuera = false;
 
-            // Limpiar claves localStorage por perfil
             localStorage.removeItem(`breakStartTime_${perfilId}`);
             localStorage.removeItem(`history_${perfilId}`);
             localStorage.removeItem(`fondoCard_${perfilId}`);
@@ -1716,7 +1673,6 @@
             localStorage.removeItem(`cardVisible_historico_${perfilId}`);
             localStorage.removeItem(`ordenCards_${perfilId}`);
 
-            // Limpiar gistId y lastSync del perfil activo
             if (window.PerfilManager) {
                 const perfil = PerfilManager.obtenerDatosPerfil();
                 if (perfil) {
@@ -1740,10 +1696,6 @@
             }
         }
 
-        // ----------------------------------------------------------------
-        // HELPER COMPARTIDO: filtra, sanitiza y recalcula una lista de
-        // registros crudos (usada por importarDatos y gistBajar).
-        // ----------------------------------------------------------------
         function normalizarRegistrosImportados(rawList, calcularHorasFn) {
             const validarHora = (h) => h && S.REGEX_PATTERNS.HORA.test(h) ? S.sanitizeString(h, 5) : null;
 
@@ -1764,7 +1716,6 @@
                         : null,
                 }));
 
-            // Recalcular totales para asegurar consistencia interna
             normalizados.forEach(r => {
                 const t = calcularHorasFn(r.entrada, r.salida, r.tiempoFuera || null, r.credito || null);
                 r.horas = t?.horas || 0;
@@ -1811,7 +1762,6 @@
                 return;
             }
 
-            // Validación estricta de MIME
             if (!file.type || file.type !== 'application/json') {
                 UILogic.mostrarToast('Solo se permiten archivos JSON', 'error');
                 return;
@@ -1820,20 +1770,17 @@
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    // Validar que el contenido no esté vacío
                     const contenido = e.target.result;
                     if (!contenido || contenido.trim().length === 0) {
                         UILogic.mostrarToast('Archivo vacío', 'error');
                         return;
                     }
 
-                    // Validar tamaño del contenido antes de parsear
                     if (contenido.length > S.SECURITY_LIMITS.MAX_JSON_SIZE) {
                         UILogic.mostrarToast('Contenido del archivo demasiado grande', 'error');
                         return;
                     }
 
-                    // Parse seguro con protección contra Prototype Pollution
                     const data = JSON.parse(contenido, (key, value) => {
                         if (['__proto__', 'constructor', 'prototype'].includes(key)) {
                             console.warn('⚠️ Intento de prototype pollution bloqueado');
@@ -1842,7 +1789,6 @@
                         return value;
                     });
 
-                    // VALIDACIÓN DE CLAVES PERMITIDAS (ACTUALIZADA)
                     const allowedRootKeys = [
                         'registros',
                         'diasHabiles',
@@ -1861,7 +1807,6 @@
                         return;
                     }
 
-                    // Validación estricta de estructura
                     if (!data || typeof data !== 'object' || Array.isArray(data)) {
                         UILogic.mostrarToast('Estructura de archivo inválida', 'error');
                         return;
@@ -1872,25 +1817,20 @@
                         return;
                     }
 
-                    // Advertir si el schema es de una versión futura
                     if (data.version && data.version > S.SECURITY_LIMITS.SCHEMA_VERSION) {
                         console.warn(`⚠️ Archivo exportado con schema v${data.version}, app en v${S.SECURITY_LIMITS.SCHEMA_VERSION}`);
                         UILogic.mostrarToast(`Archivo de versión más nueva (v${data.version}). Algunos datos pueden no importarse correctamente.`, 'warning');
                     }
 
-                    // NUEVA VALIDACIÓN: rangoExportado
                     if (data.rangoExportado !== undefined) {
-                        // Sanitizar y validar formato
                         const rangoSafe = S.sanitizeString(String(data.rangoExportado), 100);
 
-                        // Validar que solo contenga caracteres seguros
                         const regexRangoSeguro = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-:]+$/;
                         if (!regexRangoSeguro.test(rangoSafe)) {
                             UILogic.mostrarToast('Metadatos de rango inválidos', 'error');
                             return;
                         }
 
-                        // Opcional: Validar coherencia (si viene rango, verificar que los registros coincidan)
                         if (rangoSafe.includes('Mes')) {
                             const mesMatch = rangoSafe.match(/(\d{4}-\d{2})/);
                             if (mesMatch && data.registros.length > 0) {
@@ -1900,13 +1840,11 @@
                                 );
                                 if (!todosDelMes) {
                                     console.warn('⚠️ Advertencia: Registros no coinciden con el rango declarado');
-                                    // No bloqueamos, solo advertimos
                                 }
                             }
                         }
                     }
 
-                    // Verificar integridad del hash
                     if (data.hash) {
                         const hashCalculado = await S.calcularHashSHA256(data.registros);
                         if (hashCalculado !== data.hash) {
@@ -1919,13 +1857,11 @@
                         if (!continuar) return;
                     }
 
-                    // Validar límite de registros antes de procesar
                     if (data.registros.length > S.SECURITY_LIMITS.MAX_REGISTROS) {
                         UILogic.mostrarToast(`Máximo ${S.SECURITY_LIMITS.MAX_REGISTROS} registros permitidos`, 'error');
                         return;
                     }
 
-                    // Filtrar, normalizar y recalcular datos
                     const registrosImportados = normalizarRegistrosImportados(data.registros, calcularHoras);
 
                     if (registrosImportados.length === 0) {
@@ -1933,11 +1869,9 @@
                         return;
                     }
 
-                    // --- MODO REEMPLAZAR ---
                     if (modo === 'replace') {
                         registros = registrosImportados;
 
-                        // Validar diasHabiles (formato array)
                         if (Array.isArray(data.diasHabiles)) {
                             const diasValidos = data.diasHabiles.filter(d =>
                                 Number.isInteger(d) && d >= 0 && d <= 6
@@ -1945,7 +1879,6 @@
                             if (diasValidos.length > 0) diasHabiles = diasValidos;
                         }
 
-                        // VALIDACIÓN DE horasDiarias
                         if (data.horasDiarias !== undefined) {
                             const horasParsed = typeof data.horasDiarias === 'string'
                                 ? parseFloat(data.horasDiarias)
@@ -1963,19 +1896,15 @@
                         finalizarImportacionAndSave(mensaje);
                     }
 
-                    // --- MODO COMBINAR ---
                     else if (modo === 'merge') {
                         const fechasExistentes = new Set(registros.map(r => r.fecha));
                         const nuevos = registrosImportados.filter(imp => !fechasExistentes.has(imp.fecha));
 
-                        // Registros que existen en ambos pero el importado complementa al local
                         const complementarios = registrosImportados.filter(imp => {
                             if (!fechasExistentes.has(imp.fecha)) return false;
                             const local = registros.find(r => r.fecha === imp.fecha);
                             if (!local) return false;
-                            // El importado aporta salida que el local no tiene
                             const aportaSalida = !local.salida && imp.salida;
-                            // El importado aporta tiempoFuera que el local no tiene
                             const aportaTF = !local.tiempoFuera && imp.tiempoFuera;
                             return aportaSalida || aportaTF;
                         });
@@ -1990,13 +1919,11 @@
                             return;
                         }
 
-                        // Aplicar complementarios: actualizar campos faltantes en local
                         complementarios.forEach(imp => {
                             const local = registros.find(r => r.fecha === imp.fecha);
                             if (!local) return;
                             if (!local.salida && imp.salida) local.salida = imp.salida;
                             if (!local.tiempoFuera && imp.tiempoFuera) local.tiempoFuera = imp.tiempoFuera;
-                            // Recalcular total
                             const t = calcularHoras(local.entrada, local.salida, local.tiempoFuera || null, local.credito || null);
                             if (t) { local.horas = t.horas; local.minutos = t.minutos; local.total = t.total; }
                         });
@@ -2019,7 +1946,6 @@
                 }
             };
 
-            // Manejar errores de lectura
             reader.onerror = () => {
                 UILogic.mostrarToast('Error al leer el archivo', 'error');
             };
@@ -2038,7 +1964,6 @@
                     const esPerfilDefault = window.PerfilManager && PerfilManager.obtenerPerfilActual() === 'default';
 
                     if (esPerfilDefault) {
-                        // Solo guardamos diasHabiles y horasDiarias (NO el tema)
                         localStorage.setItem('diasHabiles', JSON.stringify(diasHabiles));
                         localStorage.setItem('horasDiarias', horasDiarias);
                     }
@@ -2053,46 +1978,35 @@
             }
         }
 
-        //  FUNCIÓN HELPER PARA DETENER TIMER
         function detenerYRegistrarTimer(registro) {
             const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
             const storageKey = `breakStartTime_${perfilId}`;
             const storedStart = localStorage.getItem(storageKey);
 
-            if (!storedStart) return false; // No hay timer corriendo
+            if (!storedStart) return false;
 
             const start = parseInt(storedStart);
             const end = Date.now();
             const diffMs = end - start;
             const segundosTranscurridos = Math.floor(diffMs / 1000);
 
-            // Si el tiempo es menor a 30 segundos, no registrar
             if (segundosTranscurridos < 30) {
                 localStorage.removeItem(storageKey);
                 return false;
             }
 
-            // Calcular minutos con umbral de 30 segundos
             let minutosTranscurridos = Math.floor(segundosTranscurridos / 60);
             const segundosRestantes = segundosTranscurridos % 60;
             if (segundosRestantes >= 30) minutosTranscurridos += 1;
 
-            // Sumar al tiempo existente
             const tiempoActual = registro.tiempoFuera || '00:00';
             registro.tiempoFuera = UILogic.sumarMinutosAHora(tiempoActual, minutosTranscurridos);
 
-            // Limpiar timer
             localStorage.removeItem(storageKey);
 
-            return true; // Timer detenido exitosamente
+            return true;
         }
 
-        // ---------------------------------------------------------
-        // HELPER: detectarAyerAbierto(fechaHoy, registros)
-        // Centraliza la detección de turno activo cruzando medianoche.
-        // Acepta registros como Array o Map.
-        // Retorna: { ayerStr, regAyer, ayerAbierto }
-        // ---------------------------------------------------------
         function detectarAyerAbierto(fechaHoy, regs) {
             const ayerObj = S.parsearFechaLocal(fechaHoy);
             ayerObj.setDate(ayerObj.getDate() - 1);
@@ -2123,7 +2037,6 @@
             let fechaIteracion = S.parsearFechaLocal(inicioSemana);
             let fechaLimite = S.parsearFechaLocal(fechaHoy);
 
-            // --- Detectar si ayer quedó en Standby ---
             const { ayerStr, ayerAbierto } = detectarAyerAbierto(fechaHoy, registrosMap);
 
             while (fechaIteracion <= fechaLimite) {
@@ -2140,14 +2053,13 @@
                 const tieneSalida = r && r.salida && !esEspecial;
                 const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
 
-                // --- NUEVO: ¿El día está cerrado para contabilizarlo? ---
                 let diaTerminado = false;
                 if (isoDate === fechaHoy) {
                     diaTerminado = tieneSalida;
                 } else if (ayerAbierto && isoDate === ayerStr) {
-                    diaTerminado = false; // ¡Standby!
+                    diaTerminado = false;
                 } else {
-                    diaTerminado = true; // Pasado normal
+                    diaTerminado = true;
                 }
 
                 if (esRemoto) {
@@ -2155,7 +2067,6 @@
                     horasHechasDia = horasDiariasLocal;
                 } else {
                     if (esDiaLaboralConfigurado && !esEspecial) {
-                        // Solo sumamos el objetivo si el día ya se dio por terminado
                         if (diaTerminado) {
                             horasObjetivoDia = horasDiariasLocal;
                         }
@@ -2207,7 +2118,6 @@
             if (!filtroActivo) return registros;
 
             return registros.filter(r => {
-                // Filtro por fechas
                 if (filtroDesde && r.fecha < filtroDesde) return false;
                 if (filtroHasta && r.fecha > filtroHasta) return false;
 
@@ -2215,10 +2125,8 @@
                     const tipoRegistro = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
 
                     if (filtroTipo === 'normal') {
-                        // Si el filtro es "normal", excluir todos los especiales
                         if (tipoRegistro) return false;
                     } else {
-                        // Si el filtro es un tipo especial, solo mostrar ese tipo
                         if (!tipoRegistro || tipoRegistro.id !== filtroTipo) return false;
                     }
                 }
@@ -2249,7 +2157,6 @@
                 fechaActual.setDate(fechaActual.getDate() + 1);
             }
 
-            // VALIDACIÓN DE LÍMITE
             if (fechasARegistrar.length > 60) {
                 UILogic.mostrarToast(`El rango seleccionado contiene ${fechasARegistrar.length} días.\n Máximo permitido: 60 días por operación.`, 'error');
                 throw new Error('Límite de días excedido');
@@ -2262,14 +2169,13 @@
                 throw new Error('Sin fechas nuevas');
             }
 
-            //  1: Creamos array para guardar IDs ---
             const idsNuevosParaAnimar = [];
 
             nuevosRegistros.forEach(fecha => {
                 const t = calcularHoras(entrada, salida, null);
-                const nuevoId = S.generarIDSeguro(); // Generamos ID
+                const nuevoId = S.generarIDSeguro();
 
-                idsNuevosParaAnimar.push(nuevoId); // Lo guardamos para animar
+                idsNuevosParaAnimar.push(nuevoId);
 
                 registros.push({
                     id: nuevoId,
@@ -2287,7 +2193,6 @@
 
             HistoryManager.saveState(registros);
 
-            //  2: Enviamos el array de IDs a la UI ---
             const saved = await guardarYActualizar(idsNuevosParaAnimar);
 
             if (saved) {
@@ -2326,11 +2231,9 @@
         }
 
         async function borrarPeriodoDirecto(desde, hasta) {
-            // Solo borra registros normales (eliminamos parámetro 'tipo')
             const registrosAEliminar = registros.filter(r => {
                 if (r.fecha < desde || r.fecha > hasta) return false;
 
-                // Excluir todos los tipos especiales
                 const esEspecial = TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
 
                 return !esEspecial;
@@ -2423,7 +2326,7 @@
     const GistSync = (function (S) {
 
         const GIST_FILENAME = 'horarios_backup.json';
-        const KEY_TOKEN = 'gistToken'; // Global del dispositivo
+        const KEY_TOKEN = 'gistToken';
 
         const GIST_ID_REGEX = /^[a-f0-9]{20,40}$/i;
 
@@ -2431,17 +2334,14 @@
             return id && GIST_ID_REGEX.test(id.trim());
         }
 
-        // Helper privado: ejecuta fn(perfil) y guarda si PerfilManager está disponible
         function _conPerfil(fn) {
             if (!window.PerfilManager) return;
             const perfil = PerfilManager.obtenerDatosPerfil();
             if (perfil) { fn(perfil); PerfilManager.guardarPerfiles(); }
         }
 
-        // Token: global del dispositivo
         function getToken() { return localStorage.getItem(KEY_TOKEN) || ''; }
 
-        // Gist ID y lastSync: por perfil activo
         function getGistId() {
             const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
             return perfil?.gistId || '';
@@ -2452,7 +2352,6 @@
             return perfil?.gistLastSync || null;
         }
 
-        // 0 = sin automatizar, 1 = restaurar al inicio, 2 = respaldo automático
         function getMergeBehavior() {
             const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
             return perfil?.gistMergeBehavior || 'replace';
@@ -2466,7 +2365,6 @@
             const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
             const val = perfil?.gistAutoSync;
             if (val === 1 || val === 2) return val;
-            // Migración: si era true (estado anterior), mapear a 1
             if (val === true) return 1;
             return 0;
         }
@@ -2492,7 +2390,6 @@
             return `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')} ${String(ahora.getHours()).padStart(2, '0')}`;
         }
 
-        // tipo: 'subir' | 'bajar', limite: max intentos por hora
         function getSyncCount(tipo) {
             const perfil = window.PerfilManager ? PerfilManager.obtenerDatosPerfil() : null;
             const key = `gistSyncCount_${tipo}`;
@@ -2502,7 +2399,7 @@
         }
 
         function marcarSync(tipo) {
-            if (getSyncLimite(tipo) === 0) return; // modo siempre: no acumular
+            if (getSyncLimite(tipo) === 0) return;
             _conPerfil(perfil => {
                 const key = `gistSyncCount_${tipo}`;
                 const keyFecha = `gistSyncFecha_${tipo}`;
@@ -2524,7 +2421,6 @@
         function setSyncLimite(tipo, valor) {
             const anteriorLimite = getSyncLimite(tipo);
             try { localStorage.setItem(`gistSyncLimite_${tipo}`, valor); } catch (e) { }
-            // Si se pasa de "siempre" (0) a numérico, resetear el contador
             if (anteriorLimite === 0 && valor > 0 && window.PerfilManager) {
                 const perfil = PerfilManager.obtenerDatosPerfil();
                 if (perfil) {
@@ -2537,7 +2433,7 @@
 
         function superaLimite(tipo) {
             const limite = getSyncLimite(tipo);
-            if (limite === 0) return false; // 0 = siempre
+            if (limite === 0) return false;
             return getSyncCount(tipo) >= limite;
         }
 
@@ -2545,8 +2441,6 @@
             const { desde, hasta } = getRangoHorario();
             const ahora = new Date();
             const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
-            // Si desde <= hasta: rango normal (ej. 09:00 - 17:00)
-            // Si desde > hasta: rango cruza medianoche (ej. 21:00 - 01:00)
             if (desde <= hasta) {
                 return horaActual >= desde && horaActual <= hasta;
             } else {
@@ -2556,14 +2450,11 @@
 
         function saveCredentials(token, gistId) {
             try {
-                // Token: global
                 if (token) {
                     localStorage.setItem(KEY_TOKEN, S.sanitizeString(token.trim()));
                 } else {
                     localStorage.removeItem(KEY_TOKEN);
                 }
-                // Gist ID: en el perfil activo — guardarPerfiles() directamente
-                // para no depender de window.DataManagement (que puede no existir aún)
                 if (window.PerfilManager) {
                     const perfil = PerfilManager.obtenerDatosPerfil();
                     if (perfil) {
@@ -2667,7 +2558,6 @@
                 return value;
             });
 
-            // Verificar integridad
             if (data.hash) {
                 const hashCalculado = await S.calcularHashSHA256(data.registros);
                 if (hashCalculado !== data.hash) {
@@ -2912,7 +2802,6 @@
         }
 
         function agruparRegistrosPorMes(registros) {
-            // Validar entrada
             if (!Array.isArray(registros)) {
                 console.warn('agruparRegistrosPorMes: entrada inválida');
                 return new Map();
@@ -2920,12 +2809,10 @@
 
             const grupos = new Map();
             registros.forEach(r => {
-                // Validar cada registro
                 if (!r || typeof r !== 'object' || !r.fecha || typeof r.fecha !== 'string') {
                     return;
                 }
 
-                // Validar longitud mínima
                 if (r.fecha.length < 7) {
                     return;
                 }
@@ -2939,15 +2826,13 @@
             return grupos;
         }
 
-        // Función auxiliar para identificar tipo de registro
         function obtenerTipoRegistro(registro) {
             if (!registro) return null;
 
             const tipo = TiposRegistro.obtenerTipoPorCodigo(registro.entrada, registro.salida);
-            return tipo ? tipo.id : null; // Retorna el id o null si es normal
+            return tipo ? tipo.id : null;
         }
 
-        // Función auxiliar para verificar si una fecha es consecutiva a otra
         function esFechaConsecutiva(fechaActual, fechaSiguiente) {
             const actual = S.parsearFechaLocal(fechaActual);
             const siguiente = S.parsearFechaLocal(fechaSiguiente);
@@ -2955,7 +2840,6 @@
             return S.formatearFechaLocal(actual) === fechaSiguiente;
         }
 
-        // Función principal mejorada
         function agruparRegistrosConsecutivos(registros) {
             if (!registros || registros.length === 0) return [];
 
@@ -2966,7 +2850,6 @@
                 const registroActual = registros[i];
                 const tipoActual = obtenerTipoRegistro(registroActual);
 
-                // Si es un registro normal, agregar individualmente
                 if (tipoActual === null) {
                     resultado.push({
                         tipo: 'individual',
@@ -2976,7 +2859,6 @@
                     continue;
                 }
 
-                // Buscar registros consecutivos del mismo tipo
                 const grupo = [registroActual];
                 let j = i + 1;
 
@@ -2984,19 +2866,15 @@
                     const registroSiguiente = registros[j];
                     const tipoSiguiente = obtenerTipoRegistro(registroSiguiente);
 
-                    // Si cambió el tipo, terminar el grupo
                     if (tipoSiguiente !== tipoActual) break;
 
-                    // Verificar si es fecha consecutiva
                     const ultimaFecha = grupo[grupo.length - 1].fecha;
                     if (!esFechaConsecutiva(ultimaFecha, registroSiguiente.fecha)) break;
 
-                    // Agregar al grupo
                     grupo.push(registroSiguiente);
                     j++;
                 }
 
-                // Agregar al resultado (grupo o individual)
                 if (grupo.length > 1) {
                     resultado.push({
                         tipo: 'grupo',
@@ -3018,9 +2896,8 @@
 
         function _crearChevron() {
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('class', 'icon chevron-mes');
+            svg.setAttribute('class', 'icon chevron-mes chevron-mes-icon');
             svg.setAttribute('viewBox', '0 0 24 24');
-            svg.style.cssText = 'width:1.2em;height:1.2em;vertical-align:middle';
             const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
             use.setAttribute('href', '#icon-chevron-down');
             svg.appendChild(use);
@@ -3155,7 +3032,6 @@
         function actualizarListaRegistros(registros, idNuevo = null) {
             const lista = $('lista-registros');
 
-            // Guardar estado de meses abiertos
             const mesesExpandidos = new Set();
             lista.querySelectorAll('.registro-mes-container').forEach(container => {
                 const detalle = container.querySelector('.registro-mes-detalle');
@@ -3252,10 +3128,8 @@
             const container = document.createElement('div');
             container.className = 'registro-grupo-container';
 
-            // Encabezado del grupo
             const header = document.createElement('div');
 
-            // --- Lógica de detección de IDs nuevos ---
             let className = 'registro-item';
             let animarGrupo = false;
 
@@ -3299,7 +3173,6 @@
             info.appendChild(totalEl);
             header.appendChild(info);
 
-            // Preparar datos para event delegation
             header.dataset.accion = 'editar-grupo';
             header.dataset.grupoData = JSON.stringify({
                 registros: grupo.registros.map(r => r.id),
@@ -3327,7 +3200,6 @@
         function _calcularEstadisticasRango(registrosRango, opciones = {}) {
             const { regularidadPorMes = false } = opciones;
 
-            // Contar cada tipo especial dinámicamente desde TiposRegistro
             const conteosPorTipo = {};
             TiposRegistro.obtenerTodosLosTipos().forEach(t => {
                 conteosPorTipo[t.labelPlural.toLowerCase()] = registrosRango.filter(
@@ -3335,7 +3207,6 @@
                 ).length;
             });
 
-            // Compensaciones (crédito) — no es un tipo especial, se mantiene aparte
             const compensaciones = registrosRango.filter(r => r.credito && r.credito !== '00:00').length;
 
             let tiempoFueraTotalMinutos = 0;
@@ -3399,7 +3270,6 @@
                 regJornada = calcularRegularidad(desviacionEstandar(registrosValidos.map(r => Math.round(r.total * 60))));
             }
 
-            // Calcular buffer del período iterando todos los días del rango
             const horasDiariasObj = D.horasDiarias();
             let bufferPeriodo = null;
             if (horasDiariasObj > 0 && opciones.desde && opciones.hasta) {
@@ -3407,7 +3277,6 @@
                 const regsPorFecha = new Map(registrosRango.map(r => [r.fecha, r]));
                 const hoy = obtenerFechaHoy();
 
-                // --- Standby para estadísticas ---
                 const { ayerStr, ayerAbierto } = D.detectarAyerAbierto(hoy, regsPorFecha);
 
                 let objetivo = 0;
@@ -3423,12 +3292,11 @@
                     const esHoy = iso === hoy;
                     const esRemoto = esEspecial && TiposRegistro.obtenerTipoPorCodigo(r?.entrada, r?.salida)?.id === 'remoto';
 
-                    // --- NUEVO: Evaluar terminación ---
                     let diaTerminado = true;
                     if (esHoy) {
                         diaTerminado = (r && r.salida);
                     } else if (ayerAbierto && iso === ayerStr) {
-                        diaTerminado = false; // ¡Standby!
+                        diaTerminado = false;
                     }
 
                     if (esDiaHabil && (!esEspecial || esRemoto) && diaTerminado) {
@@ -3475,7 +3343,6 @@
             };
             toggleStatItem('stat-dias-trabajados', stats.diasTrabajados);
 
-            // Tipos especiales — dinámico desde TiposRegistro
             TiposRegistro.obtenerTodosLosTipos().forEach(t => {
                 const clave = t.labelPlural.toLowerCase();
                 toggleStatItem(`stat-${clave}`, stats[clave] || 0);
@@ -3547,7 +3414,7 @@
             return window.PerfilManager ? PerfilManager.perfilKey(base) : base + '_default';
         }
 
-        let _fondoCard = 'golden-gate'; // se sobreescribe en init desde config
+        let _fondoCard = 'golden-gate';
 
         function setFondoCard(valor) {
             _fondoCard = valor;
@@ -3566,32 +3433,22 @@
         }
 
         function _svgSkylineBA(color) {
-            return `<svg viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" style="position:absolute;bottom:0;left:0;width:100%;height:100%;"><g fill="${color}">` +
-                // Río
+            return `<svg viewBox="0 0 800 200" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" class="card-bg-svg card-bg-svg--left"><g fill="${color}">` +
                 `<rect x="0" y="148" width="800" height="52"/>` +
-                // Fondo edificios izq
                 `<rect x="0" y="110" width="18" height="40"/><rect x="20" y="100" width="22" height="50"/><rect x="44" y="118" width="14" height="32"/>` +
-                // Fondo edificios der
                 `<rect x="580" y="108" width="20" height="42"/><rect x="604" y="95" width="16" height="55"/><rect x="624" y="112" width="22" height="38"/><rect x="650" y="100" width="18" height="50"/><rect x="672" y="115" width="25" height="35"/><rect x="700" y="105" width="20" height="45"/><rect x="724" y="118" width="16" height="32"/><rect x="744" y="98" width="22" height="52"/><rect x="770" y="110" width="30" height="40"/>` +
-                // Grúas Puerto Madero
                 `<rect x="62" y="90" width="5" height="58"/><rect x="46" y="92" width="38" height="4"/><rect x="84" y="94" width="4" height="30"/><rect x="105" y="98" width="5" height="50"/><rect x="90" y="100" width="36" height="4"/><rect x="125" y="102" width="4" height="24"/><rect x="145" y="108" width="4" height="40"/><rect x="133" y="110" width="28" height="3"/><rect x="160" y="111" width="3" height="18"/>` +
-                // Kavanagh
                 `<rect x="185" y="130" width="38" height="18"/><rect x="188" y="95" width="32" height="36"/><rect x="191" y="75" width="26" height="22"/><rect x="194" y="60" width="20" height="17"/><rect x="197" y="48" width="14" height="14"/><rect x="200" y="38" width="8" height="12"/><rect x="203" y="28" width="2" height="12"/>` +
-                // Barolo
                 `<rect x="258" y="118" width="42" height="30"/><rect x="260" y="75" width="38" height="44"/><rect x="270" y="55" width="18" height="22"/><rect x="273" y="44" width="12" height="13"/><ellipse cx="279" cy="44" rx="8" ry="6"/><rect x="277" y="32" width="4" height="14"/><ellipse cx="279" cy="32" rx="4" ry="3"/>` +
-                // Obelisco (tenue)
                 `<polygon points="348,22 354,22 358,118 344,118" opacity="0.5"/><polygon points="348,22 354,22 351,10" opacity="0.5"/>` +
-                // Relleno centro
                 `<rect x="168" y="120" width="16" height="28"/><rect x="238" y="115" width="18" height="33"/><rect x="304" y="108" width="14" height="40"/><rect x="322" y="115" width="20" height="33"/><rect x="370" y="100" width="16" height="48"/><rect x="390" y="112" width="14" height="36"/><rect x="406" y="118" width="12" height="30"/>` +
-                // Congreso
                 `<rect x="420" y="120" width="60" height="28"/><rect x="422" y="90" width="56" height="32"/><rect x="428" y="78" width="44" height="14"/><rect x="434" y="60" width="32" height="20"/><path d="M434,60 Q450,30 466,60 Z"/><rect x="447" y="28" width="6" height="14"/><ellipse cx="450" cy="28" rx="5" ry="4"/>` +
-                // Relleno der
                 `<rect x="484" y="110" width="20" height="38"/><rect x="508" y="102" width="16" height="46"/><rect x="528" y="115" width="18" height="33"/><rect x="550" y="108" width="14" height="40"/>` +
                 `</g></svg>`;
         }
 
         function _svgGoldenGate(color) {
-            return `<svg viewBox="300 100 2294 1200" preserveAspectRatio="xMaxYMax meet" xmlns="http://www.w3.org/2000/svg" style="position:absolute;bottom:0;right:0;width:100%;height:100%;"><g fill="${color}" fill-rule="evenodd"><path d="M2027.6,194.1C1824.5,35.5,1888.9,70.5,1868.8,51.9c-10.4,6.1-3.4,19.1-15.5,28 c-22.8,16.8-56.9,3.3-81.7,4.2c-30.8,1.1-37.2-19.6-48.1-28c-1.2-1-1.9-2.4-2.2-3.9 c-3.6-17.7-10.3-11.6-11.7,0.2c-2.5,21.7-368.4,590.3-427.2,630.5c-0.5,0.3-1,1-1.1,1.6 c-0.5,7.7-119.6,137.1-120,138.1c-12.5,31.1-262.3,242.1-307.5,239.7 c-3.6,2.4-14,6.8-14,6.8c-1.1,4.1-17.7,8.9-19.3,8.5c-1.1,3.9-9,3.5-12.1,5.4 c-119.5,71.4-309.2-82.3-402.9-269.4c-26.9-53.7,6.2,3.7-46.6-9.2c4.1-4.4,0.1-9.9-2.4-8.6 c-10.3,5.2-2.5,8.6-8.6,8.9c-25,1.4-26.6-11.1-28-13.5c-0.8-1.4-4.2-1.3-4.5,0.1 c-0.5,3.3-2.9,5.3-4.2,8.1c-2.6,5.7,2,7.7-3,19.8c-4,9.5,0.9,6.5,2.4,7.4 c0,2.5-5,141.2-6.1,142.2c-6.6,6.4,1.3,234.1-13.2,235.9c-8.6,1.1-3.2,8.9-6.9,10.1 c-8.9,2.9-5.4-0.7-7.5-1.1c-0.4,2.2,0.1,3.8-4.4,4.6c-24.1,4.2-30.6,14-34.1,5.5 c-13.1,9.3,16.4-0.7-60,23.2c-25.7,8-15.6-2.8-16.8-5.8c-2.4-1.1-5.6-0.9-6.4-4.4 c-0.8-3.2-7.1,1.2-14.3-2.3c-0.5-0.3-1.3-0.2-1.9-0c-4.2,1.1-7.4-1-11-2.9 c-3.5-1.9-8.3-1.3-10.8-5.3c-0.4-0.7-1.3-0.9-1.6-0.4c-3.6,6.1-10.5-8.3-15.7-5 c-2.8,1.7-5.3,2.5-8.4,1.1c-2.3-1.1-2.9,3-6,0.3c-3-2.6-6.6-3.1-10.2-3.9 c-13.4-2.9-16.7-6.9-23.4-5c-3.2,0.9-6.4,3.4-9.9,0.8c-0.1-0.1-0.5-0.1-0.6,0.1 c-6.5,6.1-4.5,1.3-8.3,2.4c-2.4,0.7-4.5,5.3-12.3,2.7c-4.3-1.4-3.7,3.5-3.7,8.3 c-0,212.9-3.7,189.9,8.9,189.9c2677.5,0,2541.2,0.1,2551.1-0.3V541.4 C2577.1,541.4,2275.4,387.5,2027.6,194.1z M294.5,1299.4c-7.1,3.6-12.8-0.1-18.6-3 c-3.7-1.8,4.1-6.4-8-8.2c-3.7-0.6-0.8,3.2-3.1,3.7c-11.2,2.4-10.3-11.8-22.2-14.7 c0.5-2.7-0.9-1.7,33.3-11.4c15.3-4.4,19.2-5.8,19.2-2.3 C295.1,1269.4,294.8,1296.8,294.5,1299.4z M380.5,833.1c-0.5,4.9-11.1,36.7-14.7,43.8 c-8.7-15.4-17-30-25.1-44.3C341.9,830.3,378.9,832.6,380.5,833.1z M376.6,862 c0,4.7,0.3,1.6-0.9,22.5C375.3,890.9,362.9,885.2,376.6,862z M372.1,947.7 c0.1,0,0.2,0,0.2,0c0.6-26.9,0.4-22.9,1.1-27.5c0.1-0.8,1.8-0.9,1.9,0.1 C377,933.9,370.2,1016.3,372.1,947.7z M344.6,1197.9c-3.2,0.7-2.3,0.8-2.3-37.6 c0.2,0,0.4,0,0.6,0c0.8-38.1,0.7-36.5,1-38.1c0.3-1.7,3.4-2,3.6,0.2 c0.2,1.4,0.2-2.9-0.2,70.3C347.4,1195,347.6,1197.3,344.6,1197.9z M329.2,1079.2 c0,0,0-10.8,0-33.5c0.2,0,0.4-35.6,4.2-35.5c2.5,0.1,2.4,1.6,2.3,6.4 c-0,1-1.2,59.3-1.4,62.4C334.2,1082.3,329.2,1082.1,329.2,1079.2z M332.4,1160.5 c-0.1-0-0.1-0-0.2-0c-1,41.3-0.1,41.4-4.7,41.9c-2.2,0.3-2.2-1.3-2-5.8 c3.4-90.4,1.9-60.7,5.3-74.8c0.2-0.6,2.3-0.9,2.4,0.7C333.5,1125.9,333.5,1124.9,332.4,1160.5z M334.4,1160.5c0.1-0,0.1-0,0.2-0c2.8-86.6,7.2-12.3,3.8,36.6 c-0.3,3.7-4.9,5-4.7,0.1C334.6,1166.7,334.4,1181.5,334.4,1160.5z M336.5,1081.2 c-0.3-2.1-0.3-1.1,0.5-34.8c0.1,0,0.2-21,0.3-31.6c0-8.9,4.8-5.5,5-4.5 c0.6,2.7-1,69.5-1.3,70.9C340.6,1083.1,336.8,1083.1,336.5,1081.2z M339.5,956.9 c0-0.8,0-1.5,0.1-2.2v-4.3h0.1c1-36.5,0.2-34.5,4-34.7c4.3-0.2-0,56.5-0,56.5 h-0.3c-0.3,1.5-1.1,2.5-2.6,2.4c-2.2-0.2-2.2-1.4-1.2-4.2v-13.5 C339.5,956.8,339.5,956.9,339.5,956.9z M343.5,886.3c-2.4-0.3-2.4-1.6-2.4-4.5 c-0.1-41.2-0.2-34.8,0.4-38.3c4.4,5.3,6.5,10.2,6,16.4C345.9,883,349.2,887,343.5,886.3z M344.9,1081.1c-0.1-1.4-0.1,0.4-0.1-35.4c0.2,0,1.2-21.4,1.5-32.2c0.2-7.1,3.8-4.4,3.9-3 c0.3,2.7-1.1,68.9-1.5,70.9C348.4,1082.9,345.1,1083.2,344.9,1081.1z M348.9,974.7 c-2.2,0-2.2-1.4-2.1-4.5c0.7-21.4,3.1-53.3,3.1-53.3h2.7V944 C352.5,944,351.8,974.6,348.9,974.7z M350.5,858.4c5.5,8.2,4.9,10.1,3.8,26.3 C354.1,886.3,345.6,896.6,350.5,858.4z M350.9,1157.9c0.8-37.5,0.3-36.6,2.1-36.7 c5.5-0.3-2.7,141.8-2.7,36.7C350.5,1157.9,350.7,1157.9,350.9,1157.9z M353.3,1083v-0.9h-0.4v-2 c-0.1,4.2-0.2,3.1,0-7.3v-13.1h0.2c0-2.8,0.1-6,0.2-9.4v-41.5h2.5V1083H353.3z M355.2,971.9 c1.4-57.2,1-48,2.3-54.2c0.2-1,1.8-0.4,1.9,0.3c0.3,3.3-0.2,27.5-0.2,27.5 c0,28,0.5,29-2,29.2C355.4,974.8,355.2,973.3,355.2,971.9z M358,886.7 c-1.3-0.9-1-1-1-15.8c0.5-0.1,1-0.2,1.5-0.3c2.2,3.2,4.5,6.3,6.7,9.5 C367.4,883.4,362.5,889.7,358,886.7z M359.2,1055.1v28.4h-0.9v-34.4c0,0,1.3-36.1,2.3-39.3 C361.3,1025,359.8,1040,359.2,1055.1z M358.6,1157.5c0.9-38.2,0.3-36.2,2.4-36.6 c5.4-1-2.8,136.5-2.8,36.6C358.4,1157.5,358.5,1157.5,358.6,1157.5z M361.6,1081.2 c-0.1-1.6,0.5-35.5,0.5-35.5c0-91.3,6.1,12.4,2.2,35.3C363.9,1083.6,361.7,1082.4,361.6,1081.2z M365.1,975.1v-57h2.1v57H365.1z M369.5,1127.2c1.2,1.5,0.8,3.3,0.7,4.9 C367.7,1265.6,365.3,1130.1,369.5,1127.2z M339.9,844.2c-1.7,42.1,0.1,41.7-3.4,42 c-4.2,0.3-3.2-1.3-3.2-28h-0.4c0-6.8,0-13.5-0-20.3C333,822.8,340.2,836.8,339.9,844.2z M332.2,942.5h0.1c-0.1-24-1-27.1,4.4-26c3,0.6,0.7,48.1-1.1,54.8 c-0.7,2.5-3.8,3.1-3.8-0.3c0-8.8,0.1-8.3,0.1-25.5h0.3V942.5z M324.9,878 c0.5-34.4-0.7-48.4,6.1-46c2.7,1-0.7,50.9-0.8,52C325,882.4,324.9,882.4,324.9,878z M323.4,950.9c-0.1-25,7.2-41.6,6.9-29.4c-1.3,55.1-1.1,48.8-1.6,50.7 c-6.6-1.6-6.1-8.1-3.8-14.5C325.7,955.2,323.4,953.4,323.4,950.9z M327.8,1021.4 c-1.2,47-1,41-1.6,43.2c-0.3,1.1-1.9,0.4-1.9-0.1c-0.5-3-0.4-2.5-0.2-19 C324.5,1019.2,326,1030.4,327.8,1021.4z M325,1070.7c2.2,0.8,2.1,10-0.5,9.1 c-2.3-0.8-1.1-2.9-1.5-4.3C323.1,1071.8,323.7,1070.2,325,1070.7z M323.2,1158.8 c-0.2,37.8,0.3,35.7-1.8,35.9C319.5,1194.9,320.4,1159.5,323.2,1158.8z M322.1,1304.5 c-0.7,1.6-5,2.6-4.4-1C318.4,1298.7,322.6,1303.4,322.1,1304.5z M319.2,1262 c0.3-13.6,5.1-6.3,16.1-11.9c1.1-0.6,2.9,0.8,2.7,2c-1.7,8,1.1,4.2-15,20.7 C316.9,1279,319.1,1269.3,319.2,1262z M342.5,1264.9c4.9-4.9,4.6-1.5,18.1,12.8 c7.6,8-2.7,6.2-14.9,6.2c0,0,0,0,0,0C322.8,1284,320.7,1286.7,342.5,1264.9z M328.9,1293.1c1.9-0.3,3.8-1.5,5.6-0.4c2,0.6,3.6-0.4,5.3-0.6 c7.2-0.6,14.3,1,21.5,1c6.7,0-5.1,9.3-8.9,14.6C343.1,1320.7,322.7,1294,328.9,1293.1 z M366,1314.6c-1.7-0-3.4-0.3-5.1-0.5c-4.2-0.6,6.8-10.7,8.5-11.9 c2.5-1.8,1.9,3.1,1.9,6c0.1,0,0.1,0,0.2,0C371.5,1320,368.4,1314.6,366,1314.6z M369.1,1273.5c-13.9-15.6-14.3-15.2-14-19.1c0.7-9.3,12.8-13.1,13.1-11.4 c0.6,3.2,4.6,4.6,4.5,8.2c-0.1,2.8-0,5.7-0,8.5c0.1,0,0.1,0,0.2,0 C372.2,1270.5,372.7,1277.5,369.1,1273.5z M372.6,1174.4c-1.5-5.3-0.9-24,0.9-28.1 C374.8,1152.6,374.2,1170.4,372.6,1174.4z M374.7,1065.2c-1.5-9.2-0.7-38.1,1.6-44.3 C376.3,1067.4,376.9,1064.3,374.7,1065.2z M377,972.9c-2-1.1-0.4,0.7-0.3-47.9 C376.8,897.6,382.2,975.6,377,972.9z M381.1,956.1v-26.1C384.4,930.2,381.7,953.8,381.1,956.1z M384.5,861.3h-0.3c0,22.5,0.8,23.4-2.2,24.6c-2.8,1.1-4.2,0.3-4.2-2.6 c-0.1-30.5-0.4-26.3,4.6-44C385.1,829.9,384.5,860.3,384.5,861.3z M1641.6,189.9 c0.1-14.2,30-57,32.2-58c1.2,41.6-1.1,117.8,0.7,126c-1.5,4.2-0,74.5-1.6,88.1 c-1.4,12.4-25.9,38.9-29.2,46.7C1640.5,400.6,1641.6,190.9,1641.6,189.9z M1664.6,943.6 c0.8-5.2,15.9-1.4,6.7,7.6c-0.7,0.7-0.8,2.4-2.1,2c-1.6-0.5-1.3-1.9-0.9-3.2 C1669.5,945.8,1663.7,949.1,1664.6,943.6z M1651.6,411.4c-0-8.5-1-29,22-48.4 c0,252.4,1.1,573.5-3.7,573.6C1648.4,937,1652.8,1187.6,1651.6,411.4z M1646.6,398.8 c3.3-3.5,1.9-9.2,1.9,289l-0.1,0c0,290.3,4,293.6-5.4,289.2c-3-1.4-1.6,2.3-2-546.8 C1641,409.9,1639.8,406.1,1646.6,398.8z M1613.6,224.8c41.9-66.4,17.9-53.7,24.8,170.5 c0.3,9-27.2,41.5-30,44.8c-0.4-3.5-2.1-5.7-0.6-8.4C1607.8,431.6,1602.3,242.6,1613.6,224.8z M1623.9,962c0,0-5.2,132.3-4.3-288.5c0.6-261.8-5.1-229.5,13.2-255.3 c8.8-12.4,4.9-0.1,4.5,72.9c-2.8,501.3,9.4,485.8-7.3,487.6c-5.5,0.6-3.6-13.1-2.5-15.4 C1629.2,959.2,1623,959.6,1623.9,962z M1614.5,443.9c5.1,5.4-1.3,69.7,2,83.6 c-3.1,26.6,3.4,452.3-2.4,453c-7.3,0.8-7.4,2-7.3-6.1C1608.5,404.8,1604.1,457.6,1614.5,443.9 z M1573.9,345.9c-0.1-51-1.4-56.7,6.3-68.3c30.4-45.8,23.9-58.2,23.9,51.1h-0.1 c0,79.3,1,118.7-3.6,123.6C1567.6,487.5,1574.2,533,1573.9,345.9z M1590.2,967.2 c-3-0.4-2.4,15.3-2.4-241.4c0.1,0,0.2,0,0.3,0c0-224.2-5-256.2,13.8-263.4 c3.4,3.2,2.7,607.6-3,514.3C1598.6,969.5,1597.5,968.2,1590.2,967.2z M1597.1,978.9 c-0.1,3.7-0.2,3.7-4,4.3c-1.5,0.2-3,0.9-4.8,0.2c-1-3.9-0.4-8-0.4-11.8 C1589.6,970,1597.5,968.7,1597.1,978.9z M1582.7,486.6c3.4-4.1,1.7,491.7,1.7,492.7 c-0.3,4.9-1,4-5.4,4.5c-7.3,0.9-5.5,29.2-5.5-336.4c-0,0-0,0-0,0 C1573.5,477.2,1570.7,501.1,1582.7,486.6z M1561.9,970.1c0-13.3-1-15.2,4.1-15.7 c6.1-0.6,5.1,0,4.9,27c-0,3.2,0.4,4.2-5.9,4.9c-3.6,0.4-2.8-0.8-2.8-16.3 C1562,970.1,1562,970.1,1561.9,970.1z M1556.8,820.4c0-324.9-3.7-297.9,10.4-312.8 c6.5-6.9,1.5,305,3.4,314.3c-0.6,2.2-0.7,97-0.6,98c4.1,64.2-10.3-0.6-10.6,57.5 c-0,4.2,0.1,6.7-0.9,6.7c-2.5-0-1.6,5.4-1.6-163.7H1556.8z M1541.8,347.3 c-0.4-13.4,4.3-17.7,21-42.5c6.3-9.3,6.2-9.7,7.6-9.2c1,0.4,0.7,137.1-0.5,144.9 c1.5,6.8,1.2,50.4-1.4,54.6c-9.6,15.6-17,18-17.4,23.5c-0.1,1-7.7,10.6-9.5,10.8 C1541.4,528.9,1541.9,350.7,1541.8,347.3z M1541.5,547.9c-1.4-7.6-1.4-7.8,10.4-21.8 c4.1-4.9,2.3-2.5,2.3,230.6c-0.1,0-0.2-0-0.3-0c0,253.7,4.3,230.5-7.3,231.5 C1535.4,989.3,1543,556.5,1541.5,547.9z M1515.8,374.9c18.7-27.4,18.5-29.4,21.9-31 c3.2,7.1-0.4,7.1,0.1,147.4c0.1,40.2,2.5,41.8-2.1,46.8c-31,33-26.5,75-25-92.2 C1511.1,388.3,1507.9,386.4,1515.8,374.9z M1536.7,546.8c2.2,0.7,1.3,440.6,0.7,441.9 c-13.7,3.8-9.9,15.4-10-123.6C1527.3,633.1,1523.4,542.6,1536.7,546.8z M1523,564.3 c1,0.6,5,424.2-2.5,426.3c-4.1,1.1-10.6,2.8-10.6-1.4 C1507.3,557.6,1508.1,576.4,1523,564.3z M1506.5,391.6c0,212.9,7.6,174-22.5,211.3 c-6.9,8.5-4.5,1.6-4.9-122.5C1478.9,433.5,1476,425.1,1506.5,391.6z M1497.6,986.6 c0.7-10.8,12.1-0,7.4,5.4c-0,0-0,0-0.1,0C1499.1,996.5,1497.1,994.1,1497.6,986.6z M1506,979.2c-2.8-0.4-4.7-0.7-6.8-1C1493,959.9,1506,102.8,1506,979.2z M1493.8,601.2 c1.9,2.3,2.4,393.2-2,393.2c-9.3,0-13.2,6.9-13.2-4.6 C1478.6,605.6,1474.9,613.8,1493.8,601.2z M1456.4,461.3c11.7-14.8,15-24.4,19.6-26.2 c0.5,3.1,1.1,178.2-5.4,184.1c-25.3,23.1-21.7,70.3-21.2-117.5 C1449.6,478.3,1448.6,471.2,1456.4,461.3z M1475.1,624.9c1.3,1.8,1,335,1,338.7 c-9-0.5-6.6,5.6-6.6-51.2C1469.4,597.3,1466.7,626.4,1475.1,624.9z M1473.8,966.9 c2.8-0.1,2.2,1,2.2,15.6c0,0,0.1,0,0.1,0c0,7.8,1.3,16.9-5.6,14.8 c-1.3-0.4-1.3-0.8-1.4-11.9C1469.1,968.4,1468.3,967.2,1473.8,966.9z M1463.5,637.8 c4.2-4.5,3.8-2.5,3.5,81.7c-1.1,294.8,1.1,277.2-5,278.3c-16.5,2.9-13.3,26.3-13.3-171.4 c0,0,0.1,0,0.1,0C1448.8,628.5,1443.8,659.3,1463.5,637.8z M1419.9,649.7c0-62.6,2.3-66.1,0.1-74.3 c3.3-76.6-6.3-54.5,19-89.1c3.5-4.8,4.1-7.5,6.3-6.9c1,0.3,3.5,168-2.7,174.1 c-22.8,22.4-22.8,41.6-22.8-3.9H1419.9z M1441.8,849.8h-0C1441.8,518.5,1441.8,695.2,1441.8,849.8 z M1425.2,681.9c19.8-20.8,13.7-40.4,13.7,146.3c0,0,0,0,0,0c0,0.8,0,168.1,0,168.1 c0.2,2.9,0.3,5.5-9.4,6.3c-5.4,0.4-5.5,0.4-6.1-5.2c-4.9-40.2-4,45.5-4-69.9 C1419.4,675.8,1416.9,690.6,1425.2,681.9z M1392.3,572c-0.1-19.9-3.7-20.2,24.1-53.1 c1.5,6.3,2.7,164.1-2.4,168.3C1384,711.9,1392.8,754.9,1392.3,572z M1390.9,967 c0-9-0.1-18,0-27c0.9-73.5,1.2,74.6,1.2-121.5c0-98.8-1.9-96,4.4-102.6 c22.8-23.6,15.5-54.4,15.5,208c0,93.2,2.7,79.7-8.2,82c-16.4,3.5-12.8,5.1-12.8-38.9 C1390.9,967,1390.9,967,1390.9,967z M1364.5,662.8c3.9-86.2-10-60.4,19.7-101.8 c3.9-5.4,5-3.3,4.9,3.3c-4,165.8,9.9,141.2-20,173.2c-1.7,1.8-2.9,3.3-4.2,2.4 C1363.8,739,1364.1,670.9,1364.5,662.8z M1364.1,800.5c-0.7-44.9-0.8-49,6.2-56 c21.8-21.8,15.1-39.2,15.1,108.4c-0.1,0-0.2,0-0.2,0c0,20.8-0.3,41.6,0.1,62.4 c0.4,22.5,0.4,57.8,0.4,57.8c0.3,5.1-5.6,1.6-5.5,8.6c0.5,32.4,3,27.8-14.5,29.6 C1358.3,1012.1,1366.7,964.4,1364.1,800.5z M1383.1,1009c-2.5,0-2.1-0-2-26.4 c0-1,1.2-3.7,3.3-3.3c1.8,0.4,1.4,1.3,1.4,15.1c-0,0-0.1,0-0.1,0 C1385.7,1008.5,1386.4,1008.9,1383.1,1009z M1337.8,634.3c-0.1-14.3,4.4-16.6,20.3-37.7 c4.3-5.7,3.8,1.9,3.8,71.9c-0.1,0-0.2,0-0.3,0c0,112.1-0.4,67.2-21.3,101.6 C1333.4,781.2,1338.5,719.1,1337.8,634.3z M1342.6,774.7c15.6-17,15.7-16.5,16.8-15.8 c0.2,0.1,0.9,245,0.9,245.2c-0,9-0.8,8.3-15.4,9.8c-1-2.5-0.6-4.5-0.8-6.4 c-0.6-8.9-7.7-1.7-7.6-9.1C1337.9,768.6,1336.5,781.3,1342.6,774.7z M1338.6,1004.9 c4.2-0.5,5.9,3.8,4.6,7.8c-0.8,2.5-6.8,1.5-6.4-3.7C1336.9,1007.4,1335.9,1005.2,1338.6,1004.9z M1327.8,634.9c1.5-1.9,2.8-3.9,5.8-4.8c1.9,12.8,0.6-23.6,0.7,83.4 c0,61.6,1.4,60.8-4.3,66.5c-17.3,17.6-16.2,17.2-18,16.8c-2.3-10.5-1.2-21.3-1.3-32 C1309,640.2,1310.4,657.9,1327.8,634.9z M1319.8,798.6c9.5-9.2,9.5-12.1,14.3-13.3 c0,1,0.1,224.7-0.4,227.8c-0.4,2.5-0.7,2.1-18.9,4.8c-3.6,0.5-1.6-182.7-1.6-183.8 C1313.5,813,1311.4,806.7,1319.8,798.6z M1285.5,699.6c-0.1-8.1,2.4-14.9,7.9-20.8 c21.2-22.6,13.7-45.5,14.5,118.5c0,7.2-1.9,7.9-16.9,23 C1282.4,828.9,1286.7,819.7,1285.5,699.6z M1307.6,960.8c1.2,55.5-8,0.9-7.9,51.4 c0,4.8,0.5,6.9-2.2,7.4c-13.8,2.3-9,15.5-8.1-108.4c0.6-91-5.2-75.2,15.8-97.5 c3.5-3.7,2.5,4.6,2.5,54.7c-0.2,0-0.5,0-0.8,0C1306.9,898.4,1307.5,959.8,1307.6,960.8z M1307,991c0.9,3.4,0.4,6.9,0.5,10.3c0.3,20.1,0.1,15.7-3.9,16.7c-1.7,0.4-2.5-0.6-2.4-2.1 C1302.6,1000.6,1297,991.8,1307,991z M1279.4,696.2c1.5-1.3,3.4-1.1,3.4,1.5 c0.1,33.4-0.7,125.1-0.6,125.2c0.6,4.2-0.6,7.5-3.9,10.4c-13.7,12.3-17.9,20.5-18,10.2 C1259.4,718.9,1255.8,717.4,1279.4,696.2z M1281.6,1018.7c0,2.7-0.8,2.2-9.2,4.2 c-0.7-5-0.4-8.9-5-10.5c-3.6-1.2-2.2,5.5-1.8-109c0.2-43.8-1.8-47.4,3.6-53.7 C1289.2,826.4,1279.9,828.9,1281.6,1018.7z M1258.8,965c0.1,0,0.2,0,0.4,0 c0-41.1,1-104.7,1.2-105.7c6.5-27-2.7,156.4,5.3,156.2c5.4-0.1,7,7.7,1.8,8.5 C1256,1025.6,1258.8,1036.3,1258.8,965z M1235.6,810.5c1.5-72.1-5.3-55.8,19.4-85.1 c4.1-4.9,2.6,8.9,2.6,63.7c-0.1,0-0.2,0-0.3,0c0,77,3.9,60.8-17.5,80.4 C1235,874,1234.4,873.6,1235.6,810.5z M1256.6,944.1c0,90.4,2.6,81.8-7.3,82.6 c-2.3,0.2-5.1,1.7-6.9,0c-1-0.9-0.7-131.9,1.1-149.1c0.4-3.9,8.9-13.5,12.3-13.2 c0.8,1.3,0.6-5.3,0.6,79.8C1256.4,944.1,1256.5,944.1,1256.6,944.1z M1239.9,1009.9 c0.3,16.2,0.4,18.5-2.9,18.7c-2.1,0.2-3-0.5-2.9-2.4c0.5-8.5-0.9-17.1,0.8-25.6 C1234.2,995.2,1235.2,723.3,1239.9,1009.9z M1211.8,888.6c4.2-127.5-9.9-101.6,17.5-133.2 c5.5-6.3,3.9,2.9,3.9,58.7c-0.2,0-0.3,0-0.5,0c0,62.1,1.2,62.5-5.1,67.2 C1220.8,886.3,1211.5,897.8,1211.8,888.6z M1226.1,1002.3c-1.3,5.7-9.6,101.2-6.4-96.9 c0.3-15.3,13.6-22.3,12.8-16.6c-0.9,6.4,0.4,97.2-0.3,108.9c-2,1.8-5.6,1.1-6.2,4.5 C1226.1,1002.3,1226.1,1002.3,1226.1,1002.3z M1226.2,1002.3c1.9,0.6,3.7-1,5.8-0 c0.8,1.7,0.6,1.1,0.5,23.3c-0,3.4-0.8,4.2-4.1,4.3C1225.7,1029.9,1226.2,1030.6,1226.2,1002.3z M1217,964.7c-0.1,0-0.1,0-0.2,0c0,69.9,1.5,67.2-4.1,66.5 C1204.7,1030.3,1217,785,1217,964.7z M1189.1,827.3c-1.4-23.3,0.4-27.4,4.3-31.6 c15.7-17.3,13.4-14.9,15.8-15.4c0,137.4,3.6,115-17,132.2 C1182.9,920,1191,859.7,1189.1,827.3z M1197.3,935.5c0.1-15.5-1.5-21.2,9.3-28 c2.1-1.3,2.2,1.4,2.2,15.5c-0.3,140.1,0.5,108.1-6.4,102.9 C1196.2,1014.7,1197,1051,1197.3,935.5z M1202.2,1026c0,7.8-4.9,6-5.2,1.6 C1196.9,1025.4,1198.8,1026,1202.2,1026z M1187.7,926.9c0.1-5.6,2.1-6,6.2-9 c3.4,3.1,0.4,100,0.9,109.8c0.2,3-3.1,4-3.2,6.7c-0.1,1.4-4.1-0-4.4-3.1 C1187.1,1031.3,1187.7,926.9,1187.7,926.9z M1174.9,992.3c0,0.1,0.1,0.1,0.1,0.1 c1.7-7.5,0.3-45.4,1.3-55.1c0.7-6.3,1.8-7.7,9-11.2c3.1,123,0.6,111.8-9.8,110.1 C1175.4,1032.2,1175.8,997.4,1174.9,992.3z M1184.3,806.2c2.6,3.1,0.1,50.5,1.2,105.1 c0.2,9.2-3,9.5-19.9,23.2C1163.4,811.3,1163.3,828.2,1184.3,806.2z M1167.1,939.7 c2-1.3,3.6-3.1,5.8-4.1c2.7,4.1-1,50.5,2,56.6c-5.3,6,5.7,46.1-8.7,46.1 C1164.3,1038.4,1162.1,943,1167.1,939.7z M1143.3,859.5c-0-4.8-0.3-10.7,4.3-15.3 c23-22.6,13.3-32,15.2,88.1c0.1,6.9-1.1,7.8-18.5,21 C1142,952,1144,960.9,1143.3,859.5z M1158.8,1038.9c-2.7,0.4-1.3-22.5-0.8-24.6 c0.4-1.5,3.4-2.2,3.6,0.3c0.2,2.8,0.1,7.2,0.1,11.1h-0 C1161.7,1037.7,1162.4,1038.4,1158.8,1038.9z M1155.5,1012.1c-1.3-1.2-0.7-2.8-0.7-4.2 c0.3-57.6-1.5-59.9,7.9-63C1162.6,998.2,1164.1,1013.2,1155.5,1012.1z M1142,1035.2 c0.3-80.9,0.2-76,2.8-77.4c9.8-5.3,7.7-14.5,7.7,39.3c-0.1,0-0.2,0-0.3,0 c0,47.4,1,43.1-3.4,43.8C1142,1041.9,1141.9,1041.9,1142,1035.2z M1121.2,905.2 c1-30.6-0.6-33.6,4.6-39c22-22.7,12.9-25.2,14.5,84.7c0.1,3.7-0.9,6.5-4.1,8.1 C1121.4,966.6,1118.2,994.7,1121.2,905.2z M1134.1,1029c-0.1-44.5-1.5-68.6,4.8-64.9 c2.3,1.3,0.1,68.4-0.1,69.4C1134.2,1032.4,1134.1,1032.4,1134.1,1029z M1137.5,1040.9 c-1.5,3.3-5.7-1.9-1.7-4.5C1136.8,1037,1138.9,1038,1137.5,1040.9z M1127.8,1043.7 c-10.5,2.1-6.9,7-7-64.9c-0-4.1,6.3-7.7,9.7-9.4c1.7,2.1,1.9,4.2,1.8,6.4 C1130,1004.3,1134.1,1042.5,1127.8,1043.7z M1099.4,978.7c1-98.9-2.3-85,16.5-102.4 c5.6-5.2,2.2,22.9,2.2,27.9c0.1,71,1.8,69-4.5,72.2c-5.9,3-10.8,9.6-13.8,8.5 C1099,982.9,1099.4,980.8,1099.4,978.7z M1117.4,980.2c1.5,0.7,0.5,4.5,0.4,59.3 c-0,3.9,0.1,5.3-2,5.5c-2,0.1-2-1.6-1.9-6.7C1114.4,999.9,1112.4,977.8,1117.4,980.2z M1099.5,1017.2c-0.4-28.9-1.7-25.2,8.1-31.3c5.4-3.3,4.1,1,4.1,29.8c-0.1,0-0.3-0-0.4-0 c0,32.9,1,30-3.8,31.1C1095,1049.7,1099.9,1047.1,1099.5,1017.2z M1093.6,897.8 c4.3-4.1,3.6,0.3,3.6,43.8h-0.3c0,54.1,4.1,44.5-15.7,57.7c-3.2,2.1-2.8-3.7-2.7-7.5 C1078.9,900.5,1074.8,915.7,1093.6,897.8z M1082.8,1003.2c11.4-5.1,8.7-16.2,7.3,36.5 c-0.2,7.1,0.8,9.3-3.1,10.1c-9.2,2-8.7-1.1-8.7-24.4h0 C1078.4,1009,1077.2,1005.7,1082.8,1003.2z M1059.2,932.4c0.2-5.7,2-6,16.3-18.3 c1.3,3,2.4,88-1.8,90.5C1054.2,1016,1055.3,1032.5,1059.2,932.4z M1071,1043.7 c-0.1,0.3,0.2,0.8,0.3,1.2c1.4,8.7,0.9,6.9-6.2,8.6c-9.5,2.3-7.5-3.9-7.5-18.1 c0,0,0.1,0,0.1,0c0-17.6-2.2-15.1,9.4-22.2c4.5-2.8,6.1-3.1,5.1,13 C1071.8,1032,1073.5,1038,1071,1043.7z M1053.5,933c2.7-2.3,2.6,2.9,2.6,4.8 c-0.4,83,0.8,76.7-3.3,80c-2.7,2.2-10.5,7.5-15.1,8.6 C1036.6,933.9,1036.5,947.5,1053.5,933z M1053.3,1051.6c0,2.1-1.1,3.4-3,3.7 c-10.8,2.1-12.9,2.3-12.8-0.7c0.1-18.3-0.8-23.4,6.4-27 C1055.5,1022,1053,1017.3,1053.3,1051.6z M1033.3,950.2c6.6-5,0.4,27.5,2.4,74.8 c0.2,5.1-11.3,10.7-17.9,13.7C1018.3,954.4,1013.9,965,1033.3,950.2z M1032.9,1034.4 c6.2-2.1-1.9,46.7-1.9,12.1h0C1031,1036.3,1030.5,1035.2,1032.9,1034.4z M1019.3,1052.3 c-5.3-8.9,9.9-18.1,10-11.7c0.2,16.8,0.8,17.9-3.4,18.1 C1020.8,1059,1026.1,1055.3,1019.3,1052.3z M1020.8,1057.6c0.1,1.3-1.5,1.5-1.9,0.5 C1018.5,1056.9,1020.6,1055.6,1020.8,1057.6z M1005.2,972.9c6.2-4,8.7-8.9,10.5-3.7 c0.8,2.3,1,4.8,0.6,7.1c-3,17.6,3.4,62.2-5.1,66c-8.1,3.7-8.9,5.5-11.3,4.5 c-0.8-1.6-0.5-3.4-0.5-5.2C999.3,979.7,997.6,977.8,1005.2,972.9z M1015,1057.4 c0.1,4.1-2.5,3.6-13.6,5.2c-3.8-10.5,4.1-13,10.9-16.6 C1015.7,1044.2,1014.8,1049.1,1015,1057.4z M979.8,1037.4c0.4-39.3-1.7-45.3,6.6-50.3 c14.1-8.5,10-19,10,59.1c0,3.4-1.1,5.3-4.3,6.2c-4,1.1-7.1,4.3-12.3,4.6 c0.7-5-1.7-9.8,1.1-14.3C980.3,1041,979.8,1039.3,979.8,1037.4z M983.4,1065.8 c-0.5-2.3-0.6-4.5,1.4-5.8c3.3-2,6.7-3.9,10.4-4.9c0.3,0.4,0.6,0.6,0.6,0.8 C995.9,1063,996.5,1064.7,983.4,1065.8z M976.6,994.8c3.2,2.6,1.2,39.1,1,42.3 c-0.5,7.7-4.4,1-4.3,10.7c0,11,0.6,17.2-5.2,14.9c-4.7-1.9-6.5,2.9-6.5-7.9 C961.4,998,958.8,1007.4,976.6,994.8z M977.3,1057.8c-0.4,3.5-5.7-0.4-2.4-12.2 C975.2,1044.6,979.2,1042.5,977.3,1057.8z M958,1009.2c1.3,1.6,0.9,3.2,0.9,4.6 c0.1,62.2,3.5,54.6-12.4,57.4c-2.1,0.4-3.3-0.7-3.3-3 C943.9,1026.8,940.2,1013,958,1009.2z M926.1,1048.2c0.1-14.3-0.9-18.9,4.1-21.5 c6.4-3.3,10.9-9.2,11.1-2.2c0,1.4,0.3,25.7-0.7,32.1c-1,6.8,2.6,15.9-3.7,16.7 c-12.4,1.5-13.9,6.1-9.3-21.7C927.8,1050.6,926.1,1049.6,926.1,1048.2z M908.5,1047.8 c0-5,1.1-8.9,5.3-11.1c5.4-2.9,9.4-6.7,9.6-1.5c0.5,13.9,0.2,15-2.3,16 c-3,1.3-3.5,15-2.5,19.2c-2.5,0.1-4.5-0.2-6.3,0.8c0.5,1.8,5.1,1.7,4.3,3.9 c-0.3,0.8-0.8,1.7-1.5,1.9C906.5,1080.6,908.4,1068.5,908.5,1047.8z M920.3,1064.1 c0.6-10,0.3-9.2,1.5-9.7c0.7-0.3,1.2,0.6,1.2,1.2c0.1,18.9,0.4,18.6-1.1,18.8 c-1.5,0.1-1.2-0.7-1.2-10.3C920.6,1064.1,920.5,1064.1,920.3,1064.1z M891.6,1054.4 c0.2-6.9,4.8-7.6,9-9.9c6.5-3.5,5.2-0.9,5.2,16.2c-0,0-0,0-0,0 c0,20.8,2.6,17.5-11.8,19.4C891,1080.6,891,1079.5,891.6,1054.4z M874.9,1064.6 c0-2.4,3-2.3,1.4-4.4c-2.1-2.7,1.9-3.3,7.3-6.4c6-3.5,5-0.9,5,13.1 c-0.1,0-0.1,0-0.2,0c0,15.2,2.3,14.6-10.6,16C874.1,1083.3,874.9,1081.5,874.9,1064.6z M862.6,1064.5 c1.6-0.6,2.9-2,4.8-1.6c1,7.8,0.6,10.7-2.9,16.6c-1.7,3,10.5,4-5.9,6.9 C858.2,1068.4,858.5,1066.1,862.6,1064.5z M842.6,1081.7c0.4-5.7-2.4-10,13-12.9 c0,19.4,1.8,18.1-6.8,19.3C841.1,1089.4,842.1,1089,842.6,1081.7z M827.7,1080.9 c0.6-1.7,1.3-1.6,10.4-4.8c2.8,3.8,1.8,8,1.7,12c-0.1,2-2.2,2.1-10.6,3.6 C825.2,1092.4,825.9,1086.1,827.7,1080.9z M820,1090.8c-0.4,3.5-7,3.6-8.2,3.3 C807.3,1088.5,821.6,1075.6,820,1090.8z M807.5,1088.9c1.1,1.2,1.5,5.9-1.6,6.5 C784.9,1099.3,803.8,1084.9,807.5,1088.9z M792.8,1095.8c0.2,2.6-1.5,2.4-7.1,3.2 C777.8,1095.6,792.5,1090.4,792.8,1095.8z M730.1,1106.1c2.5,0.3,0.7,3.8-1.3,3.5 C727.2,1109.4,727,1105.8,730.1,1106.1z M716.6,1104c-0.4-0.2-1.3-0.7-1.3-0.9 C716,1101.1,722.5,1103.3,716.6,1104z M718.9,1107.8c1.7,0.4,1.4,3.1-0.1,3.5 C712.2,1113.3,713.3,1106.3,718.9,1107.8z M703.8,1099.6c5.5-1.8,13,5.7,0.2,5 C701.2,1104.5,701.3,1100.4,703.8,1099.6z M704,1108.6c4.2,0.2,3.7,6-0.7,5.6 C700,1113.9,699.8,1108.4,704,1108.6z M699.4,1101.7c0.2,4.5-7.8,4.8-7.8-0.6 C691.7,1095.4,699.2,1095.9,699.4,1101.7z M686.8,1116.1c-0.8,2.7-4.2,2.9-4.5-0.5 c-0.6-5.8,4.9-11.2,4.9-2C687.2,1113.6,687.2,1114.9,686.8,1116.1z M678.7,1092.4 c1-0.4,7.9-0.6,8.1,6.9c0.1,5.6-0.4,6-5.9,4.9C676.9,1103.5,677.9,1096.4,678.7,1092.4z M677.8,1109.1c2.4-1.3,4.8,9.3,0.5,10.1c-1.6,0.3-1.5-1.8-1.9-5.3 C677.2,1112.2,675.8,1110.2,677.8,1109.1z M665.5,1095.2c0-5.7-0.3-7.1,2.1-7.1 c8.1-0.3,6.8,7.1,6.6,13.4c-0.1,2.4-2.2,2.5-5.9,1.8c-3.6-0.7-3.1-2.3-2.8-8.1 C665.6,1095.2,665.5,1095.2,665.5,1095.2z M674.2,1118.3c-0.2,1-4.6,6.3-3.6-7.9 C670.7,1108.5,676.2,1106.3,674.2,1118.3z M665,1112.6c0.5-10.4,4.9,1.3,1,8.7 C664.6,1117.7,664.8,1115.1,665,1112.6z M659.5,1084c3.8,1.1,3.2,4.2,3.2,10.2h-0.1 c0,6.1,1.4,10-7,7.6c-1.6-0.5-1.7-0.8-2-17.6C653.6,1080.8,657.9,1083.5,659.5,1084z M657.4,1123c-3.8-19.2,5-17,5.3-13.4C663.7,1121.2,664.9,1121.9,657.4,1123z M652,1121 c-0.2,4.6-7,6-7.3,3.3c-1.2-11.4-1.2-18.6,3.8-18.2C652.2,1106.4,652.7,1107.5,652,1121 z M643.1,1077.7c1.9-0.5,8.1,0.9,7.7,6.5c-1,16.4,1.7,17.8-3.2,18.2 c-5.6,0.4-5.2-2.4-5.2-5.3C642.3,1078.3,642,1078.9,643.1,1077.7z M630.9,1071 c11.5,1.2,9,10.6,8.9,26.8c-0,3.1-4.2,2.4-7.1,1.5C630,1098.4,630.6,1097.7,630.9,1071z M631.2,1115.7c0.5-9.9-0.3-12.6,3.8-12.1c5.6,0.8,5.1,2.3,4.8,20.2 c-0.1,2.7,0.4,3.2-5.9,4.2c-2.8,0.4-2.2-1.9-2.2-12.3C631.5,1115.7,631.4,1115.7,631.2,1115.7z M620.9,1130.2c-1.2-4.7-0.4-9.3-0.6-13.8c-0.2-3.3,4.7-2.7,1.5-5.7 c-2.7-2.5-1.7-5.6-1.2-8.5c0.3-1.7,2.5-0.7,5.3,0c2.3,0.6,2.4-0,2.5,22.5 C628.4,1128.6,628.4,1130.2,620.9,1130.2z M618.8,1080.3c0.2,0,0.3,0,0.5-0 c0-11.5-1-16.6,3.6-14.6c6.3,2.8,4.3,4.6,4.7,29.2c0,1.7-0.8,2.4-2.3,2.4 C617.4,1097.8,618.8,1092.9,618.8,1080.3z M608.4,1115.5c0-14.8-1.1-18.4,4-17.2 c1.8,0.4,6,1.1,4.2,9.9c-3.5,17.7,0.4,23.7-4.6,24.5c-3.9,0.6-3.1-0.5-3.1-17.2 C608.7,1115.5,608.5,1115.5,608.4,1115.5z M609,1058.5c6.5,2.2,7.6,3.5,7.5,9.5 c-0.1,26,1,28-4.4,26.3c-3.7-1.2-4.3-1.9-4.4-6.1 C607.2,1066.9,606.8,1063.9,609,1058.5z M598.5,1051.2c4.8,1.4,7.4,4.2,7.2,9.5 c-1,29.5,1.4,31.6-3,30.6c-3.4-0.8-5.8-1.1-5.8-4.2C596.8,1053.8,596.4,1055.2,598.5,1051.2 z M605.2,1098.9c0.7,40.3-0.4,34.3-8.4,36.4C591.2,1077.7,605.2,1097.3,605.2,1098.9z M589.3,1044.4 c6.9,3.2,5.3,2.1,5.2,35.4c-0,6.1,0.8,7.7-1.9,8c-8.2,0.8-6.5-7.5-6.5-23.2 c0,0,0.1,0,0.1,0C586.2,1046.1,585.2,1042.5,589.3,1044.4z M586.6,1090.8 c8.6,0.8,7.6-0.6,6.9,39.2c-0.1,7.5-6.5,8-8.5,7.1c0-14.3-0.4-15.1,1.6-16.2 c0.7-0.4,0.7-1.3,0.2-1.6C582.6,1117,585.6,1095.2,586.6,1090.8z M577.5,1035.9 c4.2,1.6,6.5,4.2,6.4,9.2c-0.5,15.4,0.1,32.6-0.5,37.4c-0.3,2.8-7.9,1.2-8-5.7 C575.2,1039,574.8,1038.7,577.5,1035.9z M577.6,1086.5c7.9,1.9,4.2,3.6,4.7,27.9 c0.2,8.5-2.7,4.1-2.7,11.8c-0.1,11.8,0.7,13.8-2.8,14.2c-3.9,0.4-4-4.2-3.6-8.1 C576.3,1106.2,569.5,1084.6,577.6,1086.5z M566.8,1026.9c1,0.2,6.3,3.4,6.3,8.4 c-0.2,45.3,1.6,45.8-3.9,43.7c-2.8-1.1-4-2.7-4-5.9 C565.7,1027.8,564.2,1028.6,566.8,1026.9z M563.6,1086.7c0.1-8.9,6-4.3,7-2 c1,2.3,0.6,51.4,0.6,52.4c-0,4.5-0.3,4.8-4.4,5.7C562.2,1143.9,562.6,1144.8,563.6,1086.7z M555.4,1046.8c1-27.2-0.7-27.4,1.4-27.6c2-0.2,5.9,3.4,5.8,7.5 c-0.7,52.9,0.2,43.4-0.7,47.2C553,1077.7,555.1,1056.4,555.4,1046.8z M554.9,1076.3 c6.4,2.5,4.7,0.1,4.6,60.6c-0,8.5-5.4,9-5.8,5.7C553.5,1141.4,553.8,1081.9,554.9,1076.3z M545.2,1030c0.2-19.7,0.2-20.4,2.9-19.2c6.8,3.2,3.8,6.3,4.5,52.6 c0,2.6-0,5.5-2.4,5C543.8,1066.9,544.8,1066.7,545.2,1030z M544,1109.6 c0.1,0,0.2-0,0.3-0c0-37.4-0.4-36.4,1.4-36.9C555.1,1070.3,541.9,1211.3,544,1109.6z M536.8,999.9c4.6,2.2,5.7,5.4,5.7,9.8c-0.7,54.1,1.4,54.8-3,53.1 c-3.1-1.2-4.9-3-4.8-6.8C535.4,1002.8,533.8,1003.1,536.8,999.9z M540,1147.8 c-1.6-2.6,1.4-77.9,1.5-78.9C543.4,1072.4,541.3,1146.1,540,1147.8z M534.9,1066.4 c5.2-0.4,3.7-0.9,2.3,77.4c-0.1,3.7,0.1,5.7-2.5,5.7C531.7,1149.5,534.8,1067.4,534.9,1066.4z M532.8,1067c-4.3,174.7-4.4,32.4-2-3.8C533.2,1064.4,532.9,1065.8,532.8,1067z M525.8,990.4 c0.4-3.3,6.4,3.6,6.3,8.8c-0.5,33.7,0.2,53.5-0.5,57.9c-2.8-0.4-3.5-2.7-5.3-3.5 C524.4,1052.7,525.5,992.8,525.8,990.4z M524,1106c0.1,0,0.2-0,0.3-0 c0-44.1-0-42.1,0.1-44.7c0.1-1,3.7-3,3.5,5.9c-1.2,82.5-0.5,86-3.5,84.7 C522.6,1151.1,523,1154.6,524,1106z M516.2,980.8c0.5-3.1,6.2,2.6,6.2,9.5 c-0.5,40.5,0.3,51.9-0.8,60.3c-5.1-1.2-6.4-4.2-6.4-8.8C515.9,986,514.5,992.4,516.2,980.8z M519.3,1102.3c-0-2.8-0.1-5.6,0-8.3c0.1-2.8,0.2-5.6,0.2-8.4V1058.5 c0-0.6,0.3-1,0.8-1.2c0-0.4,0-0.4,0-0c0.8-0.3,1.9,0.1,1.9,1.2v93.7 c0,1.7-2.7,1.7-2.7,0c0-2.5,0-4.9,0-7.4c0-5.5,0-10.9,0-16.4c0-5.6,0-11.2,0-16.8 c0-1.4,0-2.8,0-4.2c0-1.7,0-3.3-0.2-5c-0,0.1-0,0.3-0.1,0.4 C519.3,1102.6,519.3,1102.4,519.3,1102.3z M515.6,1053.1c3.4,0.9,0.5,98.5,0.4,99.5 c-0.2,2-3.2,2.6-3.3,0.1C512.8,1151.7,514.3,1054.4,515.6,1053.1z M506.9,969.1 c2.3-0.8,6,5.2,5.9,11.6c-0.9,58.9,0.8,60.1-0.8,63.2c-5.1-1.7-6.5-4.9-6.5-9.7 C506.4,969.2,504.7,969.8,506.9,969.1z M509.1,1154.6c-2.8-0.1,0.6-104.2,0.7-105.2 c1.8,0.4,2.7,1,2.8,2.2C512.7,1052.7,512.5,1154.7,509.1,1154.6z M506.1,1047.1 c2.6,1.6,2.1,3.5,2.1,5.1c-3.5,100.5-1.6,100.2-3.8,103.3 C502.8,1153.2,505,1051.1,506.1,1047.1z M499.6,958.8c4.7,4.5,3.7,5.9,3.7,19.8 c-0.2,63.3-0.1,53.4-0.3,58.5c-5-1.9-6.6-5-6.5-9.4C497.4,964.1,495.3,954.8,499.6,958.8z M501.2,1156c-0.4,1.6-2.9,2.1-3.8,0.7c-0.5-0.2-0.9-0.6-0.9-1.2V1044c0-0.8,0.6-1.3,1.3-1.3 c0.3-0.3,0.8-0.4,1.3-0.3c0.2-0.2,0.5-0.3,0.8-0.3c0.4,0,0.7,0.1,0.9,0.4 c0-0,0-0,0-0C505.4,1040.3,501.5,1155,501.2,1156z M487.6,986.3 c0-11.6-0-23.1,0-34.7c0-9.2,6.8-0.6,6.7,6.2c-1.2,74.2,1.3,71-1.7,71.9 c-6.9,2.1-4.9-17.8-4.9-43.3C487.7,986.3,487.6,986.3,487.6,986.3z M489.9,1034.6 c3.8,1,4.8,3.2,4.7,6.4c-5.1,121.3,0.1,119.2-6,119.6 C486.5,1160.8,486.2,1168.2,489.9,1034.6z M480.2,935.2c3.2,3.1,4.9,6,4.9,10.1 c-0.6,77.1,0.5,75.8-1.1,77c-1.1,0.8-5.9-3-5.8-9.5C479.1,937.6,477.4,939.3,480.2,935.2z M479.5,1025.1c4.1,2,5.4,4.3,5.3,7.7c-0,1-2.2,123-2.5,126.9 c-0.4,3.8-5.1,3.8-5.3,1.7C476.5,1157.3,479.5,1047.6,479.5,1025.1z M469.1,965.5 c0-32.8-1-46.9,2.1-42.7c6.4,8.6,4.8,1.4,4.6,81.4c-0,8,0.4,8.7-1.5,9.8 c-7.2-4.7-5.3-4.5-5.3-48.4H469.1z M476.3,1025.4c-3.8,151.7-0.2,137.8-8.7,139.4 c-0.9-8.4,2-141.3,3.1-147.6C474.9,1018.5,476.4,1020.9,476.3,1025.4z M460.7,910 c8.9-2.9,6.6,37.1,6.6,96.3c-3.1-1.5-4-3.3-5.4-4.6C458.9,998.8,459.7,910.3,460.7,910z M460.8,1006.4c4.8,3.3,6.4,6.6,6.3,11.6c-4.5,149.6-2.2,146.8-4.4,148.4 C457.3,1170.3,455.1,1178.2,460.8,1006.4z M448.5,1170.6c-0.8-4.8,2.4-161.2,3.5-171.5 c5.6,2.3,6.4,3.4,6.3,9C454.8,1186.2,457.1,1170.6,448.5,1170.6z M452.2,898.3 c6.3,3.8,8.1,1.3,5.6,98.4C449.3,991.4,452.2,996.4,452.2,898.3z M444.8,885.7 c6.3,7.3,4.5-1.2,4.5,102.5c-6.3-3.4-5.7-6.8-5.7-10.3C443.7,880.6,443.3,887.3,444.8,885.7z M449.3,998.8c-11.7,394.8-10.3-4.9-6-10.3C447.2,990.8,449.5,993.6,449.3,998.8z M436.6,872 c2.4,4.7,5.2,8.8,5.1,14.4c-0.4,52.7,0.1,80.9-0.5,92.4c-4.7-3.1-6.6-6.3-6.5-11.3 C435.9,870.6,434,874.6,436.6,872z M436.9,1164.6c-0.2,9.4,0.8,10.4-7.4,10.9 c1.8-65.2,3.2-130.4,5.2-196.3C442.3,984.4,440.4,969.9,436.9,1164.6z M427,859 c3.7,4,6.1,8,6,13.8c-0.8,50.8,0.5,86.9-0.8,96.4c-3.7-3.2-5.7-5.9-5.7-10.3 C426.9,894.4,426.6,864.6,427,859z M432.4,979.3c-14.3,435.4-8.8,19.5-6.6-10.2 C430.3,971.8,432.6,974.2,432.4,979.3z M420.4,846.7c5,6.6,3.9-6.4,3.9,112.5 c-4-3.7-5.7-6.6-5.7-10.7C419.7,841,418.6,848.4,420.4,846.7z M422.8,969.2 c-12.9,478.2-8.4,3.1-4-10.1C422.3,962.3,422.9,965.5,422.8,969.2z M411.3,832 c7.6,8.8,4.9,1,4.9,117.7c-4.6-3.6-5.8-6.9-5.7-11.2C410.6,924.3,410.4,852,411.3,832z M409.3,1153.7c-0.5,25.7,0.2,26.8-4.5,27.1c-0.6-6.3,4.3-224.8,5.1-231.7 C415.1,949.7,413.8,938.2,409.3,1153.7z M403.4,819c4,4,5.1,5.7,5.1,9 c-0.2,121.1-0.1,107.7-0.9,111.3C401.9,930.5,397.6,941,403.4,819z M400.7,937.5 c4.7,1.3,3.6,1.4,3.6,34C399,972,400.3,970.3,400.7,937.5z M399.7,838.3c0-0.4,0-0.9,0-1.3 C400.2,837.3,399.9,837.8,399.7,838.3z M399.4,848.1c0.2-0,0.4-0,0.6-0v32.6 C399.2,875.5,399.4,872.9,399.4,848.1z M1669.6,1298.3c-6.4-0.5-6.5-4-8.3-1.7 c-3.7,4.6-14,2.9-20,2.2c-6.6-0.8-3.6-7-7.7-7.8c-3.9-0.7-6.4,0.3-7.5,1.5 c-6.6,7.6-7.1,0.5-9.5,1.5c-7.8,3.4-5.7-2.1-9.6,0c-3.3,1.8-5.2,5.9-9.6,4.3 c-5.5-2-6.4,3-8,4.7c-5.5,5.7-6.4-2.3-8.9-1.5c-3.4,1.1-7.3,0.6-10.4,2.8 c-3.2,2.3-4.9,4.7-8.4,2.2c-11.2-8.3-15.5,9.1-17.3,8.8c-1-0.2-2.7-1-2.7-1.5 c-0-4.6-5.4-6.8-7.9-0.8c-1.7,3.9-4.8-4.2-15.5-4.2c-8.8-0.1-9.7,0.2-11-0.8 c-7.7-6.2-9.8,6.7-16,4.2c-2.2-0.9-7.4-0.2-8.2-1.4c-2.9-4.1-6.9-3.2-13.2-4.1 c-1.6,1.3,0.5,2.3,0.2,3.4c-0.4,1.2-0.9,2.3-0.6,3.7c1,4.6-11.4,4.1-12.2,3.1 c-1.9-2.4-4.1-3-6.9-1.8c-2.3,1-5.1,0.2-6.8,3.1c-3.3,5.8-7-1-11.7,3 c-5.4,4.6-6.6-2.6-9.4,0.1c-7.3,7.1-21.4,2.1-24.9,3.6c-6,2.4-23.6,1.4-26.7-2.8 c-3.2-4.4-5.5,4.3-11,2c-8.8,2.3-17.9-1.2-26.7,1.6c-4.2-1.2-8,1.2-12.1,1.5 c-35.2,2.4-17.5-3.3-29.2-5.1c-15-2.2-15.9,9.7-25.9,6.1c-6.9-2.4-14.7,0.5-20-2.6 c-6.8-4-12.8-0-16.5,0.2c-7.5,0.4-3.1-5.3-11.4-4.8c-1.2,0.1-7.5,0.4-8.2-1.2 c-1.6-3.8-2.6-2.6-27.1-2.8c-6.7-0.1-8.3,3.7-14,2.8c-6.4-1.1-38.7-1.4-38.7-1.4 c-4.4-3.6-25.1-4.7-26.6-2.3c-2.1,3.4-3,2.7-26.6,2.5c-11.2-0.1-5.8-10.8-32.2,6.4 c-2.4,1.6-3.7-1-5.4-0.8c-1.7,0.2-2.5,3.2-4.3,2.5c-2.2-0.9-4.7-0.3-6.8-1.9 c-11.3-8.6-18.4-0.8-25.1-3.7c-0.8-0.3-1.9-0.5-2.5-0.2c-7.3,3.6-17.7-0.9-21.5,3.7 c-1.9,2.4-8.4,3.2-9.6-0.2c-3.4-9.8-11.4,2-17.5,0.7c-0.5-0.1-1.5,0.3-1.8,0.7 c-3.7,6.6-11,0.3-14.8,3.1c-6.2,4.6-8.3-2.3-23.7,0.8c-1,0.2-9.7,1.8-10.9,0.8 c-8.7-6.7-14.4,5-22.2-0.6c-10.8-7.8-14.5,3.7-20.4,2.3c-3.8-0.9-4.1,2.3-8.8,1 c-9.6-2.7-6.6,4.1-12.4,3c-15.7-3.1-39.3,5.3-44.3,0.1c-6.5-6.8-12.7,0.6-26-0.2 c-6.7-0.4-3.8-10-8.6-7.6c-4.8,2.4-2.7,11.4-10.5,9.4c-12-3.2-19.1,2.5-24.6,1.6 c-14.7-2.4-21.3,2.8-25.3-4c-1-1.6-3.4-2-4.7-0.8c-3.7,3.6-8,1.6-11.7,0.9 c-15.5-2.9-23.7,0.9-32.9-1.9c-4.4-1.3-6,1.4-8.3,0.4c-5.9-2.4-13.9,2.5-18.7,0.7 c-2-0.7-20.2-3.6-25.6-0.3c-6.4,4-11.8-4-18.8,1.9c-1,0.9-32.9,3.9-47.1-1.8 c-2.4-0.9-9.3,2.1-15.6-0.4c-1.4-0.5-7.9-2.1-8.9-1c-4.5,4.7-16.6-2.5-32.5-1.9 c-4.9,0.2-8-6.7-19.2-2.4c-9.8,3.7-25.9,1.9-28.3-0.6c-2-2.1-4.7-2.1-7.4-1.9 c-7.8,0.7-14.9-2.2-22.2-4.2c-3.6-1,1.3-45.8,0.6-80.8c-0.7-41.2,1024-175.5,1290.8-187.2 c-0.4,19.2,1.2,25.1-2.4,26.1c-2.7,0.8,4.8,1.3,0.2,3.1c-0.6,0.2-1.3,0.3-1.5,1.1 c0.7,2.1,5.9,3.8,5.9,10.4C1687.5,1308.1,1698.7,1300.5,1669.6,1298.3z M1678.5,355.2 c5.4-9.1,3.1,297.1,3,298.2c-0,1-0.6,356.7-1.9,307.3C1679,937.9,1672.9,364.7,1678.5,355.2z M1689.5,448.2c-4.2,4.5,1.9,74.4-3.9,79.3c-0.8,0.1-1.1-73.7-1.1-74.4 c0.4-117.4-6.8-99.5,6.7-112.6c0.5,0.1,0.9,0.2,1.4,0.3 C1689.6,407.4,1694.6,442.8,1689.5,448.2z M1695.7,169.3c-0.5,125.4,0.4,166.3-17.4,171.7 c-1.9-1-1.6-2.8-1.6-4.5c-0.3-238.6-2.7-207.6,15.5-237.6 C1698.2,89,1695.9,119.8,1695.7,169.3z M1810.8,148.2c-1.1,2.5-14.8,25.8-16.3,20.7 c-0.1-0.4-0.5-0.9-0.4-1.2C1796,155.8,1786.4,139.5,1810.8,148.2z M1797.8,462.3 c-3.5-0.2-4.2-1.4-4.3-3c0-0,0.3-123,0.3-123c0.4-6.2,2.6-0.8,21.9-2.1 c10.8-0.7,8.4-2.2,8.4,94.6h-0.1C1823.9,471.3,1829.9,464.1,1797.8,462.3z M1820.5,698.5 c-20.7-1.9-26.2,2.4-26.6-4.2c-0.5-10.1-0.1-151.9-0.1-153c0.2-6.7,0.3-4.2,16-3.9 c18.1,0.3,14.3,8.2,13.8,140.3C1823.6,694.9,1825.3,699,1820.5,698.5z M1755.3,187.4 c0.1,0,0.1,0,0.2-0c0-12.2-0-24.5,0-36.7c0-12.9,0.9-4.4,31.8-4.7 c5.3-0.1,3.4,0.4,3.6,26.8c0.1,10.6-30.8,48.4-31.8,54.8c-0.4,2.3-3.6,2.8-3.7-0.9 C1755.3,215.9,1755.3,207.4,1755.3,187.4z M1798.8,945.9c2.9,0.3,2.9,2.6,2.4,8.4 c-0.2,2.5-1,3.4-3.5,4c-3.3,0.9-3-1.1-3-5.3h0 C1794.7,949.9,1794,945.4,1798.8,945.9z M1794.6,1053.9c-3.6,4-9.2-6.8-9.8-8 C1809.5,1039.4,1799.6,1048.4,1794.6,1053.9z M1784.1,926.9c4.9-0.4,4.2,0.1,3.9,26.6 c-0,3.7,0.3,6.2-7.1,5.3c-1.1-2.6-0.6-5.3-0.6-7.8C1780.2,928.7,1779.5,927.2,1784.1,926.9z M1780.7,206.9c10.8-15.6,6.3,11.2,6.3,17.7c0.1,44.1,1.7,42.4-3.9,42.3 C1752.7,266.2,1738.4,267.7,1780.7,206.9z M1754.9,536.7c2.2-1.4,4.1-1.8,6.1-1.7 c28.5,1.5,25.8-0.1,25.8,7.5c0.8,170.1,1.4,155.5-4.9,154.9c-6.9-0.7-24.1-3.1-26-3.4 C1754.3,691.1,1755.8,587.4,1754.9,536.7z M1755.2,424.7c-0.7-103.6-5.5-95,18.5-92.6 c11,1.1,13.6-1.1,13.5,4.7c-2.4,131,3.5,124.4-4.4,124.9c-10.2,0.5-22.5-2.7-24.7-2.8 C1753.8,458.7,1755.4,457.7,1755.2,424.7z M1783.2,779.7c4.4,0.2,4.6-1,4,24.3 c0,0,0.7,113.1,0.7,113.1c0.7,7.8-10.2,0.7-11.1,13.5c-0.5,6.5,0.8,8.6-2.4,9.3 c-4.8,1.1-8.7,1.1-7.1,6.4c1.2,4,2.9,15.6-3.5,15.8c-10,0.3-8.2,0.8-8.2-22.3h0 c0-5,0.1-10.1-0-15.1C1750.8,757.3,1750.9,778.4,1783.2,779.7z M1773.4,960.2 c-0,1.9-3.1,2.9-3.2,0.4c-0.1-13.4-0.4-14,1.7-15 C1773.5,946.8,1773.4,947.3,1773.4,960.2z M1743.2,144.6c1-0.2,9.6-3,9.1,0.8 c-0,0,0.3,47.2-0.8,60.3c-2.5,28.1,6.9,27.4-11.9,49.3c-2.7,3.1-6.5-3.9-6.4-10.2 C1734.4,153.7,1731,146.8,1743.2,144.6z M1744.9,833.8c-0.1-11.1,2.2-3.7,2.6-13.9 c0-1.3,1-21.9,1.9-24.1c2.1,1,1.7,2.9,1.7,4.6c1,168.2,1.4,161.8-6.7,161.1 c-3.4-0.3-2.5,0.2-3.2-68.3C1740.5,831.3,1745.2,891.5,1744.9,833.8z M1745.3,259.1 c1.4-1.8,1.9-4.4,4.6-5.8C1755.4,268.5,1742.4,262.9,1745.3,259.1z M1736.5,402.1 c0.3-12.5-1.7-66.5,9.7-69c5.9-1.3,4.3-5.3,4.9,73.6c0.4,54,2.7,52.9-10.7,45.2 C1733.6,448,1736.3,413.7,1736.5,402.1z M1743.6,565.9c-0.2-8.6-0.2-10.1,1-12.3 c2.2-4-0.3-11.1,5.1-12.8c1.8,4.7,1.9,9.4,1.2,14.2c-1.9,11.6,0.2,132.2,0.2,133.2 c0,3.1-0.9,3.8-4,3.4c-7-0.8-6.6,9.4-7.4-113C1739.5,569,1743.8,573.7,1743.6,565.9 z M1741.3,1103.9c2.6-14.5-2.8-15.6,5.5-23.3c-2.5-0.6-4.1-2.1-3.2-4.5 c1.4-3.8-0.8-5.3-0.8-8.8c-0.1-9.7,7-0.6,7.1-9.8c0.1-7-7.4-1.4-6.1-7 c0.4-1.9,0.4-1.7,13.5-2.4c2.9-0.2,2.7,0.7,15.2,15.7c1.8,2.2,2.4,14.6-0,17 c-3.9,4-27.2,32.3-29.6,35C1741.5,1111.4,1740.6,1107.6,1741.3,1103.9z M1761.5,1205.5 c-1.3,1.4-8,5.2-4.5,10.6c2.3,3.6-20.9,82.1-14.7-39.8c4.5,3.1,6.5,7.1,9.3,10.4 C1765.1,1202,1764.7,1202.2,1761.5,1205.5z M1773,1174.3c-0.4,1.6-2.4,1.8-3.8,0.5 c-12.2-11.6-10.2-13.8-9.1-18.6c0.3-1.5,2.1-1.1,10.6-1.1c0,0.1,0,0.2,0,0.3 C1789.2,1155.4,1776.1,1161.6,1773,1174.3z M1799.2,1111.4c-2.3,11.6-7.8,16.7-13.1,23.4 c-2.6,3.3-4.5,2.6-14.9,2.6c0-0,0-0-0-0c-12.6,0-13,0.7-13.3-3.7 c-0.4-5.3-1.2-3,29.3-40c6.2-7.6,7.2-0.9,12.8,4.5 C1803.7,1101.7,1800.9,1102.5,1799.2,1111.4z M1820.3,953.8c-2.5-3.3,1-14.9,0.4-16.6 c-2.2-6-5.7-0.2-4.8,1.8c2.2,5,0.9,10.3,1.1,15.5c0.1,1.9-1.9,2.5-8.1,2.4 c-4.9-0-2.9-1.7-3.9-7.2c-1.7-9.9-7.3-8.2-9.8-9.6c-0.8-2.3-0.4-4.7-0.4-7.1 c-0.2-154.9-10.6-165,25-150.3c3.7,1.6,6.7,3.3,4.9,8.1 C1824.6,791.7,1828.7,965.2,1820.3,953.8z M1824.6,266.7c1,3.8-33.7,3-30.9-2.2 c0.8-1.6-2.3-74.7,4.5-84.5c19.9-28.7,17.4-30.7,23.9-24.6 C1829.2,162.1,1823.2,261.2,1824.6,266.7z M1827.6,147.7c26.1,6.5,23.7,29.6,11.2,12 c-4.5-6.3-8.5-5.7-12.6-8.7C1824.5,149.8,1825.5,147.2,1827.6,147.7z M1827.8,217.4h0 C1827.8,261.2,1827.8,305.5,1827.8,217.4z M1833.3,560.9c4,0.9,4.2,2.4,3.6,12.7 c-0.4,7.6,4.3,4.3,4.2,11.9c-1.1,76.9,1.5,75-1.3,77.1c-4.6,3.4-3.5,23.7-2.3,24.6 c3.1,2.2,1.4,5.2,1.8,7.9c0.4,2.6-5.2,4.5-4.9,1C1834.3,696,1833.3,571,1833.3,560.9z M1841.1,890.2c-3.6,13.4,3.1,61.6-3.1,62.3c-4,0.5-4.2-120.1-2.9-119.4 c4.5,2.2,0.4,30.6,3.2,34c3.4,4,0.2,13.9,2.8,21.2C1841.4,888.8,1841.3,889.6,1841.1,890.2z M1842.2,427.8c2,6.6-1.3,16-0.5,20.4c0.4,2.1,4.2,3.6,1.5,5.9 c-4,3.5-0.8,9.1-7.1,8.6c-5.2-0.4-1.5-1-2.6-119.2c-0.1-7.1,9.3,5.6,7.8,13.2 c1.7,4.6,2.5,9.9,2.9,39.7c0.4,27.2,0.5,26.7-1.3,28.4C1842.1,425.5,1841.9,426.9,1842.2,427.8z M1848.6,183.1c-1,92.1,1.7,85.7-5.8,85.8c-11,0.2-8.5,6.1-8.5-49.7h0.1 c0-41.2-1.3-54.1,3.9-50C1848,176.8,1848.6,177.1,1848.6,183.1z M2037.5,219.5 c0.1-16,2.5-5.7,31,13.6c18.4,12.4,7.2,20.5,10.4,84.4c-2.1,4.8,1.1,9.9-0.9,14.7 c0.9,3,0.8,5.8-0.7,8.7c-2-0-3.8-0.8-5.2-2.3c-4-4.4-12.3-7.2-14.7-11.7 c-0.9-1.7-2.5-2.4-4.3-2.8c-5.7-1.5-9.4-6.3-14.3-9C2036.7,314,2037.4,220.5,2037.5,219.5z M2039.8,918c0.1-2.4,0.8-3,3.3-2.8c9.1,0.9,8.4,1.9,8.8,10.7c0.2,3.7-1.9,3.5-6.8,3.5 v-0C2039.6,929.3,2039.2,930.1,2039.8,918z M2040.9,911.3c-1.7-1-1.2-2.4-1.3-3.6 c-0.8-14.3-2.4-13.8,10.2-13.8c1.8,0,2.9,0.7,2.9,2.7c-0,4.3,0.3,8.7-0.3,13.5 C2048.2,909.1,2044.4,909.6,2040.9,911.3z M2038.3,325.5c8.3,3.4,12.6,10.1,11.9,18.5 c-4.8,60.3,12.2,626.4-11,539.8c-0.5-2-0.1-78.6,0.3-80c-2.5-18.5-0.1-133.4-1.6-140.2 C2038.1,662.6,2035.8,328.3,2038.3,325.5z M2034.3,924.5c0,11.4-8.9,6-22.5,8.3 c-5.2,0.9-0.6-24.8-3.1-33.1c0.8-7.9-3.2-582.7,0.2-596.4c30.8,22.3,24.8,8.8,23.9,65.6 c-0.4,27.8,0.3,289.3,1,291.9c-2.4,6.8,1,13.8-0.6,20.7 C2034.7,688.8,2034.3,920.4,2034.3,924.5z M1995.9,178c5.5,4.4,11.4,7.3,16.1,11.9 c30.5,29.5,18.9-2.3,21.7,77.9c1.5,42.9,0,45.1-5.2,40.3c-7.5-7-14.6-9.4-18.2-14.8 c-3.4-5.2-17.1-5.4-16.8-16.9c0.1-3.5-0.2-64.5,1-73.8C1993.5,198.4,1993.1,183,1995.9,178 z M1993.9,295.5c-0.2-3.3,9.4-2,9.1,17.5c-0.4,24.7-0,151.6-0,152.7 c-0.1,0-0.2,0-0.3,0c0,60.4,2.4,465.9,2.4,465.9c-0,3.6-5.6,4.3-7.8,2.9 C1992,931,1995.4,320.6,1993.9,295.5z M1956,144.6c31.9,33.5,39.3,2.1,34.3,109 c-0.8,18.3,1,26-3.9,22.6c-23.1-16.2-19.8-17.3-27.9-21.4c-11.7-6-3.9-4.8-7.1-39.3 c0,0,0.9-53.4-0-64.4C1951,146.9,1953.1,141.6,1956,144.6z M1989.9,305.9 c0,0,1.5,627.5,1.5,627.5c-9.2,6.6-16.1-0.1-20.4,3.6c-12.7,10.9-8.9-660.3-7.3-667.2 C1995.3,293.5,1989.7,284.9,1989.9,305.9z M1957.9,304.9h-0C1957.9,256.6,1957.9,246.4,1957.9,304.9 z M1912.5,111.6c1-3.1,4.5,1.7,29.8,22.7c10.1,8.4,5.8,66.5,5.7,67.5 c-0.1,1,2.1,50.4-4.8,41.9c-4.2-5.1-13.9-8.8-21.6-17.9c-4.9-5.8-13.7-5-10.3-16.4 C1912.6,205.1,1908.4,124.4,1912.5,111.6z M1923.3,926.3c-9.3-3.8-3.5-569.9-5.7-682.6 c-0.3-15.5,4.8-4.8,27.9,12.2c2.4,1.8,3.1,684.2,2.9,684.3c-20.7,2.2-20,2.9-20.2-1.8 C1928,934.4,1928.1,928.3,1923.3,926.3z M1923.9,938c-0.2,1.4-0.3,2.7-0.7,3.9 c-0.3,1.1-2.1,1.5-3,0.2C1916.3,936.2,1922.1,923.2,1923.9,938z M1914.6,925.2 c-2.2,0.3-2.2-0.2-2-11C1912.6,913.2,1914.6,906.1,1914.6,925.2z M1913.6,369.5 c0.1-145.4,0.1-211.3,0.1,0C1913.7,369.5,1913.7,369.5,1913.6,369.5z M1913.4,930.6 c1.1-1.7,2.1,5.6,0.9,13.3C1911.5,942.2,1911.9,933,1913.4,930.6z M1887.9,118.3 c-0.2-21.1,0.3-29.8,3.6-27c22,18.9,16.2,2.2,16.2,122.6c-2.7,0.3-3.9-0.7-5-1.7 C1879.9,193.4,1888.9,213,1887.9,118.3z M1899.2,914.8c1,29.3,0.8,28.5-0.1,30.1 c-3.5,6.1-2.5-1.9-3.7-170.5c-0-0.6-4.2-355.3-4.5-355.8c-1.8-2.9-1.3-125.7-1.3-126.7 c0.5-90.5-12.3-90.6,14.7-68.7c4.7,3.8,2,650.6,3.7,675.4C1908.6,909,1898.8,903.5,1899.2,914.8z M1903.6,913.6c1.3-3,4.4-3.4,4.7,0.6c0,0.3-0,24.3-0,24.9c-0.1,3.1-0.4,6.4-3.5,5.8 C1901.5,944.1,1903,915,1903.6,913.6z M2072.9,1033.9c-35.3,1-51.7,2.3-51.7,2.3 c-294.2,8,54.4-21.7,54.3-5.2C2075.5,1032.8,2075,1033.9,2072.9,1033.9z M2080.4,921.3 c-0.1,4,0.3,7.5-21.2,6c-4.2-0.3-3.9-557.5-4.7-561.7c2.2-7.8-2.3-30.7,2.7-27.4 c21.5,14.6,21.1,13.6,21.1,18.9c0.3,84.1-0.9,171.4,0.7,180c-1.5,3.8-0.6,170.6,0.3,176.2 c-1.9,5.6,1.5,11.4-0.6,17C2079.5,732.6,2080.8,904.2,2080.4,921.3z M2096.9,924.1 c-11.8,0.7-11.2,3.6-11.1-7.2c0-3.8-1.4-79.1-1.8-79.8c-0.1-7.5-2.6-470.5-0.5-480.4 c23.8,15.2,12.3-17,16.7,335.4C2103,934.1,2101.9,923.8,2096.9,924.1z M2086.3,348.4 c-5-2.9-4-6.1-4-20.7c0,0,0.1,0,0.1,0c-0.4-95.1-2.7-86.2,11.3-75.9 c35.8,26.3,33.4,8.8,30.6,105.5c-0.2,5.3,2.9,16.9-2.8,14.5c-10.8-4.6-14.2-12.1-19.6-14 C2096,355.8,2091.5,351.5,2086.3,348.4z M2123.2,921.5c-4.5,1.3-10.9-0.1-10.9-0.1 c-6.9,3.4-5.2-1.2-5.5-16c-0.4-15.5-5-369.5-2.8-377.1c-0.2-1.4-1.3-148.1,1-155.5 c1.6-0.3,2.5,0.2,3.5,0.8c16.1,10.8,16.8,10.2,16.7,15.1c-1.3,104.8,1.2,414.3,1.4,415.3 c-1.2,11.5,0.9,23,0.5,34.5C2123.9,921.2,2133,918.8,2123.2,921.5z M2129.3,328.8 c0-57.9-4.3-54.6,14.4-41.1c34.6,25.1,29.1,16,29,56.4c-0,1-0.2,55.3,0.2,58.2 c1.1,9-18.1-11.4-24.1-11.9c-24.6-16.9-19.2-3.6-19.2-61.6 C2129.5,328.8,2129.4,328.8,2129.3,328.8z M2134.5,919.8c-4.5,0.3-4-127.8-4-143.6 c0,0,0,0,0,0c0-1,0.1-166.6-1.3-172.5c1.4-13.5-3-217.5,3.6-213.3 c27.7,17.3,11.3-38.7,20,523.5C2152.9,918.6,2148.9,918.7,2134.5,919.8z M2174.3,914.2 c-1.2,1.8-3.4,0.3-4.8,1.4c-1.7,1.4-3.8,0.9-5.7,1c-8.9,0.2-5,6.4-6.9-47.3 c-0.9-24.4-0.5-178-2-186.4c0,0-1.3-237.2,0.9-277c5.9,2.6,10.1,6.1,14.7,9 c4.6,2.8,0.7,103.8,2.9,107.1C2171.6,530.3,2177.4,909.6,2174.3,914.2z M2178.2,316.9 c0.4-8.3,5.4,1.3,36.2,19.5c6.9,4.1,12.2,4.6,8.3,100.8c-4.4-1.7-8.2-3.9-11.3-6.9 c-5-4.7-33.2-16.9-33.9-24.7c-0.7-8.7,0.2-51.9,0.5-52.7 C2177.5,351.2,2178,320.2,2178.2,316.9z M2189.7,905.9c-0.4-3.4-1.1-5.6,1.3-6.3 C2201.5,896.5,2188.6,928.6,2189.7,905.9z M2203.4,912.5c-4.3,0.7-4.2-4-4-7.8 c0.7-13.9-9.8-8.7-10.1-18c-0.5-18.4,6.4-6.9,11.9-12.9c3.9-4.3-9.6-8.3-15.7-0.5 c-1,1.3-1.4,2.6-1.1,11.6c0.4,13.4-4.7,8.5-1.1,14.3c5.8,9.4-4.6,26.5-3.1,1.2 c0.1-1.9-2.9-383.2-2.9-383.3c1.8-6.5-0.9-81.4,0.6-91.5c0.3-2.2-6-12.2,17.8,5.8 c12.9,9.7,3.8,38.7,6.7,63.2C2202.6,495.6,2206.6,911.9,2203.4,912.5z M2218.2,910.5 c-12.9,10.2-12.7-455.6-9.7-470.4c3,1.1,14.3,6.5,14.3,10.4c-0.1,49.3-0.7,49.7,0.8,55.7 c-2.3,5.1,0.9,56-0.6,60.9c0,0,3.6,343.3,3.6,343.3C2223.1,909,2220.6,908.6,2218.2,910.5z M2228.8,347.6c3.1-0.6,46.1,26.8,45.8,32.1c-0.1,1,2.6,87.7-0.5,89c-3.2,1.4-9.7-7.7-13.4-8.6 c-4.5-1.1-32.2-17.4-32.4-20.1C2227.6,434.1,2227.3,349.4,2228.8,347.6z M2231.1,909.5 c-1.2-5-4.2-454.5-2.4-457.2c34.1,16.2,29.1,9.7,28.8,129.9 C2256.7,954.8,2275.3,903,2231.1,909.5z M2274.8,904.9c-6.2,0.3-8.6,3.4-9.5-2.2 c-0.2-1-4.5-398.6-2.5-427.1c0.2-2.7,3.2-0.9,11,4c2.4,1.5,1.4-2.5,1.4,90.1l0.5-0 c0,98.9,1.2,257,1.2,257c1.9,8.1,1.2,11.1,0.7,64.9C2277.4,902,2278.7,904.7,2274.8,904.9z M2280.2,382.2c-0.1-3.1,0.6-2.4,41.2,23.3c9.6,6.1,7.9,11.5,7.9,54.3c-0,0-0.1,0-0.1,0 c0,59.5,1.3,38-12.4,34.3c-4-1.1-4.6-1.7-33-18.8C2275.9,470.6,2280.4,392,2280.2,382.2 z M2317,900.3c-4.1,1.5-31,3.2-32,3.2c-6,0.4-2.5-212.9-4.8-241.2 c0.7-3.3-1.7-172.3,0.1-177.8c2.7-0.2,4.2,1.4,5.8,2.3c21.8,12.4,28.5,15.3,28.4,25.8 C2313,645.5,2317.9,832.7,2317,900.3z M2320.8,508.2c8.2,3.8,8.3,3.8,8.3,11.6 C2333,1368.6,2312.5,540.4,2320.8,508.2z M2375.9,438.7c11.7,7,9,6.5,9,93.1 c-15.1-5.3-27.4-14.3-40.7-21.1c-11.7-5.9-11.1,1.7-10.4-76.4 C2333.9,407.3,2327.3,409.5,2375.9,438.7z M2365.8,882.6c-5.8-0.5-6.8,12.1-7.5-20.7 c-0.1-7.6,0.5-5.7,10.5-7.6c3.1-0.6,2.8-3.8,1.4-4.2c-18-5.6-16.7,5.5-16.7,24.6 c-13.3-3.1-17.4,4.7-3.4,6.4c4.5,0.5,3.9,5.6,1.1,7.1c-5.9,3.2-6,1.6-10.1,2 c-6.7,0.6-4.3,0.2-4.7-10.5c-0-1-6.5-367-0.1-363.9c56.3,27.1,32.2-1.8,39.3,282.5 C2377.7,878,2380.7,883.9,2365.8,882.6z M2380.2,825.2c-0-0.4,0.8-32.6,0.7-41.3 c-3.1-390.4,6.7-193.1,4.4-187.8c0,0,2.9,280.5,2.9,280.5C2375.5,879.1,2385.1,882,2380.2,825.2z M2403.8,874c-3.5,2.5-10.2,3.5-10.3-0.5c-2.7-60.9-4-312.8-3.2-325.8 c3.2-0.4,5.2,1.6,7.3,3c36.6,25.5,38.9,8.1,38.8,47.8 C2435.3,900.1,2453.1,839,2403.8,874z M2441.1,714.7c0-234.4,0-117.1,0.1,0H2441.1z M2442.6,563c-3.7-0.1-6.8-1-10-2.8c-46.8-26.7-42.8-19.7-42.8-31.8 c-0.1-79.6-0.8-77.9,1.4-79.4c1.6-1.1-2.3-2.8,42.5,23.5c7.8,4.6,9.2,8.4,9,12.5 C2442.4,497.2,2444.6,534.7,2442.6,563z M2503,791.8c0,33,2.7,8.8-34.9,43.6 c-5.2,4.8-11.7,7.6-17.4,11.6c-4.1,2.9-2.7-265.9-1.5-267.2c3.6,0.6,6.6,2.9,9.8,4.5 C2511,611.6,2502.7,581.6,2503,791.8z M2505.1,596.2c-3.4,0.8-5.8-0.1-8.2-1.4 c-49.8-26.5-48.6-24.5-48.7-29.1c-2.5-93.1-1.1-86.1,7-81.5 C2511.9,516.2,2505.1,493.8,2505.1,596.2z M2510.8,515.5c68.9,35.1,56.1,21,57.6,85.2 c0,1.6,0.6,28-1.6,29.8c-70.9-35.8-58-18-57.9-77.5 C2508.9,516.7,2508.3,518,2510.8,515.5z M2567.3,766.1c0,0-16.3,9-20.7,10.7 c-7.2,2.8-14,7-18.6,13.9c-0.8,1.2-2.1,2.4-3.5,2.9c-7.8,3-14.6,23.2-13.5-15.2 c0-1-3.2-158.7-0.3-166.2c74.7,33.9,52.7,26.6,58.1,54.1 C2569,667.4,2571.6,764.5,2567.3,766.1z"/> <path d="M1505.1,992.1C1505.4,991.8,1505.7,992,1505.1,992.1L1505.1,992.1z"/> <polygon points="1749.4,1052 1749.3,1051.6 1749.6,1051.7 "/></g></svg>`;
+            return `<svg viewBox="300 100 2294 1200" preserveAspectRatio="xMaxYMax meet" xmlns="http://www.w3.org/2000/svg" class="card-bg-svg card-bg-svg--right"><g fill="${color}" fill-rule="evenodd"><path d="M2027.6,194.1C1824.5,35.5,1888.9,70.5,1868.8,51.9c-10.4,6.1-3.4,19.1-15.5,28 c-22.8,16.8-56.9,3.3-81.7,4.2c-30.8,1.1-37.2-19.6-48.1-28c-1.2-1-1.9-2.4-2.2-3.9 c-3.6-17.7-10.3-11.6-11.7,0.2c-2.5,21.7-368.4,590.3-427.2,630.5c-0.5,0.3-1,1-1.1,1.6 c-0.5,7.7-119.6,137.1-120,138.1c-12.5,31.1-262.3,242.1-307.5,239.7 c-3.6,2.4-14,6.8-14,6.8c-1.1,4.1-17.7,8.9-19.3,8.5c-1.1,3.9-9,3.5-12.1,5.4 c-119.5,71.4-309.2-82.3-402.9-269.4c-26.9-53.7,6.2,3.7-46.6-9.2c4.1-4.4,0.1-9.9-2.4-8.6 c-10.3,5.2-2.5,8.6-8.6,8.9c-25,1.4-26.6-11.1-28-13.5c-0.8-1.4-4.2-1.3-4.5,0.1 c-0.5,3.3-2.9,5.3-4.2,8.1c-2.6,5.7,2,7.7-3,19.8c-4,9.5,0.9,6.5,2.4,7.4 c0,2.5-5,141.2-6.1,142.2c-6.6,6.4,1.3,234.1-13.2,235.9c-8.6,1.1-3.2,8.9-6.9,10.1 c-8.9,2.9-5.4-0.7-7.5-1.1c-0.4,2.2,0.1,3.8-4.4,4.6c-24.1,4.2-30.6,14-34.1,5.5 c-13.1,9.3,16.4-0.7-60,23.2c-25.7,8-15.6-2.8-16.8-5.8c-2.4-1.1-5.6-0.9-6.4-4.4 c-0.8-3.2-7.1,1.2-14.3-2.3c-0.5-0.3-1.3-0.2-1.9-0c-4.2,1.1-7.4-1-11-2.9 c-3.5-1.9-8.3-1.3-10.8-5.3c-0.4-0.7-1.3-0.9-1.6-0.4c-3.6,6.1-10.5-8.3-15.7-5 c-2.8,1.7-5.3,2.5-8.4,1.1c-2.3-1.1-2.9,3-6,0.3c-3-2.6-6.6-3.1-10.2-3.9 c-13.4-2.9-16.7-6.9-23.4-5c-3.2,0.9-6.4,3.4-9.9,0.8c-0.1-0.1-0.5-0.1-0.6,0.1 c-6.5,6.1-4.5,1.3-8.3,2.4c-2.4,0.7-4.5,5.3-12.3,2.7c-4.3-1.4-3.7,3.5-3.7,8.3 c-0,212.9-3.7,189.9,8.9,189.9c2677.5,0,2541.2,0.1,2551.1-0.3V541.4 C2577.1,541.4,2275.4,387.5,2027.6,194.1z M294.5,1299.4c-7.1,3.6-12.8-0.1-18.6-3 c-3.7-1.8,4.1-6.4-8-8.2c-3.7-0.6-0.8,3.2-3.1,3.7c-11.2,2.4-10.3-11.8-22.2-14.7 c0.5-2.7-0.9-1.7,33.3-11.4c15.3-4.4,19.2-5.8,19.2-2.3 C295.1,1269.4,294.8,1296.8,294.5,1299.4z M380.5,833.1c-0.5,4.9-11.1,36.7-14.7,43.8 c-8.7-15.4-17-30-25.1-44.3C341.9,830.3,378.9,832.6,380.5,833.1z M376.6,862 c0,4.7,0.3,1.6-0.9,22.5C375.3,890.9,362.9,885.2,376.6,862z M372.1,947.7 c0.1,0,0.2,0,0.2,0c0.6-26.9,0.4-22.9,1.1-27.5c0.1-0.8,1.8-0.9,1.9,0.1 C377,933.9,370.2,1016.3,372.1,947.7z M344.6,1197.9c-3.2,0.7-2.3,0.8-2.3-37.6 c0.2,0,0.4,0,0.6,0c0.8-38.1,0.7-36.5,1-38.1c0.3-1.7,3.4-2,3.6,0.2 c0.2,1.4,0.2-2.9-0.2,70.3C347.4,1195,347.6,1197.3,344.6,1197.9z M329.2,1079.2 c0,0,0-10.8,0-33.5c0.2,0,0.4-35.6,4.2-35.5c2.5,0.1,2.4,1.6,2.3,6.4 c-0,1-1.2,59.3-1.4,62.4C334.2,1082.3,329.2,1082.1,329.2,1079.2z M332.4,1160.5 c-0.1-0-0.1-0-0.2-0c-1,41.3-0.1,41.4-4.7,41.9c-2.2,0.3-2.2-1.3-2-5.8 c3.4-90.4,1.9-60.7,5.3-74.8c0.2-0.6,2.3-0.9,2.4,0.7C333.5,1125.9,333.5,1124.9,332.4,1160.5z M334.4,1160.5c0.1-0,0.1-0,0.2-0c2.8-86.6,7.2-12.3,3.8,36.6 c-0.3,3.7-4.9,5-4.7,0.1C334.6,1166.7,334.4,1181.5,334.4,1160.5z M336.5,1081.2 c-0.3-2.1-0.3-1.1,0.5-34.8c0.1,0,0.2-21,0.3-31.6c0-8.9,4.8-5.5,5-4.5 c0.6,2.7-1,69.5-1.3,70.9C340.6,1083.1,336.8,1083.1,336.5,1081.2z M339.5,956.9 c0-0.8,0-1.5,0.1-2.2v-4.3h0.1c1-36.5,0.2-34.5,4-34.7c4.3-0.2-0,56.5-0,56.5 h-0.3c-0.3,1.5-1.1,2.5-2.6,2.4c-2.2-0.2-2.2-1.4-1.2-4.2v-13.5 C339.5,956.8,339.5,956.9,339.5,956.9z M343.5,886.3c-2.4-0.3-2.4-1.6-2.4-4.5 c-0.1-41.2-0.2-34.8,0.4-38.3c4.4,5.3,6.5,10.2,6,16.4C345.9,883,349.2,887,343.5,886.3z M344.9,1081.1c-0.1-1.4-0.1,0.4-0.1-35.4c0.2,0,1.2-21.4,1.5-32.2c0.2-7.1,3.8-4.4,3.9-3 c0.3,2.7-1.1,68.9-1.5,70.9C348.4,1082.9,345.1,1083.2,344.9,1081.1z M348.9,974.7 c-2.2,0-2.2-1.4-2.1-4.5c0.7-21.4,3.1-53.3,3.1-53.3h2.7V944 C352.5,944,351.8,974.6,348.9,974.7z M350.5,858.4c5.5,8.2,4.9,10.1,3.8,26.3 C354.1,886.3,345.6,896.6,350.5,858.4z M350.9,1157.9c0.8-37.5,0.3-36.6,2.1-36.7 c5.5-0.3-2.7,141.8-2.7,36.7C350.5,1157.9,350.7,1157.9,350.9,1157.9z M353.3,1083v-0.9h-0.4v-2 c-0.1,4.2-0.2,3.1,0-7.3v-13.1h0.2c0-2.8,0.1-6,0.2-9.4v-41.5h2.5V1083H353.3z M355.2,971.9 c1.4-57.2,1-48,2.3-54.2c0.2-1,1.8-0.4,1.9,0.3c0.3,3.3-0.2,27.5-0.2,27.5 c0,28,0.5,29-2,29.2C355.4,974.8,355.2,973.3,355.2,971.9z M358,886.7 c-1.3-0.9-1-1-1-15.8c0.5-0.1,1-0.2,1.5-0.3c2.2,3.2,4.5,6.3,6.7,9.5 C367.4,883.4,362.5,889.7,358,886.7z M359.2,1055.1v28.4h-0.9v-34.4c0,0,1.3-36.1,2.3-39.3 C361.3,1025,359.8,1040,359.2,1055.1z M358.6,1157.5c0.9-38.2,0.3-36.2,2.4-36.6 c5.4-1-2.8,136.5-2.8,36.6C358.4,1157.5,358.5,1157.5,358.6,1157.5z M361.6,1081.2 c-0.1-1.6,0.5-35.5,0.5-35.5c0-91.3,6.1,12.4,2.2,35.3C363.9,1083.6,361.7,1082.4,361.6,1081.2z M365.1,975.1v-57h2.1v57H365.1z M369.5,1127.2c1.2,1.5,0.8,3.3,0.7,4.9 C367.7,1265.6,365.3,1130.1,369.5,1127.2z M339.9,844.2c-1.7,42.1,0.1,41.7-3.4,42 c-4.2,0.3-3.2-1.3-3.2-28h-0.4c0-6.8,0-13.5-0-20.3C333,822.8,340.2,836.8,339.9,844.2z M332.2,942.5h0.1c-0.1-24-1-27.1,4.4-26c3,0.6,0.7,48.1-1.1,54.8 c-0.7,2.5-3.8,3.1-3.8-0.3c0-8.8,0.1-8.3,0.1-25.5h0.3V942.5z M324.9,878 c0.5-34.4-0.7-48.4,6.1-46c2.7,1-0.7,50.9-0.8,52C325,882.4,324.9,882.4,324.9,878z M323.4,950.9c-0.1-25,7.2-41.6,6.9-29.4c-1.3,55.1-1.1,48.8-1.6,50.7 c-6.6-1.6-6.1-8.1-3.8-14.5C325.7,955.2,323.4,953.4,323.4,950.9z M327.8,1021.4 c-1.2,47-1,41-1.6,43.2c-0.3,1.1-1.9,0.4-1.9-0.1c-0.5-3-0.4-2.5-0.2-19 C324.5,1019.2,326,1030.4,327.8,1021.4z M325,1070.7c2.2,0.8,2.1,10-0.5,9.1 c-2.3-0.8-1.1-2.9-1.5-4.3C323.1,1071.8,323.7,1070.2,325,1070.7z M323.2,1158.8 c-0.2,37.8,0.3,35.7-1.8,35.9C319.5,1194.9,320.4,1159.5,323.2,1158.8z M322.1,1304.5 c-0.7,1.6-5,2.6-4.4-1C318.4,1298.7,322.6,1303.4,322.1,1304.5z M319.2,1262 c0.3-13.6,5.1-6.3,16.1-11.9c1.1-0.6,2.9,0.8,2.7,2c-1.7,8,1.1,4.2-15,20.7 C316.9,1279,319.1,1269.3,319.2,1262z M342.5,1264.9c4.9-4.9,4.6-1.5,18.1,12.8 c7.6,8-2.7,6.2-14.9,6.2c0,0,0,0,0,0C322.8,1284,320.7,1286.7,342.5,1264.9z M328.9,1293.1c1.9-0.3,3.8-1.5,5.6-0.4c2,0.6,3.6-0.4,5.3-0.6 c7.2-0.6,14.3,1,21.5,1c6.7,0-5.1,9.3-8.9,14.6C343.1,1320.7,322.7,1294,328.9,1293.1 z M366,1314.6c-1.7-0-3.4-0.3-5.1-0.5c-4.2-0.6,6.8-10.7,8.5-11.9 c2.5-1.8,1.9,3.1,1.9,6c0.1,0,0.1,0,0.2,0C371.5,1320,368.4,1314.6,366,1314.6z M369.1,1273.5c-13.9-15.6-14.3-15.2-14-19.1c0.7-9.3,12.8-13.1,13.1-11.4 c0.6,3.2,4.6,4.6,4.5,8.2c-0.1,2.8-0,5.7-0,8.5c0.1,0,0.1,0,0.2,0 C372.2,1270.5,372.7,1277.5,369.1,1273.5z M372.6,1174.4c-1.5-5.3-0.9-24,0.9-28.1 C374.8,1152.6,374.2,1170.4,372.6,1174.4z M374.7,1065.2c-1.5-9.2-0.7-38.1,1.6-44.3 C376.3,1067.4,376.9,1064.3,374.7,1065.2z M377,972.9c-2-1.1-0.4,0.7-0.3-47.9 C376.8,897.6,382.2,975.6,377,972.9z M381.1,956.1v-26.1C384.4,930.2,381.7,953.8,381.1,956.1z M384.5,861.3h-0.3c0,22.5,0.8,23.4-2.2,24.6c-2.8,1.1-4.2,0.3-4.2-2.6 c-0.1-30.5-0.4-26.3,4.6-44C385.1,829.9,384.5,860.3,384.5,861.3z M1641.6,189.9 c0.1-14.2,30-57,32.2-58c1.2,41.6-1.1,117.8,0.7,126c-1.5,4.2-0,74.5-1.6,88.1 c-1.4,12.4-25.9,38.9-29.2,46.7C1640.5,400.6,1641.6,190.9,1641.6,189.9z M1664.6,943.6 c0.8-5.2,15.9-1.4,6.7,7.6c-0.7,0.7-0.8,2.4-2.1,2c-1.6-0.5-1.3-1.9-0.9-3.2 C1669.5,945.8,1663.7,949.1,1664.6,943.6z M1651.6,411.4c-0-8.5-1-29,22-48.4 c0,252.4,1.1,573.5-3.7,573.6C1648.4,937,1652.8,1187.6,1651.6,411.4z M1646.6,398.8 c3.3-3.5,1.9-9.2,1.9,289l-0.1,0c0,290.3,4,293.6-5.4,289.2c-3-1.4-1.6,2.3-2-546.8 C1641,409.9,1639.8,406.1,1646.6,398.8z M1613.6,224.8c41.9-66.4,17.9-53.7,24.8,170.5 c0.3,9-27.2,41.5-30,44.8c-0.4-3.5-2.1-5.7-0.6-8.4C1607.8,431.6,1602.3,242.6,1613.6,224.8z M1623.9,962c0,0-5.2,132.3-4.3-288.5c0.6-261.8-5.1-229.5,13.2-255.3 c8.8-12.4,4.9-0.1,4.5,72.9c-2.8,501.3,9.4,485.8-7.3,487.6c-5.5,0.6-3.6-13.1-2.5-15.4 C1629.2,959.2,1623,959.6,1623.9,962z M1614.5,443.9c5.1,5.4-1.3,69.7,2,83.6 c-3.1,26.6,3.4,452.3-2.4,453c-7.3,0.8-7.4,2-7.3-6.1C1608.5,404.8,1604.1,457.6,1614.5,443.9 z M1573.9,345.9c-0.1-51-1.4-56.7,6.3-68.3c30.4-45.8,23.9-58.2,23.9,51.1h-0.1 c0,79.3,1,118.7-3.6,123.6C1567.6,487.5,1574.2,533,1573.9,345.9z M1590.2,967.2 c-3-0.4-2.4,15.3-2.4-241.4c0.1,0,0.2,0,0.3,0c0-224.2-5-256.2,13.8-263.4 c3.4,3.2,2.7,607.6-3,514.3C1598.6,969.5,1597.5,968.2,1590.2,967.2z M1597.1,978.9 c-0.1,3.7-0.2,3.7-4,4.3c-1.5,0.2-3,0.9-4.8,0.2c-1-3.9-0.4-8-0.4-11.8 C1589.6,970,1597.5,968.7,1597.1,978.9z M1582.7,486.6c3.4-4.1,1.7,491.7,1.7,492.7 c-0.3,4.9-1,4-5.4,4.5c-7.3,0.9-5.5,29.2-5.5-336.4c-0,0-0,0-0,0 C1573.5,477.2,1570.7,501.1,1582.7,486.6z M1561.9,970.1c0-13.3-1-15.2,4.1-15.7 c6.1-0.6,5.1,0,4.9,27c-0,3.2,0.4,4.2-5.9,4.9c-3.6,0.4-2.8-0.8-2.8-16.3 C1562,970.1,1562,970.1,1561.9,970.1z M1556.8,820.4c0-324.9-3.7-297.9,10.4-312.8 c6.5-6.9,1.5,305,3.4,314.3c-0.6,2.2-0.7,97-0.6,98c4.1,64.2-10.3-0.6-10.6,57.5 c-0,4.2,0.1,6.7-0.9,6.7c-2.5-0-1.6,5.4-1.6-163.7H1556.8z M1541.8,347.3 c-0.4-13.4,4.3-17.7,21-42.5c6.3-9.3,6.2-9.7,7.6-9.2c1,0.4,0.7,137.1-0.5,144.9 c1.5,6.8,1.2,50.4-1.4,54.6c-9.6,15.6-17,18-17.4,23.5c-0.1,1-7.7,10.6-9.5,10.8 C1541.4,528.9,1541.9,350.7,1541.8,347.3z M1541.5,547.9c-1.4-7.6-1.4-7.8,10.4-21.8 c4.1-4.9,2.3-2.5,2.3,230.6c-0.1,0-0.2-0-0.3-0c0,253.7,4.3,230.5-7.3,231.5 C1535.4,989.3,1543,556.5,1541.5,547.9z M1515.8,374.9c18.7-27.4,18.5-29.4,21.9-31 c3.2,7.1-0.4,7.1,0.1,147.4c0.1,40.2,2.5,41.8-2.1,46.8c-31,33-26.5,75-25-92.2 C1511.1,388.3,1507.9,386.4,1515.8,374.9z M1536.7,546.8c2.2,0.7,1.3,440.6,0.7,441.9 c-13.7,3.8-9.9,15.4-10-123.6C1527.3,633.1,1523.4,542.6,1536.7,546.8z M1523,564.3 c1,0.6,5,424.2-2.5,426.3c-4.1,1.1-10.6,2.8-10.6-1.4 C1507.3,557.6,1508.1,576.4,1523,564.3z M1506.5,391.6c0,212.9,7.6,174-22.5,211.3 c-6.9,8.5-4.5,1.6-4.9-122.5C1478.9,433.5,1476,425.1,1506.5,391.6z M1497.6,986.6 c0.7-10.8,12.1-0,7.4,5.4c-0,0-0,0-0.1,0C1499.1,996.5,1497.1,994.1,1497.6,986.6z M1506,979.2c-2.8-0.4-4.7-0.7-6.8-1C1493,959.9,1506,102.8,1506,979.2z M1493.8,601.2 c1.9,2.3,2.4,393.2-2,393.2c-9.3,0-13.2,6.9-13.2-4.6 C1478.6,605.6,1474.9,613.8,1493.8,601.2z M1456.4,461.3c11.7-14.8,15-24.4,19.6-26.2 c0.5,3.1,1.1,178.2-5.4,184.1c-25.3,23.1-21.7,70.3-21.2-117.5 C1449.6,478.3,1448.6,471.2,1456.4,461.3z M1475.1,624.9c1.3,1.8,1,335,1,338.7 c-9-0.5-6.6,5.6-6.6-51.2C1469.4,597.3,1466.7,626.4,1475.1,624.9z M1473.8,966.9 c2.8-0.1,2.2,1,2.2,15.6c0,0,0.1,0,0.1,0c0,7.8,1.3,16.9-5.6,14.8 c-1.3-0.4-1.3-0.8-1.4-11.9C1469.1,968.4,1468.3,967.2,1473.8,966.9z M1463.5,637.8 c4.2-4.5,3.8-2.5,3.5,81.7c-1.1,294.8,1.1,277.2-5,278.3c-16.5,2.9-13.3,26.3-13.3-171.4 c0,0,0.1,0,0.1,0C1448.8,628.5,1443.8,659.3,1463.5,637.8z M1419.9,649.7c0-62.6,2.3-66.1,0.1-74.3 c3.3-76.6-6.3-54.5,19-89.1c3.5-4.8,4.1-7.5,6.3-6.9c1,0.3,3.5,168-2.7,174.1 c-22.8,22.4-22.8,41.6-22.8-3.9H1419.9z M1441.8,849.8h-0C1441.8,518.5,1441.8,695.2,1441.8,849.8 z M1425.2,681.9c19.8-20.8,13.7-40.4,13.7,146.3c0,0,0,0,0,0c0,0.8,0,168.1,0,168.1 c0.2,2.9,0.3,5.5-9.4,6.3c-5.4,0.4-5.5,0.4-6.1-5.2c-4.9-40.2-4,45.5-4-69.9 C1419.4,675.8,1416.9,690.6,1425.2,681.9z M1392.3,572c-0.1-19.9-3.7-20.2,24.1-53.1 c1.5,6.3,2.7,164.1-2.4,168.3C1384,711.9,1392.8,754.9,1392.3,572z M1390.9,967 c0-9-0.1-18,0-27c0.9-73.5,1.2,74.6,1.2-121.5c0-98.8-1.9-96,4.4-102.6 c22.8-23.6,15.5-54.4,15.5,208c0,93.2,2.7,79.7-8.2,82c-16.4,3.5-12.8,5.1-12.8-38.9 C1390.9,967,1390.9,967,1390.9,967z M1364.5,662.8c3.9-86.2-10-60.4,19.7-101.8 c3.9-5.4,5-3.3,4.9,3.3c-4,165.8,9.9,141.2-20,173.2c-1.7,1.8-2.9,3.3-4.2,2.4 C1363.8,739,1364.1,670.9,1364.5,662.8z M1364.1,800.5c-0.7-44.9-0.8-49,6.2-56 c21.8-21.8,15.1-39.2,15.1,108.4c-0.1,0-0.2,0-0.2,0c0,20.8-0.3,41.6,0.1,62.4 c0.4,22.5,0.4,57.8,0.4,57.8c0.3,5.1-5.6,1.6-5.5,8.6c0.5,32.4,3,27.8-14.5,29.6 C1358.3,1012.1,1366.7,964.4,1364.1,800.5z M1383.1,1009c-2.5,0-2.1-0-2-26.4 c0-1,1.2-3.7,3.3-3.3c1.8,0.4,1.4,1.3,1.4,15.1c-0,0-0.1,0-0.1,0 C1385.7,1008.5,1386.4,1008.9,1383.1,1009z M1337.8,634.3c-0.1-14.3,4.4-16.6,20.3-37.7 c4.3-5.7,3.8,1.9,3.8,71.9c-0.1,0-0.2,0-0.3,0c0,112.1-0.4,67.2-21.3,101.6 C1333.4,781.2,1338.5,719.1,1337.8,634.3z M1342.6,774.7c15.6-17,15.7-16.5,16.8-15.8 c0.2,0.1,0.9,245,0.9,245.2c-0,9-0.8,8.3-15.4,9.8c-1-2.5-0.6-4.5-0.8-6.4 c-0.6-8.9-7.7-1.7-7.6-9.1C1337.9,768.6,1336.5,781.3,1342.6,774.7z M1338.6,1004.9 c4.2-0.5,5.9,3.8,4.6,7.8c-0.8,2.5-6.8,1.5-6.4-3.7C1336.9,1007.4,1335.9,1005.2,1338.6,1004.9z M1327.8,634.9c1.5-1.9,2.8-3.9,5.8-4.8c1.9,12.8,0.6-23.6,0.7,83.4 c0,61.6,1.4,60.8-4.3,66.5c-17.3,17.6-16.2,17.2-18,16.8c-2.3-10.5-1.2-21.3-1.3-32 C1309,640.2,1310.4,657.9,1327.8,634.9z M1319.8,798.6c9.5-9.2,9.5-12.1,14.3-13.3 c0,1,0.1,224.7-0.4,227.8c-0.4,2.5-0.7,2.1-18.9,4.8c-3.6,0.5-1.6-182.7-1.6-183.8 C1313.5,813,1311.4,806.7,1319.8,798.6z M1285.5,699.6c-0.1-8.1,2.4-14.9,7.9-20.8 c21.2-22.6,13.7-45.5,14.5,118.5c0,7.2-1.9,7.9-16.9,23 C1282.4,828.9,1286.7,819.7,1285.5,699.6z M1307.6,960.8c1.2,55.5-8,0.9-7.9,51.4 c0,4.8,0.5,6.9-2.2,7.4c-13.8,2.3-9,15.5-8.1-108.4c0.6-91-5.2-75.2,15.8-97.5 c3.5-3.7,2.5,4.6,2.5,54.7c-0.2,0-0.5,0-0.8,0C1306.9,898.4,1307.5,959.8,1307.6,960.8z M1307,991c0.9,3.4,0.4,6.9,0.5,10.3c0.3,20.1,0.1,15.7-3.9,16.7c-1.7,0.4-2.5-0.6-2.4-2.1 C1302.6,1000.6,1297,991.8,1307,991z M1279.4,696.2c1.5-1.3,3.4-1.1,3.4,1.5 c0.1,33.4-0.7,125.1-0.6,125.2c0.6,4.2-0.6,7.5-3.9,10.4c-13.7,12.3-17.9,20.5-18,10.2 C1259.4,718.9,1255.8,717.4,1279.4,696.2z M1281.6,1018.7c0,2.7-0.8,2.2-9.2,4.2 c-0.7-5-0.4-8.9-5-10.5c-3.6-1.2-2.2,5.5-1.8-109c0.2-43.8-1.8-47.4,3.6-53.7 C1289.2,826.4,1279.9,828.9,1281.6,1018.7z M1258.8,965c0.1,0,0.2,0,0.4,0 c0-41.1,1-104.7,1.2-105.7c6.5-27-2.7,156.4,5.3,156.2c5.4-0.1,7,7.7,1.8,8.5 C1256,1025.6,1258.8,1036.3,1258.8,965z M1235.6,810.5c1.5-72.1-5.3-55.8,19.4-85.1 c4.1-4.9,2.6,8.9,2.6,63.7c-0.1,0-0.2,0-0.3,0c0,77,3.9,60.8-17.5,80.4 C1235,874,1234.4,873.6,1235.6,810.5z M1256.6,944.1c0,90.4,2.6,81.8-7.3,82.6 c-2.3,0.2-5.1,1.7-6.9,0c-1-0.9-0.7-131.9,1.1-149.1c0.4-3.9,8.9-13.5,12.3-13.2 c0.8,1.3,0.6-5.3,0.6,79.8C1256.4,944.1,1256.5,944.1,1256.6,944.1z M1239.9,1009.9 c0.3,16.2,0.4,18.5-2.9,18.7c-2.1,0.2-3-0.5-2.9-2.4c0.5-8.5-0.9-17.1,0.8-25.6 C1234.2,995.2,1235.2,723.3,1239.9,1009.9z M1211.8,888.6c4.2-127.5-9.9-101.6,17.5-133.2 c5.5-6.3,3.9,2.9,3.9,58.7c-0.2,0-0.3,0-0.5,0c0,62.1,1.2,62.5-5.1,67.2 C1220.8,886.3,1211.5,897.8,1211.8,888.6z M1226.1,1002.3c-1.3,5.7-9.6,101.2-6.4-96.9 c0.3-15.3,13.6-22.3,12.8-16.6c-0.9,6.4,0.4,97.2-0.3,108.9c-2,1.8-5.6,1.1-6.2,4.5 C1226.1,1002.3,1226.1,1002.3,1226.1,1002.3z M1226.2,1002.3c1.9,0.6,3.7-1,5.8-0 c0.8,1.7,0.6,1.1,0.5,23.3c-0,3.4-0.8,4.2-4.1,4.3C1225.7,1029.9,1226.2,1030.6,1226.2,1002.3z M1217,964.7c-0.1,0-0.1,0-0.2,0c0,69.9,1.5,67.2-4.1,66.5 C1204.7,1030.3,1217,785,1217,964.7z M1189.1,827.3c-1.4-23.3,0.4-27.4,4.3-31.6 c15.7-17.3,13.4-14.9,15.8-15.4c0,137.4,3.6,115-17,132.2 C1182.9,920,1191,859.7,1189.1,827.3z M1197.3,935.5c0.1-15.5-1.5-21.2,9.3-28 c2.1-1.3,2.2,1.4,2.2,15.5c-0.3,140.1,0.5,108.1-6.4,102.9 C1196.2,1014.7,1197,1051,1197.3,935.5z M1202.2,1026c0,7.8-4.9,6-5.2,1.6 C1196.9,1025.4,1198.8,1026,1202.2,1026z M1187.7,926.9c0.1-5.6,2.1-6,6.2-9 c3.4,3.1,0.4,100,0.9,109.8c0.2,3-3.1,4-3.2,6.7c-0.1,1.4-4.1-0-4.4-3.1 C1187.1,1031.3,1187.7,926.9,1187.7,926.9z M1174.9,992.3c0,0.1,0.1,0.1,0.1,0.1 c1.7-7.5,0.3-45.4,1.3-55.1c0.7-6.3,1.8-7.7,9-11.2c3.1,123,0.6,111.8-9.8,110.1 C1175.4,1032.2,1175.8,997.4,1174.9,992.3z M1184.3,806.2c2.6,3.1,0.1,50.5,1.2,105.1 c0.2,9.2-3,9.5-19.9,23.2C1163.4,811.3,1163.3,828.2,1184.3,806.2z M1167.1,939.7 c2-1.3,3.6-3.1,5.8-4.1c2.7,4.1-1,50.5,2,56.6c-5.3,6,5.7,46.1-8.7,46.1 C1164.3,1038.4,1162.1,943,1167.1,939.7z M1143.3,859.5c-0-4.8-0.3-10.7,4.3-15.3 c23-22.6,13.3-32,15.2,88.1c0.1,6.9-1.1,7.8-18.5,21 C1142,952,1144,960.9,1143.3,859.5z M1158.8,1038.9c-2.7,0.4-1.3-22.5-0.8-24.6 c0.4-1.5,3.4-2.2,3.6,0.3c0.2,2.8,0.1,7.2,0.1,11.1h-0 C1161.7,1037.7,1162.4,1038.4,1158.8,1038.9z M1155.5,1012.1c-1.3-1.2-0.7-2.8-0.7-4.2 c0.3-57.6-1.5-59.9,7.9-63C1162.6,998.2,1164.1,1013.2,1155.5,1012.1z M1142,1035.2 c0.3-80.9,0.2-76,2.8-77.4c9.8-5.3,7.7-14.5,7.7,39.3c-0.1,0-0.2,0-0.3,0 c0,47.4,1,43.1-3.4,43.8C1142,1041.9,1141.9,1041.9,1142,1035.2z M1121.2,905.2 c1-30.6-0.6-33.6,4.6-39c22-22.7,12.9-25.2,14.5,84.7c0.1,3.7-0.9,6.5-4.1,8.1 C1121.4,966.6,1118.2,994.7,1121.2,905.2z M1134.1,1029c-0.1-44.5-1.5-68.6,4.8-64.9 c2.3,1.3,0.1,68.4-0.1,69.4C1134.2,1032.4,1134.1,1032.4,1134.1,1029z M1137.5,1040.9 c-1.5,3.3-5.7-1.9-1.7-4.5C1136.8,1037,1138.9,1038,1137.5,1040.9z M1127.8,1043.7 c-10.5,2.1-6.9,7-7-64.9c-0-4.1,6.3-7.7,9.7-9.4c1.7,2.1,1.9,4.2,1.8,6.4 C1130,1004.3,1134.1,1042.5,1127.8,1043.7z M1099.4,978.7c1-98.9-2.3-85,16.5-102.4 c5.6-5.2,2.2,22.9,2.2,27.9c0.1,71,1.8,69-4.5,72.2c-5.9,3-10.8,9.6-13.8,8.5 C1099,982.9,1099.4,980.8,1099.4,978.7z M1117.4,980.2c1.5,0.7,0.5,4.5,0.4,59.3 c-0,3.9,0.1,5.3-2,5.5c-2,0.1-2-1.6-1.9-6.7C1114.4,999.9,1112.4,977.8,1117.4,980.2z M1099.5,1017.2c-0.4-28.9-1.7-25.2,8.1-31.3c5.4-3.3,4.1,1,4.1,29.8c-0.1,0-0.3-0-0.4-0 c0,32.9,1,30-3.8,31.1C1095,1049.7,1099.9,1047.1,1099.5,1017.2z M1093.6,897.8 c4.3-4.1,3.6,0.3,3.6,43.8h-0.3c0,54.1,4.1,44.5-15.7,57.7c-3.2,2.1-2.8-3.7-2.7-7.5 C1078.9,900.5,1074.8,915.7,1093.6,897.8z M1082.8,1003.2c11.4-5.1,8.7-16.2,7.3,36.5 c-0.2,7.1,0.8,9.3-3.1,10.1c-9.2,2-8.7-1.1-8.7-24.4h0 C1078.4,1009,1077.2,1005.7,1082.8,1003.2z M1059.2,932.4c0.2-5.7,2-6,16.3-18.3 c1.3,3,2.4,88-1.8,90.5C1054.2,1016,1055.3,1032.5,1059.2,932.4z M1071,1043.7 c-0.1,0.3,0.2,0.8,0.3,1.2c1.4,8.7,0.9,6.9-6.2,8.6c-9.5,2.3-7.5-3.9-7.5-18.1 c0,0,0.1,0,0.1,0c0-17.6-2.2-15.1,9.4-22.2c4.5-2.8,6.1-3.1,5.1,13 C1071.8,1032,1073.5,1038,1071,1043.7z M1053.5,933c2.7-2.3,2.6,2.9,2.6,4.8 c-0.4,83,0.8,76.7-3.3,80c-2.7,2.2-10.5,7.5-15.1,8.6 C1036.6,933.9,1036.5,947.5,1053.5,933z M1053.3,1051.6c0,2.1-1.1,3.4-3,3.7 c-10.8,2.1-12.9,2.3-12.8-0.7c0.1-18.3-0.8-23.4,6.4-27 C1055.5,1022,1053,1017.3,1053.3,1051.6z M1033.3,950.2c6.6-5,0.4,27.5,2.4,74.8 c0.2,5.1-11.3,10.7-17.9,13.7C1018.3,954.4,1013.9,965,1033.3,950.2z M1032.9,1034.4 c6.2-2.1-1.9,46.7-1.9,12.1h0C1031,1036.3,1030.5,1035.2,1032.9,1034.4z M1019.3,1052.3 c-5.3-8.9,9.9-18.1,10-11.7c0.2,16.8,0.8,17.9-3.4,18.1 C1020.8,1059,1026.1,1055.3,1019.3,1052.3z M1020.8,1057.6c0.1,1.3-1.5,1.5-1.9,0.5 C1018.5,1056.9,1020.6,1055.6,1020.8,1057.6z M1005.2,972.9c6.2-4,8.7-8.9,10.5-3.7 c0.8,2.3,1,4.8,0.6,7.1c-3,17.6,3.4,62.2-5.1,66c-8.1,3.7-8.9,5.5-11.3,4.5 c-0.8-1.6-0.5-3.4-0.5-5.2C999.3,979.7,997.6,977.8,1005.2,972.9z M1015,1057.4 c0.1,4.1-2.5,3.6-13.6,5.2c-3.8-10.5,4.1-13,10.9-16.6 C1015.7,1044.2,1014.8,1049.1,1015,1057.4z M979.8,1037.4c0.4-39.3-1.7-45.3,6.6-50.3 c14.1-8.5,10-19,10,59.1c0,3.4-1.1,5.3-4.3,6.2c-4,1.1-7.1,4.3-12.3,4.6 c0.7-5-1.7-9.8,1.1-14.3C980.3,1041,979.8,1039.3,979.8,1037.4z M983.4,1065.8 c-0.5-2.3-0.6-4.5,1.4-5.8c3.3-2,6.7-3.9,10.4-4.9c0.3,0.4,0.6,0.6,0.6,0.8 C995.9,1063,996.5,1064.7,983.4,1065.8z M976.6,994.8c3.2,2.6,1.2,39.1,1,42.3 c-0.5,7.7-4.4,1-4.3,10.7c0,11,0.6,17.2-5.2,14.9c-4.7-1.9-6.5,2.9-6.5-7.9 C961.4,998,958.8,1007.4,976.6,994.8z M977.3,1057.8c-0.4,3.5-5.7-0.4-2.4-12.2 C975.2,1044.6,979.2,1042.5,977.3,1057.8z M958,1009.2c1.3,1.6,0.9,3.2,0.9,4.6 c0.1,62.2,3.5,54.6-12.4,57.4c-2.1,0.4-3.3-0.7-3.3-3 C943.9,1026.8,940.2,1013,958,1009.2z M926.1,1048.2c0.1-14.3-0.9-18.9,4.1-21.5 c6.4-3.3,10.9-9.2,11.1-2.2c0,1.4,0.3,25.7-0.7,32.1c-1,6.8,2.6,15.9-3.7,16.7 c-12.4,1.5-13.9,6.1-9.3-21.7C927.8,1050.6,926.1,1049.6,926.1,1048.2z M908.5,1047.8 c0-5,1.1-8.9,5.3-11.1c5.4-2.9,9.4-6.7,9.6-1.5c0.5,13.9,0.2,15-2.3,16 c-3,1.3-3.5,15-2.5,19.2c-2.5,0.1-4.5-0.2-6.3,0.8c0.5,1.8,5.1,1.7,4.3,3.9 c-0.3,0.8-0.8,1.7-1.5,1.9C906.5,1080.6,908.4,1068.5,908.5,1047.8z M920.3,1064.1 c0.6-10,0.3-9.2,1.5-9.7c0.7-0.3,1.2,0.6,1.2,1.2c0.1,18.9,0.4,18.6-1.1,18.8 c-1.5,0.1-1.2-0.7-1.2-10.3C920.6,1064.1,920.5,1064.1,920.3,1064.1z M891.6,1054.4 c0.2-6.9,4.8-7.6,9-9.9c6.5-3.5,5.2-0.9,5.2,16.2c-0,0-0,0-0,0 c0,20.8,2.6,17.5-11.8,19.4C891,1080.6,891,1079.5,891.6,1054.4z M874.9,1064.6 c0-2.4,3-2.3,1.4-4.4c-2.1-2.7,1.9-3.3,7.3-6.4c6-3.5,5-0.9,5,13.1 c-0.1,0-0.1,0-0.2,0c0,15.2,2.3,14.6-10.6,16C874.1,1083.3,874.9,1081.5,874.9,1064.6z M862.6,1064.5 c1.6-0.6,2.9-2,4.8-1.6c1,7.8,0.6,10.7-2.9,16.6c-1.7,3,10.5,4-5.9,6.9 C858.2,1068.4,858.5,1066.1,862.6,1064.5z M842.6,1081.7c0.4-5.7-2.4-10,13-12.9 c0,19.4,1.8,18.1-6.8,19.3C841.1,1089.4,842.1,1089,842.6,1081.7z M827.7,1080.9 c0.6-1.7,1.3-1.6,10.4-4.8c2.8,3.8,1.8,8,1.7,12c-0.1,2-2.2,2.1-10.6,3.6 C825.2,1092.4,825.9,1086.1,827.7,1080.9z M820,1090.8c-0.4,3.5-7,3.6-8.2,3.3 C807.3,1088.5,821.6,1075.6,820,1090.8z M807.5,1088.9c1.1,1.2,1.5,5.9-1.6,6.5 C784.9,1099.3,803.8,1084.9,807.5,1088.9z M792.8,1095.8c0.2,2.6-1.5,2.4-7.1,3.2 C777.8,1095.6,792.5,1090.4,792.8,1095.8z M730.1,1106.1c2.5,0.3,0.7,3.8-1.3,3.5 C727.2,1109.4,727,1105.8,730.1,1106.1z M716.6,1104c-0.4-0.2-1.3-0.7-1.3-0.9 C716,1101.1,722.5,1103.3,716.6,1104z M718.9,1107.8c1.7,0.4,1.4,3.1-0.1,3.5 C712.2,1113.3,713.3,1106.3,718.9,1107.8z M703.8,1099.6c5.5-1.8,13,5.7,0.2,5 C701.2,1104.5,701.3,1100.4,703.8,1099.6z M704,1108.6c4.2,0.2,3.7,6-0.7,5.6 C700,1113.9,699.8,1108.4,704,1108.6z M699.4,1101.7c0.2,4.5-7.8,4.8-7.8-0.6 C691.7,1095.4,699.2,1095.9,699.4,1101.7z M686.8,1116.1c-0.8,2.7-4.2,2.9-4.5-0.5 c-0.6-5.8,4.9-11.2,4.9-2C687.2,1113.6,687.2,1114.9,686.8,1116.1z M678.7,1092.4 c1-0.4,7.9-0.6,8.1,6.9c0.1,5.6-0.4,6-5.9,4.9C676.9,1103.5,677.9,1096.4,678.7,1092.4z M677.8,1109.1c2.4-1.3,4.8,9.3,0.5,10.1c-1.6,0.3-1.5-1.8-1.9-5.3 C677.2,1112.2,675.8,1110.2,677.8,1109.1z M665.5,1095.2c0-5.7-0.3-7.1,2.1-7.1 c8.1-0.3,6.8,7.1,6.6,13.4c-0.1,2.4-2.2,2.5-5.9,1.8c-3.6-0.7-3.1-2.3-2.8-8.1 C665.6,1095.2,665.5,1095.2,665.5,1095.2z M674.2,1118.3c-0.2,1-4.6,6.3-3.6-7.9 C670.7,1108.5,676.2,1106.3,674.2,1118.3z M665,1112.6c0.5-10.4,4.9,1.3,1,8.7 C664.6,1117.7,664.8,1115.1,665,1112.6z M659.5,1084c3.8,1.1,3.2,4.2,3.2,10.2h-0.1 c0,6.1,1.4,10-7,7.6c-1.6-0.5-1.7-0.8-2-17.6C653.6,1080.8,657.9,1083.5,659.5,1084z M657.4,1123c-3.8-19.2,5-17,5.3-13.4C663.7,1121.2,664.9,1121.9,657.4,1123z M652,1121 c-0.2,4.6-7,6-7.3,3.3c-1.2-11.4-1.2-18.6,3.8-18.2C652.2,1106.4,652.7,1107.5,652,1121 z M643.1,1077.7c1.9-0.5,8.1,0.9,7.7,6.5c-1,16.4,1.7,17.8-3.2,18.2 c-5.6,0.4-5.2-2.4-5.2-5.3C642.3,1078.3,642,1078.9,643.1,1077.7z M630.9,1071 c11.5,1.2,9,10.6,8.9,26.8c-0,3.1-4.2,2.4-7.1,1.5C630,1098.4,630.6,1097.7,630.9,1071z M631.2,1115.7c0.5-9.9-0.3-12.6,3.8-12.1c5.6,0.8,5.1,2.3,4.8,20.2 c-0.1,2.7,0.4,3.2-5.9,4.2c-2.8,0.4-2.2-1.9-2.2-12.3C631.5,1115.7,631.4,1115.7,631.2,1115.7z M620.9,1130.2c-1.2-4.7-0.4-9.3-0.6-13.8c-0.2-3.3,4.7-2.7,1.5-5.7 c-2.7-2.5-1.7-5.6-1.2-8.5c0.3-1.7,2.5-0.7,5.3,0c2.3,0.6,2.4-0,2.5,22.5 C628.4,1128.6,628.4,1130.2,620.9,1130.2z M618.8,1080.3c0.2,0,0.3,0,0.5-0 c0-11.5-1-16.6,3.6-14.6c6.3,2.8,4.3,4.6,4.7,29.2c0,1.7-0.8,2.4-2.3,2.4 C617.4,1097.8,618.8,1092.9,618.8,1080.3z M608.4,1115.5c0-14.8-1.1-18.4,4-17.2 c1.8,0.4,6,1.1,4.2,9.9c-3.5,17.7,0.4,23.7-4.6,24.5c-3.9,0.6-3.1-0.5-3.1-17.2 C608.7,1115.5,608.5,1115.5,608.4,1115.5z M609,1058.5c6.5,2.2,7.6,3.5,7.5,9.5 c-0.1,26,1,28-4.4,26.3c-3.7-1.2-4.3-1.9-4.4-6.1 C607.2,1066.9,606.8,1063.9,609,1058.5z M598.5,1051.2c4.8,1.4,7.4,4.2,7.2,9.5 c-1,29.5,1.4,31.6-3,30.6c-3.4-0.8-5.8-1.1-5.8-4.2C596.8,1053.8,596.4,1055.2,598.5,1051.2 z M605.2,1098.9c0.7,40.3-0.4,34.3-8.4,36.4C591.2,1077.7,605.2,1097.3,605.2,1098.9z M589.3,1044.4 c6.9,3.2,5.3,2.1,5.2,35.4c-0,6.1,0.8,7.7-1.9,8c-8.2,0.8-6.5-7.5-6.5-23.2 c0,0,0.1,0,0.1,0C586.2,1046.1,585.2,1042.5,589.3,1044.4z M586.6,1090.8 c8.6,0.8,7.6-0.6,6.9,39.2c-0.1,7.5-6.5,8-8.5,7.1c0-14.3-0.4-15.1,1.6-16.2 c0.7-0.4,0.7-1.3,0.2-1.6C582.6,1117,585.6,1095.2,586.6,1090.8z M577.5,1035.9 c4.2,1.6,6.5,4.2,6.4,9.2c-0.5,15.4,0.1,32.6-0.5,37.4c-0.3,2.8-7.9,1.2-8-5.7 C575.2,1039,574.8,1038.7,577.5,1035.9z M577.6,1086.5c7.9,1.9,4.2,3.6,4.7,27.9 c0.2,8.5-2.7,4.1-2.7,11.8c-0.1,11.8,0.7,13.8-2.8,14.2c-3.9,0.4-4-4.2-3.6-8.1 C576.3,1106.2,569.5,1084.6,577.6,1086.5z M566.8,1026.9c1,0.2,6.3,3.4,6.3,8.4 c-0.2,45.3,1.6,45.8-3.9,43.7c-2.8-1.1-4-2.7-4-5.9 C565.7,1027.8,564.2,1028.6,566.8,1026.9z M563.6,1086.7c0.1-8.9,6-4.3,7-2 c1,2.3,0.6,51.4,0.6,52.4c-0,4.5-0.3,4.8-4.4,5.7C562.2,1143.9,562.6,1144.8,563.6,1086.7z M555.4,1046.8c1-27.2-0.7-27.4,1.4-27.6c2-0.2,5.9,3.4,5.8,7.5 c-0.7,52.9,0.2,43.4-0.7,47.2C553,1077.7,555.1,1056.4,555.4,1046.8z M554.9,1076.3 c6.4,2.5,4.7,0.1,4.6,60.6c-0,8.5-5.4,9-5.8,5.7C553.5,1141.4,553.8,1081.9,554.9,1076.3z M545.2,1030c0.2-19.7,0.2-20.4,2.9-19.2c6.8,3.2,3.8,6.3,4.5,52.6 c0,2.6-0,5.5-2.4,5C543.8,1066.9,544.8,1066.7,545.2,1030z M544,1109.6 c0.1,0,0.2-0,0.3-0c0-37.4-0.4-36.4,1.4-36.9C555.1,1070.3,541.9,1211.3,544,1109.6z M536.8,999.9c4.6,2.2,5.7,5.4,5.7,9.8c-0.7,54.1,1.4,54.8-3,53.1 c-3.1-1.2-4.9-3-4.8-6.8C535.4,1002.8,533.8,1003.1,536.8,999.9z M540,1147.8 c-1.6-2.6,1.4-77.9,1.5-78.9C543.4,1072.4,541.3,1146.1,540,1147.8z M534.9,1066.4 c5.2-0.4,3.7-0.9,2.3,77.4c-0.1,3.7,0.1,5.7-2.5,5.7C531.7,1149.5,534.8,1067.4,534.9,1066.4z M532.8,1067c-4.3,174.7-4.4,32.4-2-3.8C533.2,1064.4,532.9,1065.8,532.8,1067z M525.8,990.4 c0.4-3.3,6.4,3.6,6.3,8.8c-0.5,33.7,0.2,53.5-0.5,57.9c-2.8-0.4-3.5-2.7-5.3-3.5 C524.4,1052.7,525.5,992.8,525.8,990.4z M524,1106c0.1,0,0.2-0,0.3-0 c0-44.1-0-42.1,0.1-44.7c0.1-1,3.7-3,3.5,5.9c-1.2,82.5-0.5,86-3.5,84.7 C522.6,1151.1,523,1154.6,524,1106z M516.2,980.8c0.5-3.1,6.2,2.6,6.2,9.5 c-0.5,40.5,0.3,51.9-0.8,60.3c-5.1-1.2-6.4-4.2-6.4-8.8C515.9,986,514.5,992.4,516.2,980.8z M519.3,1102.3c-0-2.8-0.1-5.6,0-8.3c0.1-2.8,0.2-5.6,0.2-8.4V1058.5 c0-0.6,0.3-1,0.8-1.2c0-0.4,0-0.4,0-0c0.8-0.3,1.9,0.1,1.9,1.2v93.7 c0,1.7-2.7,1.7-2.7,0c0-2.5,0-4.9,0-7.4c0-5.5,0-10.9,0-16.4c0-5.6,0-11.2,0-16.8 c0-1.4,0-2.8,0-4.2c0-1.7,0-3.3-0.2-5c-0,0.1-0,0.3-0.1,0.4 C519.3,1102.6,519.3,1102.4,519.3,1102.3z M515.6,1053.1c3.4,0.9,0.5,98.5,0.4,99.5 c-0.2,2-3.2,2.6-3.3,0.1C512.8,1151.7,514.3,1054.4,515.6,1053.1z M506.9,969.1 c2.3-0.8,6,5.2,5.9,11.6c-0.9,58.9,0.8,60.1-0.8,63.2c-5.1-1.7-6.5-4.9-6.5-9.7 C506.4,969.2,504.7,969.8,506.9,969.1z M509.1,1154.6c-2.8-0.1,0.6-104.2,0.7-105.2 c1.8,0.4,2.7,1,2.8,2.2C512.7,1052.7,512.5,1154.7,509.1,1154.6z M506.1,1047.1 c2.6,1.6,2.1,3.5,2.1,5.1c-3.5,100.5-1.6,100.2-3.8,103.3 C502.8,1153.2,505,1051.1,506.1,1047.1z M499.6,958.8c4.7,4.5,3.7,5.9,3.7,19.8 c-0.2,63.3-0.1,53.4-0.3,58.5c-5-1.9-6.6-5-6.5-9.4C497.4,964.1,495.3,954.8,499.6,958.8z M501.2,1156c-0.4,1.6-2.9,2.1-3.8,0.7c-0.5-0.2-0.9-0.6-0.9-1.2V1044c0-0.8,0.6-1.3,1.3-1.3 c0.3-0.3,0.8-0.4,1.3-0.3c0.2-0.2,0.5-0.3,0.8-0.3c0.4,0,0.7,0.1,0.9,0.4 c0-0,0-0,0-0C505.4,1040.3,501.5,1155,501.2,1156z M487.6,986.3 c0-11.6-0-23.1,0-34.7c0-9.2,6.8-0.6,6.7,6.2c-1.2,74.2,1.3,71-1.7,71.9 c-6.9,2.1-4.9-17.8-4.9-43.3C487.7,986.3,487.6,986.3,487.6,986.3z M489.9,1034.6 c3.8,1,4.8,3.2,4.7,6.4c-5.1,121.3,0.1,119.2-6,119.6 C486.5,1160.8,486.2,1168.2,489.9,1034.6z M480.2,935.2c3.2,3.1,4.9,6,4.9,10.1 c-0.6,77.1,0.5,75.8-1.1,77c-1.1,0.8-5.9-3-5.8-9.5C479.1,937.6,477.4,939.3,480.2,935.2z M479.5,1025.1c4.1,2,5.4,4.3,5.3,7.7c-0,1-2.2,123-2.5,126.9 c-0.4,3.8-5.1,3.8-5.3,1.7C476.5,1157.3,479.5,1047.6,479.5,1025.1z M469.1,965.5 c0-32.8-1-46.9,2.1-42.7c6.4,8.6,4.8,1.4,4.6,81.4c-0,8,0.4,8.7-1.5,9.8 c-7.2-4.7-5.3-4.5-5.3-48.4H469.1z M476.3,1025.4c-3.8,151.7-0.2,137.8-8.7,139.4 c-0.9-8.4,2-141.3,3.1-147.6C474.9,1018.5,476.4,1020.9,476.3,1025.4z M460.7,910 c8.9-2.9,6.6,37.1,6.6,96.3c-3.1-1.5-4-3.3-5.4-4.6C458.9,998.8,459.7,910.3,460.7,910z M460.8,1006.4c4.8,3.3,6.4,6.6,6.3,11.6c-4.5,149.6-2.2,146.8-4.4,148.4 C457.3,1170.3,455.1,1178.2,460.8,1006.4z M448.5,1170.6c-0.8-4.8,2.4-161.2,3.5-171.5 c5.6,2.3,6.4,3.4,6.3,9C454.8,1186.2,457.1,1170.6,448.5,1170.6z M452.2,898.3 c6.3,3.8,8.1,1.3,5.6,98.4C449.3,991.4,452.2,996.4,452.2,898.3z M444.8,885.7 c6.3,7.3,4.5-1.2,4.5,102.5c-6.3-3.4-5.7-6.8-5.7-10.3C443.7,880.6,443.3,887.3,444.8,885.7z M449.3,998.8c-11.7,394.8-10.3-4.9-6-10.3C447.2,990.8,449.5,993.6,449.3,998.8z M436.6,872 c2.4,4.7,5.2,8.8,5.1,14.4c-0.4,52.7,0.1,80.9-0.5,92.4c-4.7-3.1-6.6-6.3-6.5-11.3 C435.9,870.6,434,874.6,436.6,872z M436.9,1164.6c-0.2,9.4,0.8,10.4-7.4,10.9 c1.8-65.2,3.2-130.4,5.2-196.3C442.3,984.4,440.4,969.9,436.9,1164.6z M427,859 c3.7,4,6.1,8,6,13.8c-0.8,50.8,0.5,86.9-0.8,96.4c-3.7-3.2-5.7-5.9-5.7-10.3 C426.9,894.4,426.6,864.6,427,859z M432.4,979.3c-14.3,435.4-8.8,19.5-6.6-10.2 C430.3,971.8,432.6,974.2,432.4,979.3z M420.4,846.7c5,6.6,3.9-6.4,3.9,112.5 c-4-3.7-5.7-6.6-5.7-10.7C419.7,841,418.6,848.4,420.4,846.7z M422.8,969.2 c-12.9,478.2-8.4,3.1-4-10.1C422.3,962.3,422.9,965.5,422.8,969.2z M411.3,832 c7.6,8.8,4.9,1,4.9,117.7c-4.6-3.6-5.8-6.9-5.7-11.2C410.6,924.3,410.4,852,411.3,832z M409.3,1153.7c-0.5,25.7,0.2,26.8-4.5,27.1c-0.6-6.3,4.3-224.8,5.1-231.7 C415.1,949.7,413.8,938.2,409.3,1153.7z M403.4,819c4,4,5.1,5.7,5.1,9 c-0.2,121.1-0.1,107.7-0.9,111.3C401.9,930.5,397.6,941,403.4,819z M400.7,937.5 c4.7,1.3,3.6,1.4,3.6,34C399,972,400.3,970.3,400.7,937.5z M399.7,838.3c0-0.4,0-0.9,0-1.3 C400.2,837.3,399.9,837.8,399.7,838.3z M399.4,848.1c0.2-0,0.4-0,0.6-0v32.6 C399.2,875.5,399.4,872.9,399.4,848.1z M1669.6,1298.3c-6.4-0.5-6.5-4-8.3-1.7 c-3.7,4.6-14,2.9-20,2.2c-6.6-0.8-3.6-7-7.7-7.8c-3.9-0.7-6.4,0.3-7.5,1.5 c-6.6,7.6-7.1,0.5-9.5,1.5c-7.8,3.4-5.7-2.1-9.6,0c-3.3,1.8-5.2,5.9-9.6,4.3 c-5.5-2-6.4,3-8,4.7c-5.5,5.7-6.4-2.3-8.9-1.5c-3.4,1.1-7.3,0.6-10.4,2.8 c-3.2,2.3-4.9,4.7-8.4,2.2c-11.2-8.3-15.5,9.1-17.3,8.8c-1-0.2-2.7-1-2.7-1.5 c-0-4.6-5.4-6.8-7.9-0.8c-1.7,3.9-4.8-4.2-15.5-4.2c-8.8-0.1-9.7,0.2-11-0.8 c-7.7-6.2-9.8,6.7-16,4.2c-2.2-0.9-7.4-0.2-8.2-1.4c-2.9-4.1-6.9-3.2-13.2-4.1 c-1.6,1.3,0.5,2.3,0.2,3.4c-0.4,1.2-0.9,2.3-0.6,3.7c1,4.6-11.4,4.1-12.2,3.1 c-1.9-2.4-4.1-3-6.9-1.8c-2.3,1-5.1,0.2-6.8,3.1c-3.3,5.8-7-1-11.7,3 c-5.4,4.6-6.6-2.6-9.4,0.1c-7.3,7.1-21.4,2.1-24.9,3.6c-6,2.4-23.6,1.4-26.7-2.8 c-3.2-4.4-5.5,4.3-11,2c-8.8,2.3-17.9-1.2-26.7,1.6c-4.2-1.2-8,1.2-12.1,1.5 c-35.2,2.4-17.5-3.3-29.2-5.1c-15-2.2-15.9,9.7-25.9,6.1c-6.9-2.4-14.7,0.5-20-2.6 c-6.8-4-12.8-0-16.5,0.2c-7.5,0.4-3.1-5.3-11.4-4.8c-1.2,0.1-7.5,0.4-8.2-1.2 c-1.6-3.8-2.6-2.6-27.1-2.8c-6.7-0.1-8.3,3.7-14,2.8c-6.4-1.1-38.7-1.4-38.7-1.4 c-4.4-3.6-25.1-4.7-26.6-2.3c-2.1,3.4-3,2.7-26.6,2.5c-11.2-0.1-5.8-10.8-32.2,6.4 c-2.4,1.6-3.7-1-5.4-0.8c-1.7,0.2-2.5,3.2-4.3,2.5c-2.2-0.9-4.7-0.3-6.8-1.9 c-11.3-8.6-18.4-0.8-25.1-3.7c-0.8-0.3-1.9-0.5-2.5-0.2c-7.3,3.6-17.7-0.9-21.5,3.7 c-1.9,2.4-8.4,3.2-9.6-0.2c-3.4-9.8-11.4,2-17.5,0.7c-0.5-0.1-1.5,0.3-1.8,0.7 c-3.7,6.6-11,0.3-14.8,3.1c-6.2,4.6-8.3-2.3-23.7,0.8c-1,0.2-9.7,1.8-10.9,0.8 c-8.7-6.7-14.4,5-22.2-0.6c-10.8-7.8-14.5,3.7-20.4,2.3c-3.8-0.9-4.1,2.3-8.8,1 c-9.6-2.7-6.6,4.1-12.4,3c-15.7-3.1-39.3,5.3-44.3,0.1c-6.5-6.8-12.7,0.6-26-0.2 c-6.7-0.4-3.8-10-8.6-7.6c-4.8,2.4-2.7,11.4-10.5,9.4c-12-3.2-19.1,2.5-24.6,1.6 c-14.7-2.4-21.3,2.8-25.3-4c-1-1.6-3.4-2-4.7-0.8c-3.7,3.6-8,1.6-11.7,0.9 c-15.5-2.9-23.7,0.9-32.9-1.9c-4.4-1.3-6,1.4-8.3,0.4c-5.9-2.4-13.9,2.5-18.7,0.7 c-2-0.7-20.2-3.6-25.6-0.3c-6.4,4-11.8-4-18.8,1.9c-1,0.9-32.9,3.9-47.1-1.8 c-2.4-0.9-9.3,2.1-15.6-0.4c-1.4-0.5-7.9-2.1-8.9-1c-4.5,4.7-16.6-2.5-32.5-1.9 c-4.9,0.2-8-6.7-19.2-2.4c-9.8,3.7-25.9,1.9-28.3-0.6c-2-2.1-4.7-2.1-7.4-1.9 c-7.8,0.7-14.9-2.2-22.2-4.2c-3.6-1,1.3-45.8,0.6-80.8c-0.7-41.2,1024-175.5,1290.8-187.2 c-0.4,19.2,1.2,25.1-2.4,26.1c-2.7,0.8,4.8,1.3,0.2,3.1c-0.6,0.2-1.3,0.3-1.5,1.1 c0.7,2.1,5.9,3.8,5.9,10.4C1687.5,1308.1,1698.7,1300.5,1669.6,1298.3z M1678.5,355.2 c5.4-9.1,3.1,297.1,3,298.2c-0,1-0.6,356.7-1.9,307.3C1679,937.9,1672.9,364.7,1678.5,355.2z M1689.5,448.2c-4.2,4.5,1.9,74.4-3.9,79.3c-0.8,0.1-1.1-73.7-1.1-74.4 c0.4-117.4-6.8-99.5,6.7-112.6c0.5,0.1,0.9,0.2,1.4,0.3 C1689.6,407.4,1694.6,442.8,1689.5,448.2z M1695.7,169.3c-0.5,125.4,0.4,166.3-17.4,171.7 c-1.9-1-1.6-2.8-1.6-4.5c-0.3-238.6-2.7-207.6,15.5-237.6 C1698.2,89,1695.9,119.8,1695.7,169.3z M1810.8,148.2c-1.1,2.5-14.8,25.8-16.3,20.7 c-0.1-0.4-0.5-0.9-0.4-1.2C1796,155.8,1786.4,139.5,1810.8,148.2z M1797.8,462.3 c-3.5-0.2-4.2-1.4-4.3-3c0-0,0.3-123,0.3-123c0.4-6.2,2.6-0.8,21.9-2.1 c10.8-0.7,8.4-2.2,8.4,94.6h-0.1C1823.9,471.3,1829.9,464.1,1797.8,462.3z M1820.5,698.5 c-20.7-1.9-26.2,2.4-26.6-4.2c-0.5-10.1-0.1-151.9-0.1-153c0.2-6.7,0.3-4.2,16-3.9 c18.1,0.3,14.3,8.2,13.8,140.3C1823.6,694.9,1825.3,699,1820.5,698.5z M1755.3,187.4 c0.1,0,0.1,0,0.2-0c0-12.2-0-24.5,0-36.7c0-12.9,0.9-4.4,31.8-4.7 c5.3-0.1,3.4,0.4,3.6,26.8c0.1,10.6-30.8,48.4-31.8,54.8c-0.4,2.3-3.6,2.8-3.7-0.9 C1755.3,215.9,1755.3,207.4,1755.3,187.4z M1798.8,945.9c2.9,0.3,2.9,2.6,2.4,8.4 c-0.2,2.5-1,3.4-3.5,4c-3.3,0.9-3-1.1-3-5.3h0 C1794.7,949.9,1794,945.4,1798.8,945.9z M1794.6,1053.9c-3.6,4-9.2-6.8-9.8-8 C1809.5,1039.4,1799.6,1048.4,1794.6,1053.9z M1784.1,926.9c4.9-0.4,4.2,0.1,3.9,26.6 c-0,3.7,0.3,6.2-7.1,5.3c-1.1-2.6-0.6-5.3-0.6-7.8C1780.2,928.7,1779.5,927.2,1784.1,926.9z M1780.7,206.9c10.8-15.6,6.3,11.2,6.3,17.7c0.1,44.1,1.7,42.4-3.9,42.3 C1752.7,266.2,1738.4,267.7,1780.7,206.9z M1754.9,536.7c2.2-1.4,4.1-1.8,6.1-1.7 c28.5,1.5,25.8-0.1,25.8,7.5c0.8,170.1,1.4,155.5-4.9,154.9c-6.9-0.7-24.1-3.1-26-3.4 C1754.3,691.1,1755.8,587.4,1754.9,536.7z M1755.2,424.7c-0.7-103.6-5.5-95,18.5-92.6 c11,1.1,13.6-1.1,13.5,4.7c-2.4,131,3.5,124.4-4.4,124.9c-10.2,0.5-22.5-2.7-24.7-2.8 C1753.8,458.7,1755.4,457.7,1755.2,424.7z M1783.2,779.7c4.4,0.2,4.6-1,4,24.3 c0,0,0.7,113.1,0.7,113.1c0.7,7.8-10.2,0.7-11.1,13.5c-0.5,6.5,0.8,8.6-2.4,9.3 c-4.8,1.1-8.7,1.1-7.1,6.4c1.2,4,2.9,15.6-3.5,15.8c-10,0.3-8.2,0.8-8.2-22.3h0 c0-5,0.1-10.1-0-15.1C1750.8,757.3,1750.9,778.4,1783.2,779.7z M1773.4,960.2 c-0,1.9-3.1,2.9-3.2,0.4c-0.1-13.4-0.4-14,1.7-15 C1773.5,946.8,1773.4,947.3,1773.4,960.2z M1743.2,144.6c1-0.2,9.6-3,9.1,0.8 c-0,0,0.3,47.2-0.8,60.3c-2.5,28.1,6.9,27.4-11.9,49.3c-2.7,3.1-6.5-3.9-6.4-10.2 C1734.4,153.7,1731,146.8,1743.2,144.6z M1744.9,833.8c-0.1-11.1,2.2-3.7,2.6-13.9 c0-1.3,1-21.9,1.9-24.1c2.1,1,1.7,2.9,1.7,4.6c1,168.2,1.4,161.8-6.7,161.1 c-3.4-0.3-2.5,0.2-3.2-68.3C1740.5,831.3,1745.2,891.5,1744.9,833.8z M1745.3,259.1 c1.4-1.8,1.9-4.4,4.6-5.8C1755.4,268.5,1742.4,262.9,1745.3,259.1z M1736.5,402.1 c0.3-12.5-1.7-66.5,9.7-69c5.9-1.3,4.3-5.3,4.9,73.6c0.4,54,2.7,52.9-10.7,45.2 C1733.6,448,1736.3,413.7,1736.5,402.1z M1743.6,565.9c-0.2-8.6-0.2-10.1,1-12.3 c2.2-4-0.3-11.1,5.1-12.8c1.8,4.7,1.9,9.4,1.2,14.2c-1.9,11.6,0.2,132.2,0.2,133.2 c0,3.1-0.9,3.8-4,3.4c-7-0.8-6.6,9.4-7.4-113C1739.5,569,1743.8,573.7,1743.6,565.9 z M1741.3,1103.9c2.6-14.5-2.8-15.6,5.5-23.3c-2.5-0.6-4.1-2.1-3.2-4.5 c1.4-3.8-0.8-5.3-0.8-8.8c-0.1-9.7,7-0.6,7.1-9.8c0.1-7-7.4-1.4-6.1-7 c0.4-1.9,0.4-1.7,13.5-2.4c2.9-0.2,2.7,0.7,15.2,15.7c1.8,2.2,2.4,14.6-0,17 c-3.9,4-27.2,32.3-29.6,35C1741.5,1111.4,1740.6,1107.6,1741.3,1103.9z M1761.5,1205.5 c-1.3,1.4-8,5.2-4.5,10.6c2.3,3.6-20.9,82.1-14.7-39.8c4.5,3.1,6.5,7.1,9.3,10.4 C1765.1,1202,1764.7,1202.2,1761.5,1205.5z M1773,1174.3c-0.4,1.6-2.4,1.8-3.8,0.5 c-12.2-11.6-10.2-13.8-9.1-18.6c0.3-1.5,2.1-1.1,10.6-1.1c0,0.1,0,0.2,0,0.3 C1789.2,1155.4,1776.1,1161.6,1773,1174.3z M1799.2,1111.4c-2.3,11.6-7.8,16.7-13.1,23.4 c-2.6,3.3-4.5,2.6-14.9,2.6c0-0,0-0-0-0c-12.6,0-13,0.7-13.3-3.7 c-0.4-5.3-1.2-3,29.3-40c6.2-7.6,7.2-0.9,12.8,4.5 C1803.7,1101.7,1800.9,1102.5,1799.2,1111.4z M1820.3,953.8c-2.5-3.3,1-14.9,0.4-16.6 c-2.2-6-5.7-0.2-4.8,1.8c2.2,5,0.9,10.3,1.1,15.5c0.1,1.9-1.9,2.5-8.1,2.4 c-4.9-0-2.9-1.7-3.9-7.2c-1.7-9.9-7.3-8.2-9.8-9.6c-0.8-2.3-0.4-4.7-0.4-7.1 c-0.2-154.9-10.6-165,25-150.3c3.7,1.6,6.7,3.3,4.9,8.1 C1824.6,791.7,1828.7,965.2,1820.3,953.8z M1824.6,266.7c1,3.8-33.7,3-30.9-2.2 c0.8-1.6-2.3-74.7,4.5-84.5c19.9-28.7,17.4-30.7,23.9-24.6 C1829.2,162.1,1823.2,261.2,1824.6,266.7z M1827.6,147.7c26.1,6.5,23.7,29.6,11.2,12 c-4.5-6.3-8.5-5.7-12.6-8.7C1824.5,149.8,1825.5,147.2,1827.6,147.7z M1827.8,217.4h0 C1827.8,261.2,1827.8,305.5,1827.8,217.4z M1833.3,560.9c4,0.9,4.2,2.4,3.6,12.7 c-0.4,7.6,4.3,4.3,4.2,11.9c-1.1,76.9,1.5,75-1.3,77.1c-4.6,3.4-3.5,23.7-2.3,24.6 c3.1,2.2,1.4,5.2,1.8,7.9c0.4,2.6-5.2,4.5-4.9,1C1834.3,696,1833.3,571,1833.3,560.9z M1841.1,890.2c-3.6,13.4,3.1,61.6-3.1,62.3c-4,0.5-4.2-120.1-2.9-119.4 c4.5,2.2,0.4,30.6,3.2,34c3.4,4,0.2,13.9,2.8,21.2C1841.4,888.8,1841.3,889.6,1841.1,890.2z M1842.2,427.8c2,6.6-1.3,16-0.5,20.4c0.4,2.1,4.2,3.6,1.5,5.9 c-4,3.5-0.8,9.1-7.1,8.6c-5.2-0.4-1.5-1-2.6-119.2c-0.1-7.1,9.3,5.6,7.8,13.2 c1.7,4.6,2.5,9.9,2.9,39.7c0.4,27.2,0.5,26.7-1.3,28.4C1842.1,425.5,1841.9,426.9,1842.2,427.8z M1848.6,183.1c-1,92.1,1.7,85.7-5.8,85.8c-11,0.2-8.5,6.1-8.5-49.7h0.1 c0-41.2-1.3-54.1,3.9-50C1848,176.8,1848.6,177.1,1848.6,183.1z M2037.5,219.5 c0.1-16,2.5-5.7,31,13.6c18.4,12.4,7.2,20.5,10.4,84.4c-2.1,4.8,1.1,9.9-0.9,14.7 c0.9,3,0.8,5.8-0.7,8.7c-2-0-3.8-0.8-5.2-2.3c-4-4.4-12.3-7.2-14.7-11.7 c-0.9-1.7-2.5-2.4-4.3-2.8c-5.7-1.5-9.4-6.3-14.3-9C2036.7,314,2037.4,220.5,2037.5,219.5z M2039.8,918c0.1-2.4,0.8-3,3.3-2.8c9.1,0.9,8.4,1.9,8.8,10.7c0.2,3.7-1.9,3.5-6.8,3.5 v-0C2039.6,929.3,2039.2,930.1,2039.8,918z M2040.9,911.3c-1.7-1-1.2-2.4-1.3-3.6 c-0.8-14.3-2.4-13.8,10.2-13.8c1.8,0,2.9,0.7,2.9,2.7c-0,4.3,0.3,8.7-0.3,13.5 C2048.2,909.1,2044.4,909.6,2040.9,911.3z M2038.3,325.5c8.3,3.4,12.6,10.1,11.9,18.5 c-4.8,60.3,12.2,626.4-11,539.8c-0.5-2-0.1-78.6,0.3-80c-2.5-18.5-0.1-133.4-1.6-140.2 C2038.1,662.6,2035.8,328.3,2038.3,325.5z M2034.3,924.5c0,11.4-8.9,6-22.5,8.3 c-5.2,0.9-0.6-24.8-3.1-33.1c0.8-7.9-3.2-582.7,0.2-596.4c30.8,22.3,24.8,8.8,23.9,65.6 c-0.4,27.8,0.3,289.3,1,291.9c-2.4,6.8,1,13.8-0.6,20.7 C2034.7,688.8,2034.3,920.4,2034.3,924.5z M1995.9,178c5.5,4.4,11.4,7.3,16.1,11.9 c30.5,29.5,18.9-2.3,21.7,77.9c1.5,42.9,0,45.1-5.2,40.3c-7.5-7-14.6-9.4-18.2-14.8 c-3.4-5.2-17.1-5.4-16.8-16.9c0.1-3.5-0.2-64.5,1-73.8C1993.5,198.4,1993.1,183,1995.9,178 z M1993.9,295.5c-0.2-3.3,9.4-2,9.1,17.5c-0.4,24.7-0,151.6-0,152.7 c-0.1,0-0.2,0-0.3,0c0,60.4,2.4,465.9,2.4,465.9c-0,3.6-5.6,4.3-7.8,2.9 C1992,931,1995.4,320.6,1993.9,295.5z M1956,144.6c31.9,33.5,39.3,2.1,34.3,109 c-0.8,18.3,1,26-3.9,22.6c-23.1-16.2-19.8-17.3-27.9-21.4c-11.7-6-3.9-4.8-7.1-39.3 c0,0,0.9-53.4-0-64.4C1951,146.9,1953.1,141.6,1956,144.6z M1989.9,305.9 c0,0,1.5,627.5,1.5,627.5c-9.2,6.6-16.1-0.1-20.4,3.6c-12.7,10.9-8.9-660.3-7.3-667.2 C1995.3,293.5,1989.7,284.9,1989.9,305.9z M1957.9,304.9h-0C1957.9,256.6,1957.9,246.4,1957.9,304.9 z M1912.5,111.6c1-3.1,4.5,1.7,29.8,22.7c10.1,8.4,5.8,66.5,5.7,67.5 c-0.1,1,2.1,50.4-4.8,41.9c-4.2-5.1-13.9-8.8-21.6-17.9c-4.9-5.8-13.7-5-10.3-16.4 C1912.6,205.1,1908.4,124.4,1912.5,111.6z M1923.3,926.3c-9.3-3.8-3.5-569.9-5.7-682.6 c-0.3-15.5,4.8-4.8,27.9,12.2c2.4,1.8,3.1,684.2,2.9,684.3c-20.7,2.2-20,2.9-20.2-1.8 C1928,934.4,1928.1,928.3,1923.3,926.3z M1923.9,938c-0.2,1.4-0.3,2.7-0.7,3.9 c-0.3,1.1-2.1,1.5-3,0.2C1916.3,936.2,1922.1,923.2,1923.9,938z M1914.6,925.2 c-2.2,0.3-2.2-0.2-2-11C1912.6,913.2,1914.6,906.1,1914.6,925.2z M1913.6,369.5 c0.1-145.4,0.1-211.3,0.1,0C1913.7,369.5,1913.7,369.5,1913.6,369.5z M1913.4,930.6 c1.1-1.7,2.1,5.6,0.9,13.3C1911.5,942.2,1911.9,933,1913.4,930.6z M1887.9,118.3 c-0.2-21.1,0.3-29.8,3.6-27c22,18.9,16.2,2.2,16.2,122.6c-2.7,0.3-3.9-0.7-5-1.7 C1879.9,193.4,1888.9,213,1887.9,118.3z M1899.2,914.8c1,29.3,0.8,28.5-0.1,30.1 c-3.5,6.1-2.5-1.9-3.7-170.5c-0-0.6-4.2-355.3-4.5-355.8c-1.8-2.9-1.3-125.7-1.3-126.7 c0.5-90.5-12.3-90.6,14.7-68.7c4.7,3.8,2,650.6,3.7,675.4C1908.6,909,1898.8,903.5,1899.2,914.8z M1903.6,913.6c1.3-3,4.4-3.4,4.7,0.6c0,0.3-0,24.3-0,24.9c-0.1,3.1-0.4,6.4-3.5,5.8 C1901.5,944.1,1903,915,1903.6,913.6z M2072.9,1033.9c-35.3,1-51.7,2.3-51.7,2.3 c-294.2,8,54.4-21.7,54.3-5.2C2075.5,1032.8,2075,1033.9,2072.9,1033.9z M2080.4,921.3 c-0.1,4,0.3,7.5-21.2,6c-4.2-0.3-3.9-557.5-4.7-561.7c2.2-7.8-2.3-30.7,2.7-27.4 c21.5,14.6,21.1,13.6,21.1,18.9c0.3,84.1-0.9,171.4,0.7,180c-1.5,3.8-0.6,170.6,0.3,176.2 c-1.9,5.6,1.5,11.4-0.6,17C2079.5,732.6,2080.8,904.2,2080.4,921.3z M2096.9,924.1 c-11.8,0.7-11.2,3.6-11.1-7.2c0-3.8-1.4-79.1-1.8-79.8c-0.1-7.5-2.6-470.5-0.5-480.4 c23.8,15.2,12.3-17,16.7,335.4C2103,934.1,2101.9,923.8,2096.9,924.1z M2086.3,348.4 c-5-2.9-4-6.1-4-20.7c0,0,0.1,0,0.1,0c-0.4-95.1-2.7-86.2,11.3-75.9 c35.8,26.3,33.4,8.8,30.6,105.5c-0.2,5.3,2.9,16.9-2.8,14.5c-10.8-4.6-14.2-12.1-19.6-14 C2096,355.8,2091.5,351.5,2086.3,348.4z M2123.2,921.5c-4.5,1.3-10.9-0.1-10.9-0.1 c-6.9,3.4-5.2-1.2-5.5-16c-0.4-15.5-5-369.5-2.8-377.1c-0.2-1.4-1.3-148.1,1-155.5 c1.6-0.3,2.5,0.2,3.5,0.8c16.1,10.8,16.8,10.2,16.7,15.1c-1.3,104.8,1.2,414.3,1.4,415.3 c-1.2,11.5,0.9,23,0.5,34.5C2123.9,921.2,2133,918.8,2123.2,921.5z M2129.3,328.8 c0-57.9-4.3-54.6,14.4-41.1c34.6,25.1,29.1,16,29,56.4c-0,1-0.2,55.3,0.2,58.2 c1.1,9-18.1-11.4-24.1-11.9c-24.6-16.9-19.2-3.6-19.2-61.6 C2129.5,328.8,2129.4,328.8,2129.3,328.8z M2134.5,919.8c-4.5,0.3-4-127.8-4-143.6 c0,0,0,0,0,0c0-1,0.1-166.6-1.3-172.5c1.4-13.5-3-217.5,3.6-213.3 c27.7,17.3,11.3-38.7,20,523.5C2152.9,918.6,2148.9,918.7,2134.5,919.8z M2174.3,914.2 c-1.2,1.8-3.4,0.3-4.8,1.4c-1.7,1.4-3.8,0.9-5.7,1c-8.9,0.2-5,6.4-6.9-47.3 c-0.9-24.4-0.5-178-2-186.4c0,0-1.3-237.2,0.9-277c5.9,2.6,10.1,6.1,14.7,9 c4.6,2.8,0.7,103.8,2.9,107.1C2171.6,530.3,2177.4,909.6,2174.3,914.2z M2178.2,316.9 c0.4-8.3,5.4,1.3,36.2,19.5c6.9,4.1,12.2,4.6,8.3,100.8c-4.4-1.7-8.2-3.9-11.3-6.9 c-5-4.7-33.2-16.9-33.9-24.7c-0.7-8.7,0.2-51.9,0.5-52.7 C2177.5,351.2,2178,320.2,2178.2,316.9z M2189.7,905.9c-0.4-3.4-1.1-5.6,1.3-6.3 C2201.5,896.5,2188.6,928.6,2189.7,905.9z M2203.4,912.5c-4.3,0.7-4.2-4-4-7.8 c0.7-13.9-9.8-8.7-10.1-18c-0.5-18.4,6.4-6.9,11.9-12.9c3.9-4.3-9.6-8.3-15.7-0.5 c-1,1.3-1.4,2.6-1.1,11.6c0.4,13.4-4.7,8.5-1.1,14.3c5.8,9.4-4.6,26.5-3.1,1.2 c0.1-1.9-2.9-383.2-2.9-383.3c1.8-6.5-0.9-81.4,0.6-91.5c0.3-2.2-6-12.2,17.8,5.8 c12.9,9.7,3.8,38.7,6.7,63.2C2202.6,495.6,2206.6,911.9,2203.4,912.5z M2218.2,910.5 c-12.9,10.2-12.7-455.6-9.7-470.4c3,1.1,14.3,6.5,14.3,10.4c-0.1,49.3-0.7,49.7,0.8,55.7 c-2.3,5.1,0.9,56-0.6,60.9c0,0,3.6,343.3,3.6,343.3C2223.1,909,2220.6,908.6,2218.2,910.5z M2228.8,347.6c3.1-0.6,46.1,26.8,45.8,32.1c-0.1,1,2.6,87.7-0.5,89c-3.2,1.4-9.7-7.7-13.4-8.6 c-4.5-1.1-32.2-17.4-32.4-20.1C2227.6,434.1,2227.3,349.4,2228.8,347.6z M2231.1,909.5 c-1.2-5-4.2-454.5-2.4-457.2c34.1,16.2,29.1,9.7,28.8,129.9 C2256.7,954.8,2275.3,903,2231.1,909.5z M2274.8,904.9c-6.2,0.3-8.6,3.4-9.5-2.2 c-0.2-1-4.5-398.6-2.5-427.1c0.2-2.7,3.2-0.9,11,4c2.4,1.5,1.4-2.5,1.4,90.1l0.5-0 c0,98.9,1.2,257,1.2,257c1.9,8.1,1.2,11.1,0.7,64.9C2277.4,902,2278.7,904.7,2274.8,904.9z M2280.2,382.2c-0.1-3.1,0.6-2.4,41.2,23.3c9.6,6.1,7.9,11.5,7.9,54.3c-0,0-0.1,0-0.1,0 c0,59.5,1.3,38-12.4,34.3c-4-1.1-4.6-1.7-33-18.8C2275.9,470.6,2280.4,392,2280.2,382.2 z M2317,900.3c-4.1,1.5-31,3.2-32,3.2c-6,0.4-2.5-212.9-4.8-241.2 c0.7-3.3-1.7-172.3,0.1-177.8c2.7-0.2,4.2,1.4,5.8,2.3c21.8,12.4,28.5,15.3,28.4,25.8 C2313,645.5,2317.9,832.7,2317,900.3z M2320.8,508.2c8.2,3.8,8.3,3.8,8.3,11.6 C2333,1368.6,2312.5,540.4,2320.8,508.2z M2375.9,438.7c11.7,7,9,6.5,9,93.1 c-15.1-5.3-27.4-14.3-40.7-21.1c-11.7-5.9-11.1,1.7-10.4-76.4 C2333.9,407.3,2327.3,409.5,2375.9,438.7z M2365.8,882.6c-5.8-0.5-6.8,12.1-7.5-20.7 c-0.1-7.6,0.5-5.7,10.5-7.6c3.1-0.6,2.8-3.8,1.4-4.2c-18-5.6-16.7,5.5-16.7,24.6 c-13.3-3.1-17.4,4.7-3.4,6.4c4.5,0.5,3.9,5.6,1.1,7.1c-5.9,3.2-6,1.6-10.1,2 c-6.7,0.6-4.3,0.2-4.7-10.5c-0-1-6.5-367-0.1-363.9c56.3,27.1,32.2-1.8,39.3,282.5 C2377.7,878,2380.7,883.9,2365.8,882.6z M2380.2,825.2c-0-0.4,0.8-32.6,0.7-41.3 c-3.1-390.4,6.7-193.1,4.4-187.8c0,0,2.9,280.5,2.9,280.5C2375.5,879.1,2385.1,882,2380.2,825.2z M2403.8,874c-3.5,2.5-10.2,3.5-10.3-0.5c-2.7-60.9-4-312.8-3.2-325.8 c3.2-0.4,5.2,1.6,7.3,3c36.6,25.5,38.9,8.1,38.8,47.8 C2435.3,900.1,2453.1,839,2403.8,874z M2441.1,714.7c0-234.4,0-117.1,0.1,0H2441.1z M2442.6,563c-3.7-0.1-6.8-1-10-2.8c-46.8-26.7-42.8-19.7-42.8-31.8 c-0.1-79.6-0.8-77.9,1.4-79.4c1.6-1.1-2.3-2.8,42.5,23.5c7.8,4.6,9.2,8.4,9,12.5 C2442.4,497.2,2444.6,534.7,2442.6,563z M2503,791.8c0,33,2.7,8.8-34.9,43.6 c-5.2,4.8-11.7,7.6-17.4,11.6c-4.1,2.9-2.7-265.9-1.5-267.2c3.6,0.6,6.6,2.9,9.8,4.5 C2511,611.6,2502.7,581.6,2503,791.8z M2505.1,596.2c-3.4,0.8-5.8-0.1-8.2-1.4 c-49.8-26.5-48.6-24.5-48.7-29.1c-2.5-93.1-1.1-86.1,7-81.5 C2511.9,516.2,2505.1,493.8,2505.1,596.2z M2510.8,515.5c68.9,35.1,56.1,21,57.6,85.2 c0,1.6,0.6,28-1.6,29.8c-70.9-35.8-58-18-57.9-77.5 C2508.9,516.7,2508.3,518,2510.8,515.5z M2567.3,766.1c0,0-16.3,9-20.7,10.7 c-7.2,2.8-14,7-18.6,13.9c-0.8,1.2-2.1,2.4-3.5,2.9c-7.8,3-14.6,23.2-13.5-15.2 c0-1-3.2-158.7-0.3-166.2c74.7,33.9,52.7,26.6,58.1,54.1 C2569,667.4,2571.6,764.5,2567.3,766.1z"/> <path d="M1505.1,992.1C1505.4,991.8,1505.7,992,1505.1,992.1L1505.1,992.1z"/> <polygon points="1749.4,1052 1749.3,1051.6 1749.6,1051.7 "/></g></svg>`;
         }
 
         function actualizarFondoCard(estado, colorOverride = null) {
@@ -3627,10 +3484,6 @@
             }
         }
 
-        // =========================================================
-        // CAPA 1: calcularEstadoCard()
-        // Lee datos, no toca el DOM ni toma decisiones visuales.
-        // =========================================================
         function calcularEstadoCard() {
             const hoy = obtenerFechaHoy();
             const { inicio: ini, fin: fn } = obtenerSemanaActual();
@@ -3640,7 +3493,6 @@
             const diasHabiles = D.diasHabiles();
             const { ayerStr: ayer, regAyer, ayerAbierto } = D.detectarAyerAbierto(hoy, registros);
 
-            // --- Día hábil hoy (compatible array v6.63 y fallback numérico) ---
             const diaSemanaHoy = new Date().getDay();
             let esDiaHabil = true;
             if (Array.isArray(diasHabiles)) {
@@ -3649,7 +3501,6 @@
                 esDiaHabil = diaSemanaHoy === 0 ? (diasHabiles === 7) : (diaSemanaHoy <= diasHabiles);
             }
 
-            // --- Semana abierta ---
             const mapDia = d => d === 0 ? 7 : d;
             const hoyIndex = mapDia(diaSemanaHoy);
             let quedanDiasFuturos = false;
@@ -3663,10 +3514,8 @@
             const regHoy = registros.find(r => r.fecha === hoy) ?? null;
             const semanaAbierta = quedanDiasFuturos || (esDiaHabil && !(regHoy && regHoy.salida));
 
-            // --- Buffer semanal ---
             const bufferSemanal = D.calcularBufferSemanal(ini, hoy);
 
-            // --- Total semana ---
             const fechaLimite = hoy < fn ? hoy : fn;
             const registrosSemana = registros.filter(r => r.fecha >= ini && r.fecha <= fechaLimite);
             let totalSemana = 0;
@@ -3676,11 +3525,9 @@
                 else if (!tipo) totalSemana += r.total;
             });
 
-            // --- Objetivo ajustado ---
             const horasDescontar = D.calcularHorasFeriadoEnRango(ini, fn);
             const objetivoSemana = Math.max(0, horasSemanales - horasDescontar);
 
-            // --- Todos los días laborables cubiertos por especiales ---
             let todosEspeciales = false;
             if (Array.isArray(diasHabiles) && diasHabiles.length > 0 && horasDiarias > 0) {
                 const fechasLaborables = [];
@@ -3709,15 +3556,12 @@
                 }
             }
 
-            // --- Tipo especial hoy (FIX: solo si entrada === salida) ---
             const tipoEspecialHoy = (regHoy && regHoy.salida && regHoy.entrada === regHoy.salida)
                 ? TiposRegistro.obtenerTipoPorCodigo(regHoy.entrada, regHoy.salida)
                 : null;
 
-            // --- Tiempo transcurrido hoy ---
             let tiempoHoy = 0;
             if (ayerAbierto && !regHoy) {
-                // Si ayer está abierto y hoy no hay nada, el timer sigue contando desde la entrada de ayer
                 const ahora = new Date();
                 const horaActual = String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0');
                 const t = D.calcularHoras(regAyer.entrada, horaActual, regAyer.tiempoFuera || null, null, true);
@@ -3737,19 +3581,15 @@
                 hoy, ini, fn,
                 registros, regHoy,
                 horasDiarias, horasSemanales,
-                diasHabiles, esDiaHabil, // Asegurate de que esDiaHabil esté definido como en tu código
+                diasHabiles, esDiaHabil,
                 semanaAbierta, bufferSemanal,
                 totalSemana, objetivoSemana,
                 tipoEspecialHoy, tiempoHoy,
                 todosEspeciales,
-                ayerAbierto, ayerStr: ayer, regAyer // turno cruzando medianoche
+                ayerAbierto, ayerStr: ayer, regAyer
             };
         }
 
-        // =========================================================
-        // CAPA 2A: derivarVistaSemana(est)
-        // Devuelve decisiones visuales para vista "semana". Sin DOM.
-        // =========================================================
         function derivarVistaSemana(est) {
             const { totalSemana: tot, objetivoSemana, semanaAbierta, horasDiarias, todosEspeciales } = est;
 
@@ -3797,18 +3637,12 @@
             };
         }
 
-        // =========================================================
-        // CAPA 2B: derivarVistaHoy(est)
-        // Devuelve decisiones visuales para vista "hoy". Sin DOM.
-        // =========================================================
         function derivarVistaHoy(est) {
             const { regHoy, tiempoHoy, horasDiarias, esDiaHabil, tipoEspecialHoy, bufferSemanal, diasHabiles } = est;
             const objetivoDiario = horasDiarias;
 
-            // SIN REGISTRO HOY
             if (!regHoy || !regHoy.entrada) {
 
-                // --- NUEVO: Mostrar tarjeta contando el turno de ayer ---
                 if (est.ayerAbierto) {
                     const prog = objetivoDiario > 0 ? Math.min((tiempoHoy / objetivoDiario) * 100, 100) : 100;
                     const cumplido = objetivoDiario === 0 || tiempoHoy >= objetivoDiario;
@@ -3832,13 +3666,9 @@
                         mensaje = bufferSemanal >= faltante ? `${faltanteTexto}, pero te podés ir` : faltanteTexto;
                     }
 
-                    // --- CALCULAR NOMBRE DEL DÍA DE AYER ---
                     const nombreDiaAyer = obtenerNombreDia(est.ayerStr);
-
-                    // --- CALCULAR SALIDA ESTIMADA PARA AYER ---
                     let hint = 'Toca Fichar para registrar salida';
                     let hintEsHTML = false;
-
                     const regAyer = est.regAyer;
 
                     if (regAyer && regAyer.entrada && objetivoDiario > 0 && !TiposRegistro.esRegistroEspecial(regAyer.entrada, regAyer.salida)) {
@@ -3870,7 +3700,7 @@
                             const mSB = Math.round(minutosConBuffer % 60);
                             const horaBuf = `${String(hSB).padStart(2, '0')}:${String(mSB).padStart(2, '0')}`;
                             const colorBuffer = bufferSemanal > 0 ? 'var(--c-green)' : bufferSemanal < 0 ? 'var(--c-red)' : 'var(--text-main)';
-                            hint = `Salida estimada: <strong>${horaSalida}</strong> <span style="color: ${colorBuffer};">(<strong>${horaBuf}</strong>)</span>`;
+                            hint = `Salida estimada: <strong>${horaSalida}</strong> <span class="hint-buffer-color" data-color="${colorBuffer}">(<strong>${horaBuf}</strong>)</span>`;
                         } else {
                             hint = `Salida estimada: <strong>${horaSalida}</strong>`;
                         }
@@ -3889,7 +3719,6 @@
                     };
                 }
 
-                // DIA NORMAL SIN REGISTRO
                 return {
                     titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
                     stats: esDiaHabil ? '🎒' : '🌞',
@@ -3903,7 +3732,6 @@
                 };
             }
 
-            // DÍA ESPECIAL HOY
             if (tipoEspecialHoy) {
                 return {
                     titulo: `<svg class="icon"><use href="#icon-clock" /></svg>${obtenerNombreDia(obtenerFechaHoy())}`,
@@ -3917,7 +3745,6 @@
                 };
             }
 
-            // DÍA NORMAL CON REGISTRO (HOY)
             const dayClosed = !!regHoy.salida;
             const prog = objetivoDiario > 0 ? Math.min((tiempoHoy / objetivoDiario) * 100, 100) : 100;
             const cumplido = objetivoDiario === 0 || tiempoHoy >= objetivoDiario;
@@ -3982,7 +3809,7 @@
                     const mSB = Math.round(minutosConBuffer % 60);
                     const horaBuf = `${String(hSB).padStart(2, '0')}:${String(mSB).padStart(2, '0')}`;
                     const colorBuffer = bufferSemanal > 0 ? 'var(--c-green)' : bufferSemanal < 0 ? 'var(--c-red)' : 'var(--text-main)';
-                    hint = `Salida estimada: <strong>${horaSalida}</strong> <span style="color: ${colorBuffer};">(<strong>${horaBuf}</strong>)</span>`;
+                    hint = `Salida estimada: <strong>${horaSalida}</strong> <span class="hint-buffer-color" data-color="${colorBuffer}">(<strong>${horaBuf}</strong>)</span>`;
                 } else {
                     hint = `Salida estimada: <strong>${horaSalida}</strong>`;
                 }
@@ -3999,9 +3826,6 @@
             };
         }
 
-        // =========================================================
-        // CAPA 3: Renderers — cada uno escribe solo su parte del DOM
-        // =========================================================
         const _COLORES_BORDE = ['blue', 'green', 'red', 'purple', 'orange', 'gold', 'transparent'];
 
         function _renderTitulo(vista) {
@@ -4009,7 +3833,6 @@
             if (el) el.innerHTML = vista.titulo;
         }
 
-        // --- Ciclo stats / entrada / salida ---
         let _cicloStatsInterval = null;
         let _cicloStatsValorHoras = '';
         let _cicloStatsEntrada = '';
@@ -4026,7 +3849,7 @@
 
         function _iniciarCicloStats() {
             _detenerCicloStats();
-            if (!_cicloStatsEntrada) return; // sin entrada no hay ciclo
+            if (!_cicloStatsEntrada) return;
 
             const fases = [
                 _cicloStatsValorHoras,
@@ -4044,7 +3867,7 @@
 
                 setTimeout(() => {
                     idx++;
-                    if (idx >= fases.length) { // ciclo completo, volver a horas y terminar
+                    if (idx >= fases.length) {
                         el.classList.remove('ciclo-fade-out');
                         el.classList.add('ciclo-fade-in');
                         el.textContent = _cicloStatsValorHoras;
@@ -4071,7 +3894,6 @@
             const el = $('stats-semana');
             if (!el) return;
 
-            // Obtener entrada y salida del día de hoy si estamos en vista diaria
             const esDiaria = D.vistaActual() !== 'semana';
             const hoy = S.formatearFechaLocal(new Date());
             const regHoy = D.registros().find(r => r.fecha === hoy) ?? null;
@@ -4083,8 +3905,6 @@
             _cicloStatsEntrada = entradaHoy;
             _cicloStatsSalida = salidaHoy;
 
-            // Solo actualizar el texto si el ciclo no está corriendo,
-            // para no pisar la fase que se esté mostrando en ese momento
             if (!_cicloStatsInterval) {
                 el.textContent = vista.stats;
             }
@@ -4115,7 +3935,7 @@
         function _renderHint(vista) {
             const el = $('toggle-hint');
             if (!el) return;
-            if (vista.hintEsHTML) el.innerHTML = vista.hint;
+            if (vista.hintEsHTML) { el.innerHTML = vista.hint; _applyDataColors(el); }
             else el.textContent = vista.hint;
         }
 
@@ -4128,7 +3948,8 @@
                 const esPositivo = bufferSemanal > 0;
                 const color = esPositivo ? 'var(--c-green)' : 'var(--c-red)';
                 const punto = document.createElement('span');
-                punto.style.cssText = `display:inline-block;width:10px;height:10px;border-radius:50%;background-color:${color};margin-right:6px;`;
+                punto.className = 'buffer-semanal-punto';
+                punto.style.backgroundColor = color;
                 const span = document.createElement('span');
                 span.style.color = color;
                 span.style.fontWeight = '500';
@@ -4165,9 +3986,6 @@
             }
         }
 
-        // =========================================================
-        // actualizarUI — orquestador
-        // =========================================================
         function _animarCambioCard(renderFn) {
             const els = [
                 $('stats-semana'),
@@ -4235,12 +4053,10 @@
             let temaOscuro = !D.cargarConfiguracion().temaOscuro;
             document.body.classList.toggle('dark-mode');
 
-            // Guardar en la raíz (NO dentro del perfil)
             try {
                 localStorage.setItem('temaOscuro', temaOscuro);
             } catch (e) { }
 
-            // Actualizar iconos de todos los botones
             const botonesTema = [
                 'theme-toggle',
                 'theme-toggle-modal',
@@ -4262,42 +4078,35 @@
             const card = document.getElementById('stats-card');
             const content = document.getElementById('stats-card-content');
 
-            // 1. Iniciamos animación de la tarjeta Y del contenido
             if (card) card.classList.add('cambiando-vista');
             if (content) content.classList.add('fade-out');
 
-            // 2. Delay para permitir que la animación se vea
             setTimeout(() => {
-                // Lógica original de cambio de datos
                 let vistaActual = D.vistaActual() === 'semana' ? 'diaria' : 'semana';
                 D.setVistaActual(vistaActual);
                 try {
                     localStorage.setItem('vistaActual', vistaActual);
                 } catch (e) { }
 
-                _detenerCicloStats(); // El ciclo es exclusivo de la vista diaria
-                actualizarUI(); // Se actualizan los textos (mientras está invisible)
+                _detenerCicloStats();
+                actualizarUI();
 
-                // 3. Removemos fade-out para que vuelva a aparecer
                 if (content) content.classList.remove('fade-out');
 
-                // 4. Terminamos la animación de la tarjeta
                 if (card) card.classList.remove('cambiando-vista');
 
-            }, 300); // sincronizado con la transición CSS
+            }, 300);
         }
 
         function pegarHoraActual(id) {
             const c = document.getElementById(id);
             if (!c) return;
 
-            // 1. Si el campo tiene contenido, limpiarlo (toggle)
             if (c.value.trim() !== '') {
                 c.value = '';
                 UILogic.limpiarError('entrada', 'error-entrada');
                 UILogic.limpiarError('salida', 'error-salida');
 
-                // --- Avisar que se borró para bloquear el botón ---
                 if (id === 'edit-entrada' || id === 'edit-salida') {
                     verificarBloqueoCredito();
                     c.dispatchEvent(new Event('input'));
@@ -4305,13 +4114,11 @@
                 return;
             }
 
-            // 2. Si está vacío, pegar hora actual
             const now = new Date();
             const h = String(now.getHours()).padStart(2, '0');
             const m = String(now.getMinutes()).padStart(2, '0');
             c.value = `${h}:${m}`;
 
-            // --- Avisar que se pegó para habilitar el botón ---
             if (id === 'edit-entrada' || id === 'edit-salida') {
                 verificarBloqueoCredito();
                 c.dispatchEvent(new Event('input'));
@@ -4343,7 +4150,6 @@
                 else el.textContent = `(Total semanal: ${total}hs)`;
             }
 
-            // Aplicar días laborales inmediatamente si hay al menos uno seleccionado
             if (seleccionados > 0) {
                 const nuevosDias = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => a - b);
                 D.setDiasHabiles(nuevosDias);
@@ -4357,14 +4163,11 @@
         }
 
         function iniciarCambioHoras(incremento) {
-            // Cambio inmediato al presionar
             cambiarHorasDiarias(incremento);
-
-            // Esperar 500ms antes de iniciar repetición
             timeoutInicial = setTimeout(() => {
                 intervaloPulsacion = setInterval(() => {
                     cambiarHorasDiarias(incremento);
-                }, 100); // Repetir cada 100ms
+                }, 100);
             }, 500);
         }
 
@@ -4405,7 +4208,6 @@
             D.setIgnorarTiempoFuera(nuevoValor);
             try { localStorage.setItem(_perfilKey('ignorarTiempoFuera'), nuevoValor); } catch (e) { }
             actualizarEstadoBotonIgnorarTF();
-            // Recalcular totales en memoria (sin guardar en historial ni perfil)
             D.recalcularTotalesEnMemoria();
             actualizarUI();
             mostrarToast(nuevoValor ? 'Tiempo fuera ignorado en cálculos' : 'Tiempo fuera incluido en cálculos', 'info');
@@ -4502,7 +4304,6 @@
                 }
             });
 
-            // Reordenar filas en ajustes
             const lista = document.getElementById('lista-orden-cards');
             if (lista) {
                 orden.forEach(cual => {
@@ -4516,25 +4317,23 @@
             const lista = document.getElementById('lista-orden-cards');
             if (!lista) return;
 
-            let draggingEl = null;   // Original (actúa como hueco en la lista)
-            let dragClone = null;    // Clon visual que sigue al dedo
+            let draggingEl = null;
+            let dragClone = null;
             let startY = 0;
             let initialYOffset = 0;
             let dragTimer = null;
-            const DRAG_DELAY = 150; // Corto: se siente instantáneo pero permite hacer scroll
+            const DRAG_DELAY = 150;
 
             function getCardFromItem(el) {
                 const handle = el?.classList?.contains('drag-handle') ? el : el?.querySelector('.drag-handle');
                 return handle?.dataset?.card;
             }
 
-            // Inicializa el clon y oculta el original
             function initDrag(item, clientY) {
                 draggingEl = item;
                 const rect = item.getBoundingClientRect();
                 initialYOffset = clientY - rect.top;
 
-                // 1. Clon visual DENTRO DEL BODY para evadir el bug del transform del modal
                 dragClone = item.cloneNode(true);
                 dragClone.style.position = 'fixed';
                 dragClone.style.top = `${rect.top}px`;
@@ -4542,14 +4341,12 @@
                 dragClone.style.width = `${rect.width}px`;
                 dragClone.style.height = `${rect.height}px`;
                 dragClone.style.zIndex = '999999';
-                dragClone.style.pointerEvents = 'none'; // Clave para que los eventos pasen al fondo
+                dragClone.style.pointerEvents = 'none';
                 dragClone.style.boxShadow = '0 8px 24px rgba(0,0,0,0.3)';
                 dragClone.style.margin = '0';
                 dragClone.style.transform = 'scale(1.02)';
                 dragClone.style.opacity = '0.9';
                 document.body.appendChild(dragClone);
-
-                // 2. El original se vuelve fantasma (ocupa espacio, pero es invisible)
                 draggingEl.style.opacity = '0';
 
                 if (navigator.vibrate) navigator.vibrate(30);
@@ -4558,22 +4355,18 @@
             function moveDrag(clientY) {
                 if (!dragClone || !draggingEl) return;
 
-                // Mover el clon en la pantalla
                 dragClone.style.top = `${clientY - initialYOffset}px`;
 
-                // Detectar qué tarjeta estamos sobrevolando
                 const target = [...lista.querySelectorAll('.orden-card-item')].find(item => {
                     if (item === draggingEl) return false;
                     const r = item.getBoundingClientRect();
                     return clientY >= r.top && clientY <= r.bottom;
                 });
 
-                // Desplazar el elemento original (fantasma) por el DOM
                 if (target) {
                     const targetRect = target.getBoundingClientRect();
                     const targetMiddle = targetRect.top + targetRect.height / 2;
 
-                    // Flexbox reacomoda automáticamente en tiempo real
                     if (clientY < targetMiddle) {
                         lista.insertBefore(draggingEl, target);
                     } else {
@@ -4586,19 +4379,16 @@
                 clearTimeout(dragTimer);
                 if (!draggingEl) return;
 
-                // Destruir el clon y hacer visible el original
                 if (dragClone) {
                     dragClone.remove();
                     dragClone = null;
                 }
                 draggingEl.style.opacity = '';
 
-                // Guardar nuevo orden leyendo el estado final del DOM
                 const itemsDOM = Array.from(lista.querySelectorAll('.orden-card-item'));
                 const nuevoOrden = itemsDOM.map(i => getCardFromItem(i)).filter(Boolean);
 
                 try {
-                    // Usamos el helper existente _perfilKey
                     localStorage.setItem(_perfilKey('ordenCards'), JSON.stringify(nuevoOrden));
                 } catch (e) { }
 
@@ -4609,7 +4399,6 @@
                 draggingEl = null;
             }
 
-            // --- TOUCH EVENTS (CELULARES) ---
             lista.addEventListener('touchstart', (e) => {
                 const handle = e.target.closest('.drag-handle');
                 if (!handle) return;
@@ -4624,18 +4413,16 @@
 
             lista.addEventListener('touchmove', (e) => {
                 if (!draggingEl) {
-                    // Si mueve mucho el dedo antes del delay, es scroll: cancelar drag
                     if (Math.abs(e.touches[0].clientY - startY) > 10) clearTimeout(dragTimer);
                     return;
                 }
-                e.preventDefault(); // Evita que se scrollee el modal mientras arrastramos
+                e.preventDefault();
                 moveDrag(e.touches[0].clientY);
             }, { passive: false });
 
             lista.addEventListener('touchend', endDrag);
             lista.addEventListener('touchcancel', endDrag);
 
-            // --- MOUSE EVENTS (PC) ---
             lista.addEventListener('mousedown', (e) => {
                 const handle = e.target.closest('.drag-handle');
                 if (!handle) return;
@@ -4692,7 +4479,6 @@
                     btnVolverI.lastChild.textContent = desdeLista ? ' Cerrar' : ' Volver';
                     btnVolverI.querySelector('use').setAttribute('href', desdeLista ? '#icon-cancelar' : '#icon-undo');
                 }
-                // Abrir selector de archivo automáticamente al abrir el modal
                 setTimeout(() => $('file-import').click(), 50);
             });
         }
@@ -4712,7 +4498,6 @@
             const selectAnio = $('select-anio-stats');
             if (!selectAnio) return;
 
-            // Guardar año seleccionado actual
             const anioActualmenteSeleccionado = selectAnio.value;
 
             const aniosUnicos = new Set();
@@ -4731,7 +4516,6 @@
 
             const anioActual = String(new Date().getFullYear());
 
-            // Si había un año seleccionado y aún existe, mantenerlo
             let anioASeleccionar;
             if (anioActualmenteSeleccionado && aniosOrdenados.includes(anioActualmenteSeleccionado)) {
                 anioASeleccionar = anioActualmenteSeleccionado;
@@ -4804,7 +4588,6 @@
                 actualizarEstadisticasSemana(null);
                 return;
             }
-            // Agrupar semanas por año
             const semanasPorAnio = new Map();
             semanas.forEach(key => {
                 const anio = key.substring(0, 4);
@@ -4812,7 +4595,6 @@
                 semanasPorAnio.get(anio).push(key);
             });
 
-            // Determinar valor a seleccionar
             let seleccionar;
             if (selActual && semanas.includes(selActual)) {
                 seleccionar = selActual;
@@ -4821,7 +4603,6 @@
                 seleccionar = semanas.includes(lunesISO) ? lunesISO : semanas[0];
             }
 
-            // Crear opciones agrupadas por año
             semanasPorAnio.forEach((keys, anio) => {
                 const grupo = document.createElement('optgroup');
                 grupo.label = anio;
@@ -4904,24 +4685,15 @@
         function poblarSelectorMeses() {
             const selectMes = $('select-mes-stats');
             if (!selectMes) return;
-
-            // Guardar mes seleccionado actual
             const mesActualmenteSeleccionado = selectMes.value;
-
-            // Obtener todos los meses únicos de los registros
             const mesesUnicos = new Set();
             D.registros().forEach(r => {
                 const mesAnio = r.fecha.substring(0, 7);
                 mesesUnicos.add(mesAnio);
             });
 
-            // Convertir a array y ordenar (más reciente primero)
             const mesesOrdenados = Array.from(mesesUnicos).sort().reverse();
-
-            // Limpiar opciones previas
             selectMes.innerHTML = '';
-
-            // Si no hay registros
             if (mesesOrdenados.length === 0) {
                 const option = document.createElement('option');
                 option.value = '';
@@ -4931,22 +4703,17 @@
                 return;
             }
 
-            // Mes actual
             const hoy = new Date();
             const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
 
-            // Determinar qué mes debe quedar seleccionado
             let mesASeleccionar = mesActual;
 
-            // Si había un mes seleccionado y aún existe, mantenerlo
             if (mesActualmenteSeleccionado && mesesOrdenados.includes(mesActualmenteSeleccionado)) {
                 mesASeleccionar = mesActualmenteSeleccionado;
             } else if (!mesesOrdenados.includes(mesActual)) {
-                // Si el mes actual no tiene registros, usar el más reciente
                 mesASeleccionar = mesesOrdenados[0];
             }
 
-            // Agrupar meses por año
             const mesesPorAnio = new Map();
             mesesOrdenados.forEach(mesAnio => {
                 const anio = mesAnio.substring(0, 4);
@@ -4954,7 +4721,6 @@
                 mesesPorAnio.get(anio).push(mesAnio);
             });
 
-            // Crear opciones agrupadas por año
             mesesPorAnio.forEach((meses, anio) => {
                 const grupo = document.createElement('optgroup');
                 grupo.label = anio;
@@ -4963,13 +4729,11 @@
                     const option = document.createElement('option');
                     option.value = mesAnio;
 
-                    // Formatear solo el nombre del mes (sin el año)
                     const [a, m] = mesAnio.split('-');
                     const fecha = new Date(a, m - 1, 1);
                     const nombreMes = fecha.toLocaleDateString('es-ES', { month: 'long' });
                     option.textContent = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
 
-                    // Seleccionar el mes correcto
                     if (mesAnio === mesASeleccionar) {
                         option.selected = true;
                     }
@@ -4980,7 +4744,6 @@
                 selectMes.appendChild(grupo);
             });
 
-            // Actualizar stats con el mes correcto
             actualizarEstadisticas(mesASeleccionar);
         }
 
@@ -4993,14 +4756,12 @@
             const esAnual = modoEstadisticas === 'anual';
             const horasDiariasObjetivo = D.horasDiarias();
 
-            // Helper local: evita triplicar el mismo cálculo de h/m
             const fmtHM = (total) => {
                 let h = Math.floor(total), m = Math.round((total - h) * 60);
                 if (m === 60) { h++; m = 0; }
                 return `${h}h ${String(m).padStart(2, '0')}m`;
             };
 
-            // Helper local: suma horas de un array de registros
             const sumarHoras = (regs) => regs.reduce((sum, r) => {
                 const t = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
                 if (t && t.id === 'remoto') return sum + horasDiariasObjetivo;
@@ -5008,7 +4769,6 @@
                 return sum;
             }, 0);
 
-            // --- PERÍODO Y REGISTROS ---
             let periodoLabel, registrosPeriodo, stats, nombreArchivo, mesSeleccionado;
 
             if (esAnual) {
@@ -5071,7 +4831,6 @@ ${lineasTipos}
 
                 detallePeriodo: () => {
                     if (esAnual) {
-                        // --- TOTALES POR MES ---
                         const mesesOrdenados = Array.from(
                             new Set(registrosPeriodo.map(r => r.fecha.substring(0, 7)))
                         ).sort();
@@ -5099,7 +4858,6 @@ ${lineasTipos}
                                 })
                                 .filter(Boolean);
 
-                            // Usa formatoTituloMes — ya existe para esto
                             const nombreMesCap = formatoTituloMes(claveMes).split(' ')[0];
 
                             seccion += `   ${nombreMesCap.padEnd(12)} ${fmtHM(sumarHoras(regsM)).padEnd(10)}  (${normales.length} jornadas)`;
@@ -5109,7 +4867,6 @@ ${lineasTipos}
                         return seccion;
 
                     } else {
-                        // --- DETALLE DIARIO ---
                         let seccion = `
 
 ──────────────────────────────────────────────────────────────────
@@ -5144,7 +4901,6 @@ ${lineasTipos}
                 },
 
                 totalesPorSemana: () => {
-                    // mesSeleccionado ya está disponible en el closure, no hace falta releer el DOM
                     if (esAnual || !mesSeleccionado) return '';
 
                     const [añoActual, mesActual] = mesSeleccionado.split('-').map(Number);
@@ -5167,8 +4923,6 @@ ${lineasTipos}
                             if (semana[categoria]) semana[categoria].push(r);
                         } else {
                             semana.trabajados.push(r);
-                            // Nota: registros con crédito son jornadas normales (salida temprana),
-                            // no se clasifican como asuetos
                         }
                     });
 
@@ -5283,11 +5037,9 @@ Generado por Sistema Lushibosca
             }
         }
 
-        // Función auxiliar para sumar minutos a un formato HH:MM
         function sumarMinutosAHora(horaString, minutosASumar) {
             let totalMinutos = minutosASumar;
 
-            // Si ya existe un valor en el input (ej: 00:20), lo sumamos
             if (horaString && horaString.includes(':')) {
                 const [h, m] = horaString.split(':').map(Number);
                 if (!isNaN(h) && !isNaN(m)) {
@@ -5298,10 +5050,8 @@ Generado por Sistema Lushibosca
             let horas = Math.floor(totalMinutos / 60);
             let mins = Math.round(totalMinutos % 60);
 
-            // Capear a 23:59
             if (horas > 23) { horas = 23; mins = 59; }
 
-            // Formatear a HH:MM
             return `${String(horas).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
         }
 
@@ -5310,20 +5060,15 @@ Generado por Sistema Lushibosca
             const card = document.getElementById('stats-card');
             if (!btn) return;
 
-            // Verificamos si estamos en modo lote
             if (modoLoteActivo) {
-                // Si estamos en modo lote, nos aseguramos que el botón siga oculto y SALIMOS
                 btn.style.display = 'none';
                 return;
             }
 
-            // Si no estamos en modo lote, nos aseguramos que se vea
             btn.style.display = '';
 
             const hoy = obtenerFechaHoy();
             const registroHoy = D.registros().find(r => r.fecha === hoy);
-
-            //  CLAVE ESPECÍFICA POR PERFIL
             const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
             const storageKey = `breakStartTime_${perfilId}`;
             const isRunning = localStorage.getItem(storageKey) !== null;
@@ -5344,7 +5089,6 @@ Generado por Sistema Lushibosca
             }
 
             if (isRunning) {
-                // Estado ACTIVO
                 btn.classList.add('running');
                 btn.style.color = 'var(--c-red)';
                 btn.style.borderColor = 'var(--c-red)';
@@ -5354,7 +5098,6 @@ Generado por Sistema Lushibosca
                     card.classList.add('timer-running');
                     const titulo = card.querySelector('h2');
 
-                    // Mantener contexto de vista
                     const vistaActual = D.vistaActual();
                     const icono = vistaActual === 'semana'
                         ? '<svg class="icon"><use href="#icon-calendar-simple"/></svg>'
@@ -5363,13 +5106,16 @@ Generado por Sistema Lushibosca
                     const contexto = vistaActual === 'semana' ? 'Esta Semana' : obtenerNombreDia(obtenerFechaHoy());
 
                     if (titulo) {
-                        titulo.innerHTML = `${icono} ${contexto} - <svg class="icon"><use href="#icon-exit"/></svg> Tiempo fuera <span id="break-counter" style="font-size:0.8em; font-weight:500; color:var(--c-red); margin-left:0.3em;"></span>`;
+                        titulo.innerHTML = `${icono} ${contexto} - <svg class="icon"><use href="#icon-exit"/></svg> Tiempo fuera `;
+                        const breakCounter = document.createElement('span');
+                        breakCounter.id = 'break-counter';
+                        breakCounter.className = 'break-counter-label';
+                        titulo.appendChild(breakCounter);
                         _iniciarContadorBreak(storageKey);
                     }
                 }
 
             } else {
-                // Estado INACTIVO
                 btn.classList.remove('running');
                 btn.style.color = 'var(--text-main)';
                 btn.style.borderColor = 'var(--border)';
@@ -5380,7 +5126,6 @@ Generado por Sistema Lushibosca
             }
         }
 
-        // --- Contador visual de tiempo fuera en curso ---
         let _breakCounterInterval = null;
 
         function _iniciarContadorBreak(storageKey) {
@@ -5412,40 +5157,33 @@ Generado por Sistema Lushibosca
         }
 
         async function toggleTimerBreakMain() {
-            //  CLAVE ESPECÍFICA POR PERFIL
             const perfilId = window.PerfilManager ? PerfilManager.obtenerPerfilActual() : 'default';
             const storageKey = `breakStartTime_${perfilId}`;
             const storedStart = localStorage.getItem(storageKey);
             const hoy = obtenerFechaHoy();
             const registroHoy = D.registros().find(r => r.fecha === hoy);
 
-            // Doble verificación de seguridad
             if (!storedStart && !registroHoy) {
                 mostrarToast('Debes crear un registro para hoy primero', 'warning');
                 return;
             }
 
             if (!storedStart) {
-                // --- INICIAR ---
                 localStorage.setItem(storageKey, Date.now());
                 mostrarToast('Tiempo fuera iniciado', 'info');
             } else {
-                // --- DETENER ---
                 const start = parseInt(storedStart);
                 const end = Date.now();
                 const diffMs = end - start;
 
-                // NUEVO: Calcular minutos con umbral de 30 segundos
                 const segundosTranscurridos = Math.floor(diffMs / 1000);
                 let minutosTranscurridos = Math.floor(segundosTranscurridos / 60);
                 const segundosRestantes = segundosTranscurridos % 60;
 
-                // Si los segundos restantes son >= 30, sumar 1 minuto más
                 if (segundosRestantes >= 30) {
                     minutosTranscurridos += 1;
                 }
 
-                // Si el tiempo es menor a 30 segundos, no registrar nada
                 if (segundosTranscurridos < 30) {
                     localStorage.removeItem(storageKey);
                     mostrarToast('Tiempo muy corto, no se registró', 'info');
@@ -5454,7 +5192,6 @@ Generado por Sistema Lushibosca
                     return;
                 }
 
-                // Calcular nuevo tiempo
                 if (!registroHoy) {
                     localStorage.removeItem(storageKey);
                     mostrarToast('No hay registro para hoy, tiempo fuera descartado', 'warning');
@@ -5464,20 +5201,15 @@ Generado por Sistema Lushibosca
                 }
                 const tiempoActual = registroHoy.tiempoFuera || '00:00';
                 const nuevoTiempoFuera = sumarMinutosAHora(tiempoActual, minutosTranscurridos);
-
-                // Actualizar el registro en memoria
                 registroHoy.tiempoFuera = nuevoTiempoFuera;
-
-                // Recalcular totales del registro (horas netas)
                 const t = D.calcularHoras(registroHoy.entrada, registroHoy.salida, nuevoTiempoFuera);
                 registroHoy.horas = t?.horas || 0;
                 registroHoy.minutos = t?.minutos || 0;
                 registroHoy.total = t?.total || 0;
                 HistoryManager.saveState(D.registros());
 
-                // Guardar en base de datos
                 localStorage.removeItem(storageKey);
-                await D.guardarYActualizar(registroHoy.id); // Guardamos y refrescamos UI
+                await D.guardarYActualizar(registroHoy.id);
 
                 const mensaje = minutosTranscurridos === 1
                     ? 'Se descontó 1 minuto al registro de hoy'
@@ -5499,14 +5231,12 @@ Generado por Sistema Lushibosca
                 btnLock.style.color = bloqueado ? 'var(--c-red)' : 'var(--text-main)';
             }
 
-            // Bloquear Inputs (Menos el botón de crédito, que se maneja aparte)
             const inputs = ['edit-fecha', 'edit-entrada', 'edit-salida', 'edit-tiempo-fuera', 'edit-notas'];
             inputs.forEach(id => {
                 const el = $(id);
                 if (el) el.disabled = bloqueado;
             });
 
-            // Bloquear Botones generales
             const modal = $('modal-editar');
             if (modal) {
                 const botones = modal.querySelectorAll('button:not(#btn-lock-toggle):not(.btn-cancel):not(#btn-toggle-credito)');
@@ -5514,8 +5244,6 @@ Generado por Sistema Lushibosca
                     btn.disabled = bloqueado;
                 });
             }
-
-            // IMPORTANTE: Forzamos la revisión del botón de crédito AHORA MISMO
             verificarBloqueoCredito();
         }
 
@@ -5603,7 +5331,6 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // Poblar selector antes de medir altura
             const registros = D.registros();
             const mesesUnicos = new Set();
             registros.forEach(r => mesesUnicos.add(r.fecha.substring(0, 7)));
@@ -5611,13 +5338,15 @@ Generado por Sistema Lushibosca
 
             selector.innerHTML = '';
             if (mesesOrdenados.length === 0) {
-                selector.innerHTML = '<div class="empty-state" style="grid-column: span 3;">No hay registros</div>';
+                const emptyEl = document.createElement('div');
+                emptyEl.className = 'empty-state empty-state--calendario';
+                emptyEl.textContent = 'No hay registros';
+                selector.appendChild(emptyEl);
             } else {
                 const hoy = new Date();
                 const anioActual = _calendarioMes ? _calendarioMes.anio : hoy.getFullYear();
                 const mesActual = _calendarioMes ? _calendarioMes.mes : hoy.getMonth();
 
-                // Agrupar meses por año
                 const mesesPorAnio = new Map();
                 mesesOrdenados.forEach(mesAnio => {
                     const anioStr = mesAnio.substring(0, 4);
@@ -5626,7 +5355,6 @@ Generado por Sistema Lushibosca
                 });
 
                 mesesPorAnio.forEach((meses, anioStr) => {
-                    // Encabezado de año
                     const separador = document.createElement('div');
                     separador.className = 'selector-meses-anio-header';
                     separador.textContent = anioStr;
@@ -5660,7 +5388,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // Abrir: medir altura real del grid antes de ocultarlo
             const alturaCalendario = grid.offsetHeight;
             selector.style.height = alturaCalendario + 'px';
 
@@ -5672,7 +5399,7 @@ Generado por Sistema Lushibosca
                 titulo.textContent = 'Selector de mes';
                 selector.style.display = 'grid';
                 selector.classList.add('fade-out');
-                selector.offsetHeight; // reflow
+                selector.offsetHeight;
                 selector.classList.remove('fade-out');
             }, 300);
         }
@@ -5702,7 +5429,6 @@ Generado por Sistema Lushibosca
             const input = document.getElementById('nombre-nuevo-perfil-selector');
             if (!input) return;
 
-            // 1. Limpieza básica
             const nombre = S.sanitizeString(input.value.trim(), 30);
 
             if (!nombre) {
@@ -5710,7 +5436,6 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // Permite: Letras, Números, Espacios, Guiones, Tildes y Ñ
             const regexSeguro = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\-_ ]+$/;
 
             if (!regexSeguro.test(nombre)) {
@@ -5720,7 +5445,6 @@ Generado por Sistema Lushibosca
 
             const perfiles = window.PerfilManager ? PerfilManager.obtenerTodosPerfiles() : {};
 
-            //  VALIDACIÓN DE NOMBRE DUPLICADO (case-insensitive)
             const nombreNormalizado = nombre.toLowerCase().trim();
             const nombreExiste = Object.values(perfiles).some(perfil =>
                 perfil.nombre.toLowerCase().trim() === nombreNormalizado
@@ -5740,7 +5464,7 @@ Generado por Sistema Lushibosca
             perfiles[id] = {
                 nombre: nombre,
                 registros: [],
-                diasHabiles: [1, 2, 3, 4, 5], // Array por defecto
+                diasHabiles: [1, 2, 3, 4, 5],
                 horasDiarias: 7
             };
 
@@ -5748,14 +5472,12 @@ Generado por Sistema Lushibosca
                 localStorage.setItem('perfiles', JSON.stringify(perfiles));
             } catch (e) {
                 console.error('Error al guardar perfil:', e);
-                delete perfiles[id]; // revertir
+                delete perfiles[id];
                 mostrarToast('Error al guardar: almacenamiento lleno', 'error');
                 return;
             }
 
-            // FORZAR ACTUALIZACIÓN DEL PERFILMANAGER
             if (window.PerfilManager) {
-                // Recargar los perfiles internamente
                 window.PerfilManager.inicializar();
             }
 
@@ -5763,10 +5485,8 @@ Generado por Sistema Lushibosca
 
             input.value = '';
 
-            // RENDERIZAR LISTA ACTUALIZADA
             renderizarListaPerfiles();
 
-            // Resaltar nuevo perfil
             requestAnimationFrame(() => {
                 const lista = document.getElementById('lista-perfiles-botones');
                 const nuevoPerfilElement = lista?.lastElementChild;
@@ -5813,13 +5533,11 @@ Generado por Sistema Lushibosca
             document.getElementById('nombre-perfil-editar').value = perfil.nombre;
             document.getElementById('id-perfil-editar').value = perfilId;
 
-            // Deshabilitar botón eliminar si es el perfil default
             const btnEliminar = document.getElementById('btn-eliminar-perfil-editor');
             if (btnEliminar) {
                 btnEliminar.disabled = (perfilId === 'default');
             }
 
-            // Cerrar selector y abrir editor
             ModalManager.alternar('modal-selector-perfiles', 'modal-editar-perfil');
         }
 
@@ -5835,7 +5553,6 @@ Generado por Sistema Lushibosca
         function guardarEdicionPerfil() {
             if (!perfilEnEdicion) return;
 
-            // 1. Limpieza básica
             const nuevoNombre = S.sanitizeString(document.getElementById('nombre-perfil-editar').value.trim(), 30);
 
             if (!nuevoNombre) {
@@ -5843,7 +5560,6 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // --- VALIDACIÓN ESTRICTA ---
             const regexSeguro = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\-_ ]+$/;
 
             if (!regexSeguro.test(nuevoNombre)) {
@@ -5858,17 +5574,15 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // Detectar cambios
             if (perfiles[perfilEnEdicion].nombre === nuevoNombre) {
                 mostrarToast('Sin cambios', 'info');
                 cerrarEditorPerfil();
                 return;
             }
 
-            // VALIDACIÓN DE NOMBRE DUPLICADO (case-insensitive)
             const nombreNormalizado = nuevoNombre.toLowerCase().trim();
             const nombreExiste = Object.entries(perfiles).some(([id, perfil]) =>
-                id !== perfilEnEdicion && // Excluir el perfil que estamos editando
+                id !== perfilEnEdicion &&
                 perfil.nombre.toLowerCase().trim() === nombreNormalizado
             );
 
@@ -5883,7 +5597,7 @@ Generado por Sistema Lushibosca
                 localStorage.setItem('perfiles', JSON.stringify(perfiles));
             } catch (e) {
                 console.error('Error al guardar perfil:', e);
-                perfiles[perfilEnEdicion].nombre = nombreAnterior; // revertir
+                perfiles[perfilEnEdicion].nombre = nombreAnterior;
                 mostrarToast('Error al guardar: almacenamiento lleno', 'error');
                 return;
             }
@@ -5920,8 +5634,6 @@ Generado por Sistema Lushibosca
 
             if (!confirmacion) return;
 
-            // Eliminar el perfil
-            // Limpiar claves localStorage del perfil eliminado
             const pid = perfilEnEdicion;
             localStorage.removeItem(`breakStartTime_${pid}`);
             localStorage.removeItem(`history_${pid}`);
@@ -5932,7 +5644,6 @@ Generado por Sistema Lushibosca
             localStorage.removeItem(`cardVisible_historico_${pid}`);
             localStorage.removeItem(`ordenCards_${pid}`);
 
-            // Eliminar el perfil
             delete perfiles[perfilEnEdicion];
             try {
                 localStorage.setItem('perfiles', JSON.stringify(perfiles));
@@ -5942,7 +5653,6 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // Si era el perfil actual, cambiar a default
             const perfilActual = window.PerfilManager.obtenerPerfilActual();
             if (perfilEnEdicion === perfilActual) {
                 try {
@@ -5955,7 +5665,6 @@ Generado por Sistema Lushibosca
                 mostrarToast('Perfil eliminado. Recargando...', 'success');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                // --- Actualizar memoria del PerfilManager ---
                 if (window.PerfilManager) {
                     window.PerfilManager.inicializar();
                 }
@@ -5975,7 +5684,6 @@ Generado por Sistema Lushibosca
             modoLoteActivo = !modoLoteActivo;
 
             if (modoLoteActivo) {
-                // Cambiar a modo lote
                 modoNormal.classList.add('fade-out');
 
                 setTimeout(() => {
@@ -5984,7 +5692,6 @@ Generado por Sistema Lushibosca
                     modoLote.offsetHeight;
                     modoLote.classList.remove('fade-out');
 
-                    // Limpiar campos
                     document.getElementById('lote-tipo').value = 'feriado';
                     document.getElementById('lote-fecha-desde').value = '';
                     document.getElementById('lote-fecha-hasta').value = '';
@@ -6002,7 +5709,6 @@ Generado por Sistema Lushibosca
                 }, 300);
 
             } else {
-                // Volver a modo normal
                 modoLote.classList.add('fade-out');
 
                 setTimeout(() => {
@@ -6024,7 +5730,6 @@ Generado por Sistema Lushibosca
                 await DataManagement.agregarRegistro();
             }
 
-            // Actualizar el estado del botón después de la operación
             if (modoLoteActivo) {
                 setTimeout(() => actualizarBotonLote(), 100);
             }
@@ -6035,7 +5740,6 @@ Generado por Sistema Lushibosca
             const inputHasta = document.getElementById('lote-fecha-hasta');
             const tipo = document.getElementById('lote-tipo').value;
 
-            // VALIDACIÓN: Verificar si el usuario escribió algo inválido
             if (inputDesde.value === '' && inputDesde.validity && !inputDesde.validity.valid) {
                 mostrarToast('Fecha inicial inválida', 'error');
                 return;
@@ -6049,9 +5753,7 @@ Generado por Sistema Lushibosca
             const desde = inputDesde.value;
             const hasta = inputHasta.value;
 
-            // --- CASO 1: Sin fechas (registrar HOY) ---
             if (!desde && !hasta) {
-                // Verificar que realmente estén vacíos y no inválidos
                 if (!inputDesde.checkValidity() || !inputHasta.checkValidity()) {
                     mostrarToast('Revisa las fechas ingresadas', 'error');
                     return;
@@ -6062,7 +5764,6 @@ Generado por Sistema Lushibosca
                     return;
                 }
 
-                // ... resto del código del CASO 1
 
                 const fechaHoy = UILogic.obtenerFechaHoy();
                 const registroExistente = DataManagement.registros().find(r => r.fecha === fechaHoy);
@@ -6071,37 +5772,30 @@ Generado por Sistema Lushibosca
                     return;
                 }
 
-                // Intentar registrar
                 try {
                     await DataManagement.registrarDiaEspecial(fechaHoy, tipo);
-                    // Solo limpiar si fue exitoso
                     document.getElementById('lote-fecha-desde').value = '';
                     document.getElementById('lote-fecha-hasta').value = '';
                 } catch (error) {
-                    // No limpiar campos si hubo error
                     console.error('Error al registrar:', error);
                 }
                 return;
             }
 
-            // --- CASO 2: Solo campo "Desde" (registrar día único) ---
             if (desde && !hasta) {
                 if (tipo === 'normal') {
                     mostrarToast('Completa ambos campos', 'info');
                     return;
                 }
 
-                // Verificar si ya existe algo en esa fecha
                 const registroExistente = DataManagement.registros().find(r => r.fecha === desde);
                 if (registroExistente) {
                     mostrarToast('Ya existe un registro para esa fecha', 'warning');
                     return;
                 }
 
-                // Intentar registrar
                 try {
                     await DataManagement.registrarDiaEspecial(desde, tipo);
-                    // Solo limpiar si fue exitoso
                     aplicarFeedbackCampos([
                         { id: 'lote-fecha-desde', fallback: 'Desde', mostrar: true },
                         { id: 'lote-fecha-hasta', fallback: 'Hasta', mostrar: false }
@@ -6109,13 +5803,11 @@ Generado por Sistema Lushibosca
                     document.getElementById('lote-fecha-desde').value = '';
                     document.getElementById('lote-fecha-hasta').value = '';
                 } catch (error) {
-                    // No limpiar campos si hubo error
                     console.error('Error al registrar:', error);
                 }
                 return;
             }
 
-            // --- CASO 3: Solo "Hasta" sin "Desde" (error) ---
             if (!desde && hasta) {
                 mostrarToast('Completa ambos campos', 'info');
                 return;
@@ -6126,18 +5818,15 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // --- LÓGICA DE RANGO ---
             let registrosDelTipoEnRango;
 
             if (tipo === 'normal') {
-                // Contar registros NORMALES (no especiales) en el rango
                 registrosDelTipoEnRango = DataManagement.registros().filter(r => {
                     const dentroDelRango = r.fecha >= desde && r.fecha <= hasta;
                     const esEspecial = TiposRegistro.esRegistroEspecial(r.entrada, r.salida);
                     return dentroDelRango && !esEspecial;
                 });
             } else {
-                //  Obtener códigos del tipo seleccionado
                 const codigosTipo = TiposRegistro.obtenerCodigosPorTipo(tipo);
 
                 if (!codigosTipo) {
@@ -6153,7 +5842,6 @@ Generado por Sistema Lushibosca
                 );
             }
 
-            // Intentar la operación (registrar o borrar)
             try {
                 if (tipo === 'normal') {
                     await DataManagement.borrarPeriodoDirecto(desde, hasta);
@@ -6161,7 +5849,6 @@ Generado por Sistema Lushibosca
                     await DataManagement.registrarVacacionesDirecto(desde, hasta, tipo);
                 }
 
-                // Solo limpiar campos si la operación fue exitosa
                 aplicarFeedbackCampos([
                     { id: 'lote-fecha-desde', fallback: 'Desde', mostrar: true },
                     { id: 'lote-fecha-hasta', fallback: 'Hasta', mostrar: true }
@@ -6169,7 +5856,6 @@ Generado por Sistema Lushibosca
                 document.getElementById('lote-fecha-desde').value = '';
                 document.getElementById('lote-fecha-hasta').value = '';
             } catch (error) {
-                // No limpiar campos si hubo error
                 console.error('Error en operación de lote:', error);
             }
         }
@@ -6182,10 +5868,8 @@ Generado por Sistema Lushibosca
         function poblarSelectoresTipos() {
             const tipos = TiposRegistro.obtenerTodosLosTipos();
 
-            // lote-tipo: tipos especiales + opción "normal" al final
             const selectLote = $('lote-tipo');
             if (selectLote) {
-                // Conservar la opción "normal" que ya está en el HTML
                 selectLote.innerHTML = '';
                 tipos.forEach(t => {
                     const opt = document.createElement('option');
@@ -6199,7 +5883,6 @@ Generado por Sistema Lushibosca
                 selectLote.appendChild(optNormal);
             }
 
-            // filtro-tipo: "Todos" + "Normales" + tipos especiales en plural
             const selectFiltro = $('filtro-tipo');
             if (selectFiltro) {
                 selectFiltro.innerHTML = '<option value="">Todos</option><option value="normal">🕒 Jornadas</option>';
@@ -6211,7 +5894,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // edit-grupo-tipo: solo tipos especiales en singular
             const selectGrupo = $('edit-grupo-tipo');
             if (selectGrupo) {
                 selectGrupo.innerHTML = '';
@@ -6231,18 +5913,15 @@ Generado por Sistema Lushibosca
             const btn = document.getElementById('btn-agregar');
             const btnTexto = document.getElementById('btn-registrar-texto');
 
-            // 1. LIMPIEZA: Reseteamos siempre al estilo original
             btn.style.background = '';
             btn.style.color = '';
 
-            // 2. Si faltan fechas, mostramos "Fichar" estándar y salimos
             if (!desde && !hasta) {
                 btnTexto.textContent = 'Fichar';
                 setIconoBtn(btn, '#icon-save');
                 return;
             }
 
-            // Solo "Desde" (día único)
             if (desde && !hasta) {
                 if (tipo === 'normal') {
                     btnTexto.textContent = 'Requiere Rango';
@@ -6251,7 +5930,6 @@ Generado por Sistema Lushibosca
                     return;
                 }
 
-                // Verificar si ya existe
                 const registroExiste = DataManagement.registros().find(r => r.fecha === desde);
                 if (registroExiste) {
                     btnTexto.textContent = 'Fichado';
@@ -6263,14 +5941,12 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // Solo "Hasta" (error)
             if (!desde && hasta) {
                 btnTexto.textContent = 'Requiere Rango';
                 btn.style.color = 'var(--c-red)';
                 return;
             }
 
-            // VALIDACIÓN DE FECHAS ANTES DE PROCESAR
             if (!S.validarFechaSegura(desde)) {
                 btnTexto.textContent = 'Fecha Inicial Inválida';
                 btn.style.color = 'var(--c-red)';
@@ -6292,13 +5968,11 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // 3. Calcular días totales en el rango
             const fechaInicio = S.parsearFechaLocal(desde);
             const fechaFin = S.parsearFechaLocal(hasta);
             const diffTime = Math.abs(fechaFin - fechaInicio);
             const diasTotales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-            // 4. Buscamos registros en el rango
             let registrosDelTipoEnRango;
 
             if (tipo === 'normal') {
@@ -6359,8 +6033,6 @@ Generado por Sistema Lushibosca
 
         function toggleCredito() {
             const btn = document.getElementById('btn-toggle-credito');
-
-            // Usamos el dataset como fuente de verdad
             const estaActivo = btn.dataset.activo === "true";
 
             btn.dataset.activo = estaActivo ? "false" : "true";
@@ -6371,15 +6043,12 @@ Generado por Sistema Lushibosca
         function mostrarExportar(desdeLista = false) {
             _modalAbiertoDesdeLista = desdeLista;
             ModalManager.alternar(desdeLista ? null : 'modal-config', 'modal-exportar', null, () => {
-                // Reset del selector
                 const tipoSelect = document.getElementById('tipo-exportacion');
                 if (tipoSelect) tipoSelect.value = 'todo';
 
-                // Ocultar campos de rango
                 const camposRango = document.getElementById('campos-rango-exportar');
                 if (camposRango) { camposRango.style.maxHeight = '0'; camposRango.style.opacity = '0'; }
 
-                // Limpiar fechas
                 document.getElementById('export-fecha-desde').value = '';
                 document.getElementById('export-fecha-hasta').value = '';
 
@@ -6417,18 +6086,15 @@ Generado por Sistema Lushibosca
 
             try {
                 if (tipo === 'todo') {
-                    // Exportación completa (función existente)
                     D.exportarJSON();
                     cerrarExportar();
 
                 } else if (tipo === 'mes-actual') {
-                    // Exportar solo mes actual
                     const hoy = new Date();
                     const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
                     await exportarRango(mesActual, mesActual, true);
 
                 } else if (tipo === 'rango') {
-                    // Exportar rango personalizado
                     const desde = S.sanitizeString(document.getElementById('export-fecha-desde').value, 10);
                     const hasta = S.sanitizeString(document.getElementById('export-fecha-hasta').value, 10);
 
@@ -6462,18 +6128,15 @@ Generado por Sistema Lushibosca
         }
 
         async function exportarRango(desde, hasta, esMes = false) {
-            // Filtrar registros por rango
             let registrosFiltrados;
 
             if (esMes) {
-                // Mes completo: "2025-01" incluye del 01 al 31
                 const [año, mes] = desde.split('-').map(Number);
                 registrosFiltrados = D.registros().filter(r => {
                     const [aReg, mReg] = r.fecha.split('-').map(Number);
                     return aReg === año && mReg === mes;
                 });
             } else {
-                // Rango exacto
                 registrosFiltrados = D.registros().filter(r =>
                     r.fecha >= desde && r.fecha <= hasta
                 );
@@ -6484,7 +6147,6 @@ Generado por Sistema Lushibosca
                 return;
             }
 
-            // Generar fecha local
             const ahora = new Date();
             const año = ahora.getFullYear();
             const mes = String(ahora.getMonth() + 1).padStart(2, '0');
@@ -6535,7 +6197,6 @@ Generado por Sistema Lushibosca
 
             PerfilManager.inicializar();
 
-            // --- EXPORTAR MÓDULOS (Mantener igual) ---
             window.DataManagement = {
                 agregarRegistro: D.agregarRegistro,
                 exportarJSON: D.exportarJSON,
@@ -6587,7 +6248,6 @@ Generado por Sistema Lushibosca
             }
 
             function abrirModalGist() {
-                // Recordar qué modal está abierto para volver al cerrar
                 const modalAbierto = document.querySelector('.modal.show');
                 _gistModalPadre = modalAbierto ? modalAbierto.id : null;
 
@@ -6602,7 +6262,6 @@ Generado por Sistema Lushibosca
                     lastSyncEl.textContent = last ? `Sincronizado: ${last}` : 'No sincronizado';
                 }
 
-                // Cargar rango horario
                 const rango = GistSync.getRangoHorario();
                 const desdeEl = document.getElementById('gist-rango-desde');
                 const hastaEl = document.getElementById('gist-rango-hasta');
@@ -6642,7 +6301,6 @@ Generado por Sistema Lushibosca
 
                 const tieneGist = GistSync.esGistIdValido(GistSync.getGistId());
 
-                // Clonar para eliminar listeners anteriores
                 const newRespaldar = btnRespaldar.cloneNode(true);
                 const newRestaurar = btnRestaurar.cloneNode(true);
                 btnRespaldar.parentNode.replaceChild(newRespaldar, btnRespaldar);
@@ -6860,7 +6518,6 @@ Generado por Sistema Lushibosca
                 if (label) label.textContent = c.texto;
                 if (hint) { hint.textContent = c.hint; hint.style.color = c.color; }
 
-                // Mostrar/ocultar inputs de rango en estado 1 y 2
                 if (rangoEl) {
                     const mostrar = estado === 1 || estado === 2;
                     rangoEl.style.maxHeight = mostrar ? '60px' : '0';
@@ -6943,10 +6600,8 @@ Generado por Sistema Lushibosca
                         D.diasHabiles(),
                         D.horasDiarias()
                     );
-                    // Actualizar el campo con el ID si era nuevo
                     const gistIdInput = document.getElementById('gist-id');
                     if (gistIdInput) gistIdInput.value = nuevoId;
-                    // Actualizar última sync
                     const lastSyncEl = document.getElementById('gist-ultima-sync');
                     if (lastSyncEl) lastSyncEl.textContent = `Última sync: ${GistSync.getLastSync()}`;
                     mostrarToast('Datos respaldados en Gist', 'success');
@@ -6974,12 +6629,10 @@ Generado por Sistema Lushibosca
                         throw new Error('Datos inválidos en el Gist');
                     }
 
-                    // Validar claves permitidas
                     const allowedRootKeys = ['registros', 'diasHabiles', 'horasDiarias', 'fecha', 'version', 'hash', 'timestamp', '_hashNoCoincide'];
                     const hasInvalidKeys = Object.keys(data).some(k => !allowedRootKeys.includes(k));
                     if (hasInvalidKeys) throw new Error('Estructura del Gist sospechosa');
 
-                    // Hash no coincide — preguntar igual que en importación local
                     if (data._hashNoCoincide) {
                         const continuar = await confirmarModal('El hash de integridad no coincide. El Gist puede haber sido modificado o corrompido. ¿Restaurar de todas formas?', 'Restaurar', '#icon-upload');
                         if (!continuar) {
@@ -6988,39 +6641,30 @@ Generado por Sistema Lushibosca
                         }
                     }
 
-                    // Advertir schema futuro
                     if (data.version && data.version > S.SECURITY_LIMITS.SCHEMA_VERSION) {
                         mostrarToast(`Gist de versión más nueva (v${data.version}). Algunos datos pueden no importarse correctamente.`, 'warning');
                     }
 
-                    // Filtrar, normalizar y recalcular registros (mismo helper que importarDatos)
                     const registrosNormalizados = D.normalizarRegistrosImportados(data.registros, D.calcularHoras);
 
                     if (registrosNormalizados.length === 0) throw new Error('No se encontraron registros válidos');
                     if (registrosNormalizados.length > S.SECURITY_LIMITS.MAX_REGISTROS) throw new Error(`Máximo ${S.SECURITY_LIMITS.MAX_REGISTROS} registros permitidos`);
 
-                    // Análisis: comparar Gist vs local
                     const fechasLocales = new Set(D.registros().map(r => r.fecha));
                     const soloEnGist = registrosNormalizados.filter(r => !fechasLocales.has(r.fecha));
                     const enAmbos = registrosNormalizados.filter(r => fechasLocales.has(r.fecha));
                     const soloLocal = D.registros().filter(r => !registrosNormalizados.some(g => g.fecha === r.fecha));
-
-                    // Registros que el Gist puede complementar (tienen datos que el local no tiene)
                     const complementarios = enAmbos.filter(imp => {
                         const local = D.registros().find(r => r.fecha === imp.fecha);
                         if (!local) return false;
                         return (!local.salida && imp.salida) || (!local.tiempoFuera && imp.tiempoFuera);
                     });
 
-                    // Guardar datos para que gistMergeAplicar los use
                     _gistMergeData = { registrosNormalizados, soloEnGist, complementarios, data };
 
                     if (modoAutomatico) {
-                        // En automático: usar el toggle configurado sin preguntar
                         await gistMergeAplicar(GistSync.getMergeBehavior(), true);
                     } else {
-                        // Manual: mostrar modal de análisis
-                        // Detectar cambios de configuración
                         const configCambios = [];
                         if (Array.isArray(data.diasHabiles)) {
                             const diasGist = [...data.diasHabiles].sort().join(',');
@@ -7035,12 +6679,12 @@ Generado por Sistema Lushibosca
                         if (resumenEl) {
                             resumenEl.innerHTML =
                                 `<div>` +
-                                `<div><svg class="icon"><use href="#icon-cloud"/></svg> En Gist <strong style="color:var(--c-green)">${soloEnGist.length}</strong> registro${soloEnGist.length !== 1 ? 's' : ''} nuevos</div>` +
-                                `<div><svg class="icon"><use href="#icon-combine"/></svg> En ambos <strong>${enAmbos.length}</strong> registro${enAmbos.length !== 1 ? 's' : ''} (por fecha${complementarios.length > 0 ? `, <strong style="color:var(--c-blue)">${complementarios.length}</strong> para completar` : ''})</div>` +
+                                `<div><svg class="icon"><use href="#icon-cloud"/></svg> En Gist <strong class="text-green">${soloEnGist.length}</strong> registro${soloEnGist.length !== 1 ? 's' : ''} nuevos</div>` +
+                                `<div><svg class="icon"><use href="#icon-combine"/></svg> En ambos <strong>${enAmbos.length}</strong> registro${enAmbos.length !== 1 ? 's' : ''} (por fecha${complementarios.length > 0 ? `, <strong class="text-blue">${complementarios.length}</strong> para completar` : ''})</div>` +
                                 `<div><svg class="icon"><use href="#icon-save"/></svg> Local <strong>${soloLocal.length}</strong> registro${soloLocal.length !== 1 ? 's' : ''} no subidos</div>` +
                                 `</div>` +
                                 `<div id="_gist-config-cambios"></div>` +
-                                `<div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.75rem">` +
+                                `<div class="gist-resumen-footer">` +
                                 `<strong>Combinar</strong>: agrega ${soloEnGist.length} nuevo(s)${complementarios.length > 0 ? `, completa ${complementarios.length} registro(s)` : ''}, mantiene los locales<br>` +
                                 `<strong>Reemplazar</strong>: usa los ${registrosNormalizados.length} registros del Gist` +
                                 `</div>`;
@@ -7085,32 +6729,25 @@ Generado por Sistema Lushibosca
                 obtenerNombrePerfilSafe, descargarJSON,
             };
 
-            // === LISTENERS E INTERACTIVIDAD ===
-
-            // A) Inputs normales del formulario principal (Solo formato)
             ['entrada', 'salida'].forEach(id => {
                 const el = $(id);
                 if (el) el.addEventListener('input', formatearInput);
             });
 
-            // B) Inputs del Modal Editar (Formato + Verificación OPTIMIZADA)
             const verificarBloqueCreditoDebounced = debounce(verificarBloqueoCredito, 200);
 
             ['edit-entrada', 'edit-salida'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
-                    // Input: formato inmediato + validación debounced
                     el.addEventListener('input', (e) => {
-                        formatearInput(e); // Inmediato (visual)
-                        verificarBloqueCreditoDebounced(); // Debounced (lógica)
+                        formatearInput(e);
+                        verificarBloqueCreditoDebounced();
                     });
 
-                    // Change: validación inmediata al perder foco
                     el.addEventListener('change', verificarBloqueoCredito);
                 }
             });
 
-            // C) Otros inputs
             const tf = document.getElementById('edit-tiempo-fuera');
             if (tf) tf.addEventListener('input', (e) => {
                 formatearInput(e);
@@ -7128,13 +6765,11 @@ Generado por Sistema Lushibosca
                 }
             });
 
-            // D) modal gist
             ['gist-rango-desde', 'gist-rango-hasta'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', formatearInput);
             });
 
-            // D) Hint resumen en tiempo real
             function actualizarHintEdicion() {
                 const hint = document.getElementById('edit-hint-resumen');
                 if (!hint) return;
@@ -7170,9 +6805,6 @@ Generado por Sistema Lushibosca
             // ===================================
             // LISTENERS PARA TECLA ENTER MODULE
             // ===================================
-
-            // --- TARJETA REGISTRAR ---
-            // A) Enter en campo Entrada → Pasa a Salida
             const inputEntrada = document.getElementById('entrada');
             if (inputEntrada) {
                 inputEntrada.addEventListener('keydown', (e) => {
@@ -7184,7 +6816,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // B) Enter en campo Salida → Ejecuta Registrar Y cierra teclado
             const inputSalida = document.getElementById('salida');
             if (inputSalida) {
                 inputSalida.addEventListener('keydown', (e) => {
@@ -7200,8 +6831,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // --- MODAL EDITAR ---
-            // C) Enter en campo Entrada (editar) → Pasa a Salida
             const editEntrada = document.getElementById('edit-entrada');
             if (editEntrada) {
                 editEntrada.addEventListener('keydown', (e) => {
@@ -7213,7 +6842,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // D) Enter en campo Salida (editar) → Pasa a Tiempo Fuera
             const editSalida = document.getElementById('edit-salida');
             if (editSalida) {
                 editSalida.addEventListener('keydown', (e) => {
@@ -7225,60 +6853,52 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // E) Enter en campo Tiempo Fuera (editar) → Guarda Y cierra teclado
             const editTiempoFuera = document.getElementById('edit-tiempo-fuera');
             if (editTiempoFuera) {
                 editTiempoFuera.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        editTiempoFuera.blur(); // Cierra el teclado
+                        editTiempoFuera.blur();
 
                         const btnGuardar = document.querySelector('#modal-editar .btn-edit');
                         if (btnGuardar && !btnGuardar.disabled) {
-                            btnGuardar.click(); // Ejecuta guardar
+                            btnGuardar.click();
                         }
                     }
                 });
             }
 
-            // --- PERFILES ---
-            // F) Enter en campo "Agregar Nuevo Perfil" → Crea el perfil
             const inputNuevoPerfil = document.getElementById('nombre-nuevo-perfil-selector');
             if (inputNuevoPerfil) {
                 inputNuevoPerfil.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        inputNuevoPerfil.blur(); // Cierra teclado
+                        inputNuevoPerfil.blur();
 
-                        // Ejecutar la función de crear perfil
                         UILogic.crearPerfilDesdeSelector();
                     }
                 });
             }
 
-            // G) Enter en campo "Editar Perfil" → Guarda cambios
             const inputEditarPerfil = document.getElementById('nombre-perfil-editar');
             if (inputEditarPerfil) {
                 inputEditarPerfil.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        inputEditarPerfil.blur(); // Cierra teclado
+                        inputEditarPerfil.blur();
 
                         const btnGuardarPerfil = document.querySelector('#modal-editar-perfil .btn-edit');
                         if (btnGuardarPerfil && !btnGuardarPerfil.disabled) {
-                            btnGuardarPerfil.click(); // Ejecuta guardar perfil
+                            btnGuardarPerfil.click();
                         }
                     }
                 });
             }
 
-            // Swipe en stats-card (solo touch/móvil)
             registrarSwipe(document.getElementById('stats-card'), () => alternarVista());
 
-            // Swipe en form-registro para alternar modo normal/lote (ignora si hay un campo con foco)
             registrarSwipe(document.getElementById('form-registro'), () => toggleModoLote(), { ignoreInputs: true });
 
-            // Generar stat-items de tipos especiales dinámicamente desde TiposRegistro
             const anchor = document.getElementById('stat-items-tipos-anchor');
             if (anchor) {
                 TiposRegistro.obtenerTodosLosTipos().forEach(t => {
@@ -7297,7 +6917,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // CARGAR CONFIGURACIÓN
             const config = D.cargarConfiguracion();
             const temaOscuro = config.temaOscuro;
             D.setVistaActual(config.vistaActual);
@@ -7320,18 +6939,15 @@ Generado por Sistema Lushibosca
             const registrosCargados = perfilActual.registros || [];
             D.registros().splice(0, D.registros().length, ...registrosCargados);
 
-            // Cargar historial guardado (si existe y es válido)
             const historialCargado = HistoryManager.loadFromLocalStorage();
 
             if (historialCargado) {
-                // Si se cargó historial válido, restaurar el estado actual de ese historial
                 const estadoActual = HistoryManager.getCurrentState();
                 if (estadoActual && estadoActual.length > 0) {
                     D.registros().splice(0, D.registros().length, ...estadoActual);
                     console.log('✓ Registros restaurados desde historial');
                 }
             }
-            // Siempre recalcular al cargar para reflejar el flag actual (cubre historial y sin historial)
             D.recalcularTotalesEnMemoria();
             if (!historialCargado) {
                 HistoryManager.saveState(D.registros());
@@ -7340,11 +6956,9 @@ Generado por Sistema Lushibosca
 
             HistoryManager.updateButtons();
 
-            // TEMA
             if (temaOscuro) {
                 document.body.classList.add('dark-mode');
             }
-            // Restaurar iconos de tema...
             const toggleBtnEl = $('theme-toggle');
             if (toggleBtnEl) {
                 const tBtn = toggleBtnEl.querySelector('use');
@@ -7358,15 +6972,12 @@ Generado por Sistema Lushibosca
 
             $('fecha').value = obtenerFechaHoy();
 
-            // RESTAURAR ESTADO VISUAL
             try {
                 const persistir = localStorage.getItem('persistirTarjetas') !== 'false';
                 if (persistir && localStorage.getItem('formularioExpandido') === 'true') toggleFormulario();
                 if (persistir && localStorage.getItem('statsExpandido') === 'true') toggleStats();
 
-                // Restaurar estado de Histórico (3 estados)
                 const estadoHistoricoGuardado = persistir ? localStorage.getItem('historicoExpandido') : null;
-                // Si estaba completo (con botones), restaurar solo con registros
                 const estadoHistorico = estadoHistoricoGuardado === 'completo' ? 'meses' : estadoHistoricoGuardado;
                 if (estadoHistorico === 'meses' || estadoHistorico === 'completo') {
                     const contenido = $('contenido-historico');
@@ -7374,13 +6985,11 @@ Generado por Sistema Lushibosca
                     if (contenido) contenido.classList.add('expanded');
 
                     if (estadoHistorico === 'meses') {
-                        // Estado 2: Chevron arriba (180°)
                         if (icon) {
                             icon.style.transform = '';
-                            icon.classList.add('rotated'); // 180°
+                            icon.classList.add('rotated');
                         }
                     } else if (estadoHistorico === 'completo') {
-                        // Estado 3: Chevron lateral derecha (90°)
                         const botones = $('botones-historico');
                         if (botones) {
                             botones.classList.add('expanded');
@@ -7388,11 +6997,10 @@ Generado por Sistema Lushibosca
                         }
                         if (icon) {
                             icon.classList.remove('rotated');
-                            icon.style.transform = 'rotate(-90deg)'; // 90°
+                            icon.style.transform = 'rotate(-90deg)';
                         }
                     }
                 } else {
-                    // Estado 1: Chevron abajo (0°)
                     const botones = $('botones-historico');
                     const icon = $('icon-indicator-historico');
                     if (botones) botones.classList.remove('expanded');
@@ -7402,7 +7010,6 @@ Generado por Sistema Lushibosca
                     }
                 }
 
-                // Default: calendario si no hay nada guardado (primera vez)
                 const vistaGuardada = localStorage.getItem('vistaHistoricoCalendario');
                 const usarCalendario = vistaGuardada === null ? true : vistaGuardada === 'true';
                 if (usarCalendario) {
@@ -7424,22 +7031,17 @@ Generado por Sistema Lushibosca
             _iniciarCicloStats();
             actualizarBotonesHistorico();
 
-            // Auto-transición: si la página carga en vista semanal,
-            // cambiar a "Hoy" luego de 2,5 segundos e iniciar cicloStats
             if (D.vistaActual() === 'semana') {
                 setTimeout(() => {
                     alternarVista();
-                    // alternarVista detiene el ciclo; lo relanzamos tras el delay de su animación
                     setTimeout(() => { _iniciarCicloStats(); }, 350);
                 }, 2500);
             }
 
-            // Auto-sync al iniciar
             const _autoSyncEstado = GistSync.getAutoSync();
             const _tieneCredenciales = GistSync.getToken() && GistSync.esGistIdValido(GistSync.getGistId());
             if (_tieneCredenciales) {
                 if (_autoSyncEstado === 1) {
-                    // Estado 1: restaurar al inicio si está en rango — máx 2 bajas por hora
                     if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('bajar')) {
                         setTimeout(async () => {
                             await gistBajar(true);
@@ -7447,7 +7049,6 @@ Generado por Sistema Lushibosca
                         }, 2000);
                     }
                 } else if (_autoSyncEstado === 2) {
-                    // Estado 2: respaldo automático — máx 1 subida por hora
                     if (GistSync.dentroDelRangoHorario() && !GistSync.superaLimite('subir')) {
                         setTimeout(async () => {
                             await gistSubir();
@@ -7460,7 +7061,6 @@ Generado por Sistema Lushibosca
             setInterval(() => actualizarUI(null, true), 20000);
             console.log('Sistema iniciado correctamente');
 
-            // Escape cierra el modal abierto simulando su botón cerrar/volver
             document.addEventListener('keydown', (e) => {
                 if (e.key !== 'Escape') return;
                 const modal = document.querySelector('.modal.show');
@@ -7483,13 +7083,9 @@ Generado por Sistema Lushibosca
                 if (accion) accion();
             });
 
-            // ===================================
-            // EVENT DELEGATION - LISTA REGISTROS
-            // ===================================
             const lista = document.getElementById('lista-registros');
             if (lista) {
                 lista.addEventListener('click', (e) => {
-                    // Buscar el elemento clickeado o su ancestro con data-accion
                     const target = e.target.closest('[data-accion]');
                     if (!target) return;
 
@@ -7517,9 +7113,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // ===================================
-            // EVENT DELEGATION - TOGGLE AÑOS
-            // ===================================
             lista.addEventListener('click', (e) => {
                 const headerAnio = e.target.closest('.registro-mes-header[data-accion="toggle-anio"]');
                 if (!headerAnio) return;
@@ -7545,10 +7138,6 @@ Generado por Sistema Lushibosca
                 }
             });
 
-            // ===================================
-            // EVENT DELEGATION - TOGGLE MESES
-            // ===================================
-            
             lista.addEventListener('click', (e) => {
                 const header = e.target.closest('.registro-mes-header');
                 if (!header || header.dataset.accion !== 'toggle-mes') return;
@@ -7564,26 +7153,21 @@ Generado por Sistema Lushibosca
                 const estaExpandido = detalle.classList.contains('expanded');
 
                 if (estaExpandido) {
-                    // CERRAR
                     detalle.classList.remove('expanded');
                     chevronIcon.style.transform = 'rotate(0deg)';
 
-                    // Guardar estado
                     try {
                         localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'false');
                     } catch (e) { }
 
                 } else {
-                    // ABRIR
                     const otrosMesesAbiertos = lista.querySelectorAll('.registro-mes-detalle.expanded');
                     const esContenedorAnio = (el) => {
                         const h = el.closest('.registro-mes-container')?.querySelector('.registro-mes-header');
                         return h && h.dataset.accion === 'toggle-anio';
                     };
-                    // Año padre del mes actual (no debe cerrarse)
                     const detalleAnioPadre = contenedor.parentElement?.closest('.registro-mes-detalle') || null;
 
-                    // Cerrar otros años abiertos que no sean el padre
                     otrosMesesAbiertos.forEach(otroDetalle => {
                         if (esContenedorAnio(otroDetalle) && otroDetalle !== detalleAnioPadre) {
                             otroDetalle.classList.remove('expanded');
@@ -7600,15 +7184,12 @@ Generado por Sistema Lushibosca
                     const hayOtrosAbiertos = Array.from(otrosMesesAbiertos).some(otro => otro !== detalle && !esContenedorAnio(otro));
 
                     if (hayOtrosAbiertos) {
-                        // Calcular y reservar altura antes de cerrar
                         otrosMesesAbiertos.forEach(otroDetalle => {
                             if (otroDetalle !== detalle && !esContenedorAnio(otroDetalle)) {
                                 const alturaActual = otroDetalle.scrollHeight;
 
-                                // Fijar altura actual como mínima temporalmente
                                 otroDetalle.style.minHeight = `${alturaActual}px`;
 
-                                // Cerrar visualmente
                                 otroDetalle.classList.remove('expanded');
                                 const otroContainer = otroDetalle.closest('.registro-mes-container');
                                 const otroChevron = otroContainer?.querySelector('.chevron-mes');
@@ -7616,14 +7197,12 @@ Generado por Sistema Lushibosca
 
                                 if (otroChevron) otroChevron.style.transform = 'rotate(0deg)';
 
-                                // Guardar que se cerró
                                 if (otroHeader && otroHeader.dataset.mesId) {
                                     try {
                                         localStorage.setItem(`mes-${otroHeader.dataset.mesId}-expandido`, 'false');
                                     } catch (e) { }
                                 }
 
-                                // Liberar la altura después de la animación
                                 setTimeout(() => {
                                     otroDetalle.style.minHeight = '';
                                 }, 350);
@@ -7634,12 +7213,10 @@ Generado por Sistema Lushibosca
                             detalle.classList.add('expanded');
                             chevronIcon.style.transform = 'rotate(180deg)';
 
-                            // Guardar que se abrió
                             try {
                                 localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
                             } catch (e) { }
 
-                            // Scroll inteligente
                             setTimeout(() => {
                                 const margenHeader = 80;
                                 const alturaVentana = window.innerHeight;
@@ -7662,16 +7239,13 @@ Generado por Sistema Lushibosca
                         }, 300);
 
                     } else {
-                        // No hay otros meses abiertos
                         detalle.classList.add('expanded');
                         chevronIcon.style.transform = 'rotate(180deg)';
 
-                        // Guardar que se abrió
                         try {
                             localStorage.setItem(`mes-${header.dataset.mesId}-expandido`, 'true');
                         } catch (e) { }
 
-                        // Scroll inteligente
                         setTimeout(() => {
                             const margenHeader = 80;
                             const alturaVentana = window.innerHeight;
@@ -7695,27 +7269,24 @@ Generado por Sistema Lushibosca
                 }
             });
 
-            // Listeners Lote
             const loteDesde = document.getElementById('lote-fecha-desde');
             const loteHasta = document.getElementById('lote-fecha-hasta');
             const actualizarBotonLoteDebounced = debounce(actualizarBotonLote, 300);
 
             const agregarListenersFecha = (el) => {
                 if (!el) return;
-                el.addEventListener('change', () => actualizarBotonLote()); // Inmediato
-                el.addEventListener('input', () => actualizarBotonLoteDebounced()); // Debounced
+                el.addEventListener('change', () => actualizarBotonLote());
+                el.addEventListener('input', () => actualizarBotonLoteDebounced());
             };
             agregarListenersFecha(loteDesde);
             agregarListenersFecha(loteHasta);
 
-            // Listener para mostrar/ocultar campos de rango en exportación
             const tipoExportSelect = document.getElementById('tipo-exportacion');
             if (tipoExportSelect) {
                 tipoExportSelect.addEventListener('change', () => {
                     UILogic.toggleCamposRangoExport();
                 });
             }
-            // Listener para mostrar nombre de archivo seleccionado
             const fileInput = document.getElementById('file-import');
             if (fileInput) {
                 fileInput.addEventListener('change', (e) => {
@@ -7724,14 +7295,12 @@ Generado por Sistema Lushibosca
                     const btnReemplazar = document.getElementById('btn-reemplazar');
 
                     if (e.target.files.length > 0) {
-                        // Mostrar nombre del archivo
                         if (nombreEl) {
                             const nombreArchivo = e.target.files[0].name;
                             nombreEl.textContent = `✓ ${nombreArchivo}`;
                             nombreEl.style.display = 'block';
                         }
 
-                        // Habilitar botones
                         if (btnCombinar) {
                             btnCombinar.disabled = false;
                             btnCombinar.style.opacity = '1';
@@ -7741,7 +7310,6 @@ Generado por Sistema Lushibosca
                             btnReemplazar.style.opacity = '1';
                         }
                     } else {
-                        // Si se cancela la selección, ocultar y deshabilitar
                         if (nombreEl) {
                             nombreEl.style.display = 'none';
                             nombreEl.textContent = '';
@@ -7757,7 +7325,6 @@ Generado por Sistema Lushibosca
             }
         }
 
-        // E) Hint resumen en tiempo real para editar grupo
         function actualizarHintGrupo() {
             const hint = document.getElementById('edit-grupo-hint');
             if (!hint) return;
@@ -7783,16 +7350,13 @@ Generado por Sistema Lushibosca
         });
 
         function mostrarFiltros() {
-            // Si hay filtro activo, limpiarlo directamente
             if (D.obtenerRegistrosFiltrados().length !== D.registros().length) {
                 D.limpiarFiltros();
                 return;
             }
 
-            // Si no hay filtro, mostrar modal
             ModalManager.abrir('modal-filtros');
 
-            // Aplicar cambios al instante
             const aplicarInmediato = () => {
                 const desde = $('filtro-fecha-desde').value;
                 const hasta = $('filtro-fecha-hasta').value;
@@ -7813,7 +7377,6 @@ Generado por Sistema Lushibosca
             ModalManager.cerrar('modal-filtros');
         }
 
-        // --- FUNCIÓN GENÉRICA PARA COLAPSABLES ---
         function toggleSeccionGen(elementId, iconId, storageKey, callback = null) {
             const el = $(elementId);
             const icon = $(iconId);
@@ -7832,7 +7395,6 @@ Generado por Sistema Lushibosca
                 try { localStorage.setItem(storageKey, isExpanded); } catch (e) { }
             }
 
-            // Ejecutar lógica extra si es necesario (ej: cargar stats)
             if (isExpanded && callback) callback();
         }
 
@@ -7840,31 +7402,25 @@ Generado por Sistema Lushibosca
             const el = $('form-registro');
             const estabaExpandido = el.classList.contains('expanded');
 
-            // 1. Ejecuta la animación visual de contraer/expandir
             toggleSeccionGen('form-registro', 'icon-indicator-form', 'formularioExpandido');
 
-            // 2. Si la tarjeta estaba abierta y ahora se está cerrando...
             if (estabaExpandido) {
 
-                // --- Limpieza de Modo Normal ---
                 $('entrada').value = '';
                 $('salida').value = '';
-                $('fecha').value = obtenerFechaHoy(); // Resetea la fecha a hoy
+                $('fecha').value = obtenerFechaHoy();
 
-                // --- Limpieza de Modo Lote ---
                 const loteDesde = $('lote-fecha-desde');
                 const loteHasta = $('lote-fecha-hasta');
                 const loteTipo = $('lote-tipo');
 
                 if (loteDesde) loteDesde.value = '';
                 if (loteHasta) loteHasta.value = '';
-                if (loteTipo) loteTipo.value = 'feriado'; // Vuelve al valor por defecto
+                if (loteTipo) loteTipo.value = 'feriado';
 
-                // 3. Si estaba activo el modo lote, resetearlo al modo normal
                 if (modoLoteActivo) {
                     toggleModoLote();
                 } else {
-                    // Si ya estaba en modo normal, refrescamos el estado del botón principal
                     actualizarEstadoBotonTimerMain();
                 }
             }
@@ -7885,16 +7441,14 @@ Generado por Sistema Lushibosca
 
             try {
                 if (!contenidoExpandido) {
-                    // ESTADO 1 → ESTADO 2: Abrir meses (chevron a 180°)
                     contenido.classList.add('expanded');
                     if (icon) {
-                        icon.style.transform = ''; // Resetear inline
-                        icon.classList.add('rotated'); // 180° arriba
+                        icon.style.transform = '';
+                        icon.classList.add('rotated');
                     }
                     localStorage.setItem('historicoExpandido', 'meses');
                     tiempoExpansionBotones = null;
 
-                    // Si la vista calendario estaba activa, aplicarla al abrir
                     if (_vistaHistoricoCalendario) {
                         const lista = document.getElementById('lista-registros');
                         const cal = document.getElementById('vista-calendario-historico');
@@ -7907,36 +7461,32 @@ Generado por Sistema Lushibosca
                     }
 
                 } else if (contenidoExpandido && !botonesExpandidos) {
-                    // ESTADO 2 → ESTADO 3: Mostrar botones (chevron a 90°)
                     botones.classList.add('expanded');
                     if (icon) {
-                        icon.classList.remove('rotated'); // Quitar 180°
-                        icon.style.transform = 'rotate(-90deg)'; // Lateral derecha
+                        icon.classList.remove('rotated');
+                        icon.style.transform = 'rotate(-90deg)';
                     }
                     localStorage.setItem('historicoExpandido', 'completo');
                     tiempoExpansionBotones = Date.now();
 
                 } else {
-                    // ESTADO 3 → Verificar tiempo
                     const tiempoTranscurrido = Date.now() - (tiempoExpansionBotones || 0);
                     const history_toggle_timer = tiempoTranscurrido > 500;
 
                     if (history_toggle_timer) {
-                        // Solo ocultar botones (3 → 2, chevron a 180°)
                         botones.classList.remove('expanded');
                         if (icon) {
-                            icon.style.transform = ''; // Resetear inline
-                            icon.classList.add('rotated'); // Volver a 180°
+                            icon.style.transform = '';
+                            icon.classList.add('rotated');
                         }
                         localStorage.setItem('historicoExpandido', 'meses');
                         tiempoExpansionBotones = null;
                     } else {
-                        // Cerrar todo (3 → 1, chevron a 0°)
                         botones.classList.remove('expanded');
                         contenido.classList.remove('expanded');
                         if (icon) {
-                            icon.classList.remove('rotated'); // Quitar clase
-                            icon.style.transform = ''; // Resetear a 0° (abajo)
+                            icon.classList.remove('rotated');
+                            icon.style.transform = '';
                         }
                         localStorage.setItem('historicoExpandido', 'cerrado');
                         tiempoExpansionBotones = null;
@@ -7948,26 +7498,22 @@ Generado por Sistema Lushibosca
         }
 
         function iniciarTimerAutoCierreBotones() {
-            // Limpiar timer anterior si existe
             if (timerAutoCierreBotones) {
                 clearTimeout(timerAutoCierreBotones);
                 timerAutoCierreBotones = null;
             }
 
-            // Iniciar nuevo timer 
             timerAutoCierreBotones = setTimeout(() => {
                 const botones = $('botones-historico');
                 const contenido = $('contenido-historico');
                 const icon = $('icon-indicator-historico');
 
-                // Solo cerrar si están expandidos
                 if (botones && botones.classList.contains('expanded')) {
-                    // ESTADO 3 → ESTADO 2 (Solo ocultar botones)
                     botones.classList.remove('expanded');
 
                     if (icon) {
-                        icon.style.transform = ''; // Resetear inline
-                        icon.classList.add('rotated'); // Volver a 180°
+                        icon.style.transform = '';
+                        icon.classList.add('rotated');
                     }
 
                     try {
@@ -7980,7 +7526,7 @@ Generado por Sistema Lushibosca
                 }
 
                 timerAutoCierreBotones = null;
-            }, 3000); // 3 segundos timer autocierre
+            }, 3000);
         }
 
         function cancelarTimerAutoCierreBotones() {
@@ -7990,14 +7536,13 @@ Generado por Sistema Lushibosca
             }
         }
 
-        let _calendarioMes = null; // { anio, mes } — null = mes actual
+        let _calendarioMes = null;
 
         function _renderizarCalendario(idResaltar = null) {
             const grid = document.getElementById('calendario-grid');
             const titulo = document.getElementById('calendario-titulo-mes');
             if (!grid) return;
 
-            // Swipe para móvil (se adjunta una sola vez)
             registrarSwipe(grid, dir => navegarCalendario(dir));
 
             const hoy = new Date();
@@ -8006,12 +7551,10 @@ Generado por Sistema Lushibosca
             const nombresMes = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
             if (titulo) titulo.textContent = `${nombresMes[mes]} ${anio}`;
             const fechaStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            // ← CAMBIO: usar registros filtrados
             const registrosFiltrados = D.obtenerRegistrosFiltrados();
             const todosLosRegistros = D.registros();
             const regsPorFecha = {};
             registrosFiltrados.forEach(r => { regsPorFecha[r.fecha] = r; });
-            // Para saber si un día tiene registro pero fue filtrado
             const todosRegsPorFecha = {};
             todosLosRegistros.forEach(r => { todosRegsPorFecha[r.fecha] = r; });
             const horasDiariasObj = D.horasDiarias();
@@ -8022,7 +7565,7 @@ Generado por Sistema Lushibosca
                 if (!r) return 'dia-sin-registro';
                 if (TiposRegistro.esRegistroEspecial(r.entrada, r.salida)) {
                     const tipo = TiposRegistro.obtenerTipoPorCodigo(r.entrada, r.salida);
-                    return `dia-especial-${tipo ? tipo.color : 'purple'}`;  // ← cambio
+                    return `dia-especial-${tipo ? tipo.color : 'purple'}`;
                 }
                 if (r.entrada && !r.salida) {
                     const fechaHoy = obtenerFechaHoy();
@@ -8046,10 +7589,10 @@ Generado por Sistema Lushibosca
                 const clase = claseDelDia(fecha);
                 const esHoy = anio === hoy.getFullYear() && mes === hoy.getMonth() && dia === hoy.getDate();
                 const reg = regsPorFecha[fecha];
-                const cursor = reg ? ' style="cursor:pointer;"' : '';
+                const cursor = reg ? ' cursor-pointer' : '';
                 const esNuevo = idResaltar && reg && reg.id === idResaltar ? ' nuevo-registro-animacion' : '';
                 const dataId = reg ? ` data-reg-id="${reg.id}"` : '';
-                html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}${esNuevo}"${dataId}${cursor}>${dia}</div>`;
+                html += `<div class="calendario-dia ${clase}${esHoy ? ' hoy' : ''}${esNuevo}${cursor}"${dataId}>${dia}</div>`;
             }
 
             if (filtroActivo) {
@@ -8077,8 +7620,6 @@ Generado por Sistema Lushibosca
             const lista = document.getElementById('lista-registros');
             const cal = document.getElementById('vista-calendario-historico');
             const btnFiltro = document.getElementById('btn-filtro');
-
-            // Fade-out del elemento visible
             const saliente = _vistaHistoricoCalendario ? lista : cal;
             const entrante = _vistaHistoricoCalendario ? cal : lista;
             if (saliente) saliente.classList.add('fade-out');
@@ -8088,7 +7629,7 @@ Generado por Sistema Lushibosca
                 if (entrante) {
                     entrante.classList.remove('hidden');
                     entrante.classList.add('fade-out');
-                    entrante.offsetHeight; // forzar reflow
+                    entrante.offsetHeight;
                     entrante.classList.remove('fade-out');
                 }
 
@@ -8100,7 +7641,6 @@ Generado por Sistema Lushibosca
                 }
             }, 300);
 
-            // RESETEAR SELECTOR SI ESTÁ ABIERTO AL CAMBIAR DE VISTA
             const selector = document.getElementById('calendario-selector-meses');
             const grid = document.getElementById('calendario-grid');
             const navBotones = document.getElementById('calendario-nav-botones');
@@ -8124,13 +7664,11 @@ Generado por Sistema Lushibosca
             const reg = D.registros().find(r => r.id === registroId);
             if (!reg) return;
 
-            // Helper para escapar datos de usuario antes de insertarlos en innerHTML
             const _esc = s => s == null ? '' : String(s)
                 .replace(/&/g, '&amp;').replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
 
-            // Detectar si pertenece a un grupo reutilizando la lógica existente
             const claveMes = reg.fecha.substring(0, 7);
             const registrosDelMes = D.registros().filter(r => r.fecha.substring(0, 7) === claveMes);
             const grupos = agruparRegistrosConsecutivos(registrosDelMes);
@@ -8148,13 +7686,13 @@ Generado por Sistema Lushibosca
                 const tipoConfig = TiposRegistro.obtenerTipoPorCodigo(reg.entrada, reg.salida);
                 const emoji = tipoConfig ? tipoConfig.emoji : '';
                 const label = tipoConfig ? tipoConfig.label : _esc(reg.entrada);
-                infoHtml = `<span class="cal-popup-badge" style="background:var(--c-${tipoConfig?.color || 'purple'})">${emoji} ${label}</span>`;
+                infoHtml = `<span class="cal-popup-badge cal-popup-badge--${tipoConfig?.color || 'purple'}">${emoji} ${label}</span>`;
             } else if (reg.entrada && !reg.salida) {
                 const esHoy = reg.fecha === obtenerFechaHoy();
                 infoHtml = esHoy
-                    ? `<div class="cal-popup-info" style="color:var(--c-blue)">En curso</div>
+                    ? `<div class="cal-popup-info cal-popup-info--blue">En curso</div>
                                <div class="cal-popup-3l">Entrada: ${_esc(reg.entrada)}</div>`
-                    : `<div class="cal-popup-info" style="color:var(--c-gold)">Incompleto</div>
+                    : `<div class="cal-popup-info cal-popup-info--gold">Incompleto</div>
                                <div class="cal-popup-3l">Entrada: ${_esc(reg.entrada)}</div>`;
             } else {
                 const totalHoras = reg.total || 0;
@@ -8174,19 +7712,17 @@ Generado por Sistema Lushibosca
                     if (diffText) totalConDiff += ` (${diffText})`;
                     diffColor = totalHoras >= horasDiarias ? 'var(--c-green)' : 'var(--c-red)';
                 }
-                infoHtml = `<div class="cal-popup-info"${diffColor ? ` style="color:${diffColor}"` : ''}>${totalConDiff}</div>
+                infoHtml = `<div class="cal-popup-info${diffColor ? ' cal-popup-info--dynamic' : ''}" ${diffColor ? `data-color="${diffColor}"` : ''}>${totalConDiff}</div>
                     <div class="cal-popup-3l">${_esc(reg.entrada)} – ${_esc(reg.salida)}</div>
                     ${tfStr ? `<div class="cal-popup-3l">${_esc(tfStr)}</div>` : ''}`;
             }
 
-            // Botón editar grupo (solo si pertenece a uno)
             const btnGrupoHtml = grupoDelRegistro ? `
         <button class="cal-popup-btn-edit" id="_cal-popup-btn-grupo">
             <svg class="icon"><use href="#icon-grid-group"/></svg>
             Editar grupo
         </button>` : '';
 
-            // Antes de crear el popup, si hay grupo:
             if (grupoDelRegistro) {
                 window._calPopupGrupo = grupoDelRegistro;
             }
@@ -8205,13 +7741,12 @@ Generado por Sistema Lushibosca
         ${btnGrupoHtml}
     `;
 
-            // Ocultar visualmente mientras se calcula la posición real post-layout
+            _applyDataColors(popup);
             popup.style.visibility = 'hidden';
 
             document.body.appendChild(popup);
             _popupCalendarioEl = popup;
 
-            // Event listeners para botones del popup (no se pueden poner como onclick= por CSP)
             const btnEditPopup = popup.querySelector('#_cal-popup-btn-edit');
             if (btnEditPopup) {
                 btnEditPopup.addEventListener('click', () => {
@@ -8227,7 +7762,6 @@ Generado por Sistema Lushibosca
                 });
             }
 
-            // En desktop: si el mouse entra al popup cancelar el cierre por hover
             popup.addEventListener('mouseenter', () => {
                 clearTimeout(_popupCalendarioHoverTimer);
             });
@@ -8243,7 +7777,6 @@ Generado por Sistema Lushibosca
                 }
             });
 
-            // Cerrar al tocar fuera — definidos acá para que cerrarPopup pueda referenciar cerrarPorScroll
             const cerrarPorScroll = () => {
                 popup.remove();
                 _popupCalendarioEl = null;
@@ -8266,7 +7799,6 @@ Generado por Sistema Lushibosca
                 document.addEventListener('scroll', cerrarPorScroll, true);
             }, 10);
 
-            // Posicionar cerca del elemento tocado usando dimensiones reales post-layout (fix parpadeo)
             const el = event.currentTarget || event.target;
             const rect = el.getBoundingClientRect();
             const margin = 8;
@@ -8283,14 +7815,12 @@ Generado por Sistema Lushibosca
                 if (top + ph > window.innerHeight - margin) {
                     top = rect.top - ph - 12;
                 }
-                // Evitar que se salga por arriba de la pantalla
                 if (top < margin) top = margin;
 
                 popup.style.top = top + 'px';
                 popup.style.left = left + 'px';
-                popup.style.visibility = ''; // mostrar recién cuando la posición es correcta
+                popup.style.visibility = '';
 
-                // Habilitar pointer-events al terminar la animación (fix ciclo hover)
                 setTimeout(() => popup.classList.add('listo'), 350);
             });
         }
@@ -8299,7 +7829,6 @@ Generado por Sistema Lushibosca
         let _popupCalendarioHoverTimer = null;
 
         function _popupCalendarioHover(event, registroId) {
-            // Ignorar si el evento fue precedido por un touch (browsers Android simulan mouse events)
             if (event.sourceCapabilities && event.sourceCapabilities.firesTouchEvents) return;
             if (!window.matchMedia('(hover: hover)').matches) return;
             const stored = localStorage.getItem('hoverPopupCalendario');
@@ -8327,7 +7856,6 @@ Generado por Sistema Lushibosca
                 clearTimeout(_popupCalendarioHoverTimer);
                 DataManagement.editarRegistro(registroId);
             } else {
-                // Si el popup ya está abierto para este mismo registro, no hacer nada
                 if (_popupCalendarioEl && _popupCalendarioEl.dataset.registroId === registroId) return;
                 _popupCalendario(event, registroId);
             }
@@ -8348,7 +7876,6 @@ Generado por Sistema Lushibosca
         }
 
         function navegarCalendario(delta) {
-            // Cerrar popup si está abierto
             if (_popupCalendarioEl) {
                 _popupCalendarioEl.remove();
                 _popupCalendarioEl = null;
@@ -8377,7 +7904,7 @@ Generado por Sistema Lushibosca
             const hoy = new Date();
             if (_calendarioMes === null ||
                 (_calendarioMes.anio === hoy.getFullYear() && _calendarioMes.mes === hoy.getMonth())) {
-                return; // Ya estamos en el mes actual
+                return;
             }
             _calendarioMes = null;
             const grid = document.getElementById('calendario-grid');
@@ -8394,10 +7921,7 @@ Generado por Sistema Lushibosca
 
         function toggleStats() {
             toggleSeccionGen('form-stats', 'icon-indicator-stats', 'statsExpandido', () => {
-                // Swipe para alternar período (mensual/anual/semanal)
                 registrarSwipe($('form-stats'), dir => togglePeriodoStats(dir));
-
-                // Lógica específica de stats al abrir
                 if (modoEstadisticas === 'anual') {
                     poblarSelectorAnios();
                 } else if (modoEstadisticas === 'semanal') {
@@ -8418,17 +7942,13 @@ Generado por Sistema Lushibosca
         function alternarFechaActual(id) {
             const c = document.getElementById(id);
             if (!c) return;
-
-            // Si tiene datos, limpiar. Si está vacío, poner hoy.
             if (c.value.trim() !== '') {
                 c.value = '';
             } else {
                 c.value = obtenerFechaHoy();
             }
 
-            // Actualizar el estado del botón principal
             actualizarBotonLote();
-            // Actualizar hint si es campo del grupo
             if (id === 'edit-grupo-desde' || id === 'edit-grupo-hasta') {
                 c.dispatchEvent(new Event('change'));
             }
@@ -8436,7 +7956,7 @@ Generado por Sistema Lushibosca
 
         function verificarBloqueoCredito() {
             const btnCredito = document.getElementById('btn-toggle-credito');
-            if (!btnCredito) return; // Seguridad
+            if (!btnCredito) return;
 
             const _bloquear = () => {
                 btnCredito.disabled = true;
@@ -8449,10 +7969,8 @@ Generado por Sistema Lushibosca
                 btnCredito.style.cursor = 'pointer';
             };
 
-            // 1. Candado global: si el modal está bloqueado, cortar directo
             if (document.getElementById('edit-fecha').disabled) return _bloquear();
 
-            // 2. Obtenemos valores y validamos horario completo
             const e = document.getElementById('edit-entrada').value.trim();
             const s = document.getElementById('edit-salida').value.trim();
             const tf = document.getElementById('edit-tiempo-fuera').value.trim() || null;
@@ -8463,10 +7981,8 @@ Generado por Sistema Lushibosca
                 return _bloquear();
             }
 
-            // 3. Días especiales
             if (TiposRegistro.esRegistroEspecial(e, s)) return _bloquear();
 
-            // 4. Horas trabajadas (sin crédito) deben ser menores al objetivo diario
             const calcTemp = D.calcularHoras(e, s, tf, null);
             if (!calcTemp || calcTemp.total >= D.horasDiarias()) return _bloquear();
 
@@ -8505,7 +8021,7 @@ Generado por Sistema Lushibosca
 
         function cerrarEdicionGrupo() {
             ModalManager.cerrar('modal-editar-grupo', () => {
-                D.setGrupoEnEdicion(null);
+                D.setGrupoEnEdicion(null);                
             });
         }
 
@@ -8580,7 +8096,6 @@ if ('serviceWorker' in navigator) {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // Lógica visual para avisar al usuario
                             if (window.UILogic) UILogic.mostrarToast('Se actualizará la versión al recargar', 'info');
                         }
                     });
@@ -8590,7 +8105,6 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-// ====================================================================
 document.addEventListener('DOMContentLoaded', function () {
     const $ = id => document.getElementById(id);
 
@@ -8602,30 +8116,24 @@ document.addEventListener('DOMContentLoaded', function () {
         btn.addEventListener('touchend', (e) => { e.preventDefault(); onStop(); }, { passive: false });
     };
 
-    // --- Header ---
     $('btn-install')?.addEventListener('click', () => PWAInstaller.instalarApp());
     document.querySelector('.header-profile-btn')?.addEventListener('click', () => UILogic.abrirSelectorPerfiles());
 
-    // --- Stats card ---
     $('stats-card')?.addEventListener('click', () => UILogic.alternarVista());
 
-    // --- Card registrar ---
     $('btn-timer-main')?.addEventListener('click', () => UILogic.toggleTimerBreakMain());
     $('btn-agregar')?.addEventListener('click', () => UILogic.ejecutarAccionRegistro());
     $('icon-indicator-form')?.addEventListener('click', () => UILogic.toggleFormulario());
 
-    // --- Modo normal ---
     $('btn-ir-modo-lote')?.addEventListener('click', () => UILogic.toggleModoLote());
     $('btn-pegar-entrada')?.addEventListener('click', () => UILogic.pegarHoraActual('entrada'));
     $('btn-pegar-salida')?.addEventListener('click', () => UILogic.pegarHoraActual('salida'));
 
-    // --- Modo lote ---
     $('lote-tipo')?.addEventListener('change', () => UILogic.actualizarBotonLote());
     $('btn-ir-modo-normal')?.addEventListener('click', () => UILogic.toggleModoLote());
     $('btn-lote-desde')?.addEventListener('click', () => UILogic.alternarFechaActual('lote-fecha-desde'));
     $('btn-lote-hasta')?.addEventListener('click', () => UILogic.alternarFechaActual('lote-fecha-hasta'));
 
-    // --- Card estadísticas ---
     document.querySelector('#card-estadisticas .card-header-clickable')?.addEventListener('click', () => UILogic.toggleStats());
     $('select-mes-stats')?.addEventListener('change', () => UILogic.cambiarMesStats());
     $('select-anio-stats')?.addEventListener('change', () => UILogic.cambiarAnioStats());
@@ -8633,15 +8141,12 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btn-toggle-periodo')?.addEventListener('click', () => UILogic.togglePeriodoStats());
     $('btn-reporte')?.addEventListener('click', () => UILogic.generarReporte());
 
-    // --- Card histórico ---
     document.querySelector('#card-historico .card-header-clickable')?.addEventListener('click', () => UILogic.toggleHistorico());
     $('btn-vista-calendario')?.addEventListener('click', () => UILogic.toggleVistaHistorico());
     $('btn-filtro')?.addEventListener('click', () => UILogic.mostrarFiltros());
-    // btn-hist-restaurar y btn-hist-respaldar: manejados por actualizarBotonesHistorico()
     $('btn-undo')?.addEventListener('click', () => HistoryManager.undo());
     $('btn-redo')?.addEventListener('click', () => HistoryManager.redo());
 
-    // --- Calendario ---
     $('calendario-titulo-mes')?.addEventListener('click', () => UILogic.abrirSelectorMesesCalendario());
     document.querySelector('.btn-hoy-calendario')?.addEventListener('click', () => UILogic.irHoyCalendario());
     const navBotones = $('calendario-nav-botones');
@@ -8651,7 +8156,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (navBtns[1]) navBtns[1].addEventListener('click', () => UILogic.navegarCalendario(1));
     }
 
-    // --- Modal Config ---
     $('btn-toggle-fondo')?.addEventListener('click', () => UILogic.toggleFondoCard());
     $('btn-toggle-ignorar-tf')?.addEventListener('click', () => UILogic.toggleIgnorarTiempoFuera());
     $('btn-toggle-hover-popup')?.addEventListener('click', () => UILogic.toggleHoverPopupCalendario());
@@ -8665,7 +8169,6 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.config-actions .btn-delete')?.addEventListener('click', () => DataManagement.borrarTodoHistorial());
     document.querySelector('#modal-config .modal-panel-footer .btn-delete')?.addEventListener('click', () => UILogic.cerrarConfig());
 
-    // Config: horas diarias +/-
     const inputHoras = $('config-horas-diarias');
     if (inputHoras) {
         const btnsHoras = inputHoras.closest('.input-number-group')?.querySelectorAll('.btn-increment');
@@ -8673,7 +8176,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btnsHoras?.[1]) addHoldEvents(btnsHoras[1], () => UILogic.iniciarCambioHoras(-0.5), () => UILogic.detenerCambio());
     }
 
-    // --- Modal Gist ---
     $('gist-token')?.addEventListener('input', () => UILogic.actualizarEstadoBotonesGist());
     $('gist-id')?.addEventListener('input', () => UILogic.actualizarEstadoBotonesGist());
     $('btn-toggle-token')?.addEventListener('click', () => UILogic.toggleVerToken());
@@ -8684,7 +8186,6 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btn-toggle-gist-backup')?.addEventListener('click', () => UILogic.toggleGistBackup());
     $('btn-toggle-gist-merge')?.addEventListener('click', () => UILogic.toggleGistMerge());
 
-    // Gist: límite registros +/-
     const inputLimite = $('gist-limite-valor');
     if (inputLimite) {
         const btnsLimite = inputLimite.closest('.input-number-group')?.querySelectorAll('.btn-increment');
@@ -8695,12 +8196,10 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btn-gist-guardar')?.addEventListener('click', () => UILogic.guardarConfigGist());
     $('btn-gist-volver')?.addEventListener('click', () => UILogic.cerrarModalGist());
 
-    // --- Modal Gist Merge ---
     $('btn-gist-merge-combinar')?.addEventListener('click', () => UILogic.gistMergeAplicar('merge'));
     $('btn-gist-merge-reemplazar')?.addEventListener('click', () => UILogic.gistMergeAplicar('replace'));
     $('btn-gist-merge-cancelar')?.addEventListener('click', () => UILogic.gistMergeCancelar());
 
-    // --- Modal Editar Registro ---
     $('btn-toggle-credito')?.addEventListener('click', () => UILogic.toggleCredito());
     $('btn-lock-toggle')?.addEventListener('click', () => UILogic.toggleBloqueoEdicion());
     $('btn-edit-entrada')?.addEventListener('click', () => UILogic.pegarHoraActual('edit-entrada'));
@@ -8711,31 +8210,25 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('#modal-editar .btn-delete')?.addEventListener('click', () => DataManagement.eliminarRegistroActual());
     document.querySelector('#modal-editar .btn-cancel')?.addEventListener('click', () => UILogic.cerrarEdicion());
 
-    // --- Modal Importar ---
     $('btn-seleccionar-archivo')?.addEventListener('click', () => $('file-import').click());
     $('btn-combinar')?.addEventListener('click', () => DataManagement.importarDatos('merge'));
     $('btn-reemplazar')?.addEventListener('click', () => DataManagement.importarDatos('replace'));
     $('btn-volver-importar')?.addEventListener('click', () => UILogic.cerrarImportar());
 
-    // --- Modal Exportar ---
     document.querySelector('#modal-exportar .btn-export')?.addEventListener('click', () => UILogic.ejecutarExportacion());
     $('btn-volver-exportar')?.addEventListener('click', () => UILogic.cerrarExportar());
 
-    // --- Modal Filtros ---
     document.querySelector('#modal-filtros .btn-cancel')?.addEventListener('click', () => UILogic.cerrarFiltros());
 
-    // --- Modal Selector Perfiles ---
     document.querySelector('#modal-selector-perfiles .btn-edit')?.addEventListener('click', () => UILogic.mostrarconfig());
     $('theme-toggle-modal')?.addEventListener('click', () => UILogic.alternarTema());
     document.querySelector('#modal-selector-perfiles .btn-cancel')?.addEventListener('click', () => UILogic.cerrarSelectorPerfiles());
     $('btn-crear-perfil')?.addEventListener('click', () => UILogic.crearPerfilDesdeSelector());
 
-    // --- Modal Editar Perfil ---
     document.querySelector('#modal-editar-perfil .btn-edit')?.addEventListener('click', () => UILogic.guardarEdicionPerfil());
     $('btn-eliminar-perfil-editor')?.addEventListener('click', () => UILogic.eliminarPerfilDesdeEditor());
     document.querySelector('#modal-editar-perfil .btn-cancel')?.addEventListener('click', () => UILogic.cerrarEditorPerfil());
 
-    // --- Modal Editar Grupo ---
     $('btn-lock-grupo-toggle')?.addEventListener('click', () => UILogic.toggleBloqueoEdicionGrupo());
     $('btn-grupo-desde')?.addEventListener('click', () => UILogic.alternarFechaActual('edit-grupo-desde'));
     $('btn-grupo-hasta')?.addEventListener('click', () => UILogic.alternarFechaActual('edit-grupo-hasta'));
@@ -8743,3 +8236,5 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('#modal-editar-grupo .btn-delete')?.addEventListener('click', () => DataManagement.eliminarGrupoActual());
     document.querySelector('#modal-editar-grupo .btn-cancel')?.addEventListener('click', () => UILogic.cerrarEdicionGrupo());
 });
+
+// lushibosca version 260511-v1

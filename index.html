@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self';
          script-src 'self'; 
-         style-src 'self' 'unsafe-inline'; 
+         style-src 'self';
          img-src 'self' data: blob:; 
          font-src 'self' data:; 
          connect-src 'self' https://api.github.com; 
@@ -195,7 +195,6 @@
             <line x1="12" y1="12" x2="12" y2="21" />
             <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
         </symbol>
-        <!-- Cloud sync down -->
         <symbol id="icon-cloud-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <polyline points="8 16 12 20 16 16" />
@@ -237,7 +236,6 @@
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
             <circle cx="12" cy="12" r="3" />
         </symbol>
-        <!-- Eye-off (ocultar token) -->
         <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
             <path
@@ -306,7 +304,6 @@
                 </h2>
                 <div class="form-collapsible collapsible" id="form-registro">
 
-                    <!-- MODO NORMAL -->
                     <div id="modo-normal">
                         <div class="form-group form-group-pt">
                             <label>Fecha</label>
@@ -349,7 +346,6 @@
                         </div>
                     </div>
 
-                    <!-- MODO LOTE -->
                     <div id="modo-lote" class="fade-out">
                         <div class="form-group form-group-pt">
                             <label>Tipo de registro</label>
@@ -568,7 +564,6 @@
             <div class="modal-panel-body custom-scroll">
                 <div class="modal-config-cols">
 
-                    <!-- COLUMNA IZQUIERDA -->
                     <div>
                         <div class="form-group">
                             <label>Horas Diarias</label>
@@ -647,10 +642,7 @@
                                 <span>Recordar estado</span>
                             </button>
                         </div>
-
                     </div>
-
-                    <!-- COLUMNA DERECHA -->
                     <div>
                         <div class="form-group">
                             <label>Tarjetas y posición</label>
@@ -712,9 +704,8 @@
                             </button>
                         </div>
                     </div>
-
                 </div>
-            </div><!-- /modal-panel-body -->
+            </div>
             <div class="modal-panel-footer">
                 <div class="btn-group">
                     <button class="btn-delete">
@@ -723,7 +714,7 @@
                         </svg> Volver
                     </button>
                 </div>
-            </div><!-- /modal-panel-footer -->
+            </div>
         </div>
     </div>
 
@@ -986,7 +977,6 @@
                     Seleccionar archivo
                 </button>
                 <div id="nombre-archivo-seleccionado" class="config-hint-text">
-                    <!-- Aquí aparecerá el nombre del archivo -->
                 </div>
                 <hr class="modal-hr">
             </div>
@@ -1029,8 +1019,6 @@
                     <option value="rango">📊 Rango personalizado</option>
                 </select>
             </div>
-
-            <!-- Campos de rango (ocultos por defecto) -->
             <div id="campos-rango-exportar" class="collapsible">
                 <div class="form-group">
                     <label>Desde</label>
@@ -1291,11 +1279,11 @@
 </html>
 
 <!--// ====================================================================
-    //             NOTAS SISTEMA LUSHIBOSCA HORARIOS VERSION 301
+    //             NOTAS SISTEMA LUSHIBOSCA HORARIOS VERSION 303
     // ====================================================================
     
       - CAMBIOS:
-    1) Se quita el unsafe inline del codigo para division en modulos basicos
+    1) Se quita el unsafe inline del codigo
 
      - BUGS CONOCIDOS:
     1)
