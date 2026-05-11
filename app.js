@@ -4450,6 +4450,7 @@
         function cerrarEdicion() {
             ModalManager.cerrar('modal-editar', () => {
                 D.setEditandoId(null);
+                document.dispatchEvent(new Event('scroll'));
             });
         }
 
@@ -8021,7 +8022,8 @@ Generado por Sistema Lushibosca
 
         function cerrarEdicionGrupo() {
             ModalManager.cerrar('modal-editar-grupo', () => {
-                D.setGrupoEnEdicion(null);                
+                D.setGrupoEnEdicion(null);      
+                document.dispatchEvent(new Event('scroll'));          
             });
         }
 
