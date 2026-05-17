@@ -1,11 +1,13 @@
-const CACHE_NAME = 'horarios-260511-v2-cache';
+const CACHE_NAME = 'horarios-v260517.1817-cache';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './icon.svg',
   './app.js',
-  './styles.css'
+  './styles.css',
+  './fondos.js',
+  './flash.js',
 ];
 
 // Instalación
