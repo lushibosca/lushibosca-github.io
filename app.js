@@ -470,7 +470,7 @@
 
             if (esHaciaAtras) {
                 _enAlternanciaHaciaAtras = true;
-                delete _padres[modalIdCerrar]; 
+                delete _padres[modalIdCerrar];
             } else {
                 _enAlternanciaHaciaAdelante = true;
                 if (modalIdCerrar && modalIdAbrir) {
@@ -2582,6 +2582,7 @@
         let timerAutoCierreBotones = null;
         let modoEstadisticas = 'mensual';
         let _modalAbiertoDesdeLista = false;
+        let _timerAutoVista = null;
 
         function registrarSwipe(el, callback, { minX = 50, maxY = 80, ignoreInputs = false } = {}) {
             if (!el || el.dataset.swipeInit) return;
@@ -4084,6 +4085,7 @@
         }
 
         function alternarVista() {
+            if (_timerAutoVista) { clearTimeout(_timerAutoVista); _timerAutoVista = null; }
             const card = document.getElementById('stats-card');
             const content = document.getElementById('stats-card-content');
 
@@ -7087,7 +7089,8 @@ Generado por Sistema Lushibosca
             actualizarBotonesHistorico();
 
             if (D.vistaActual() === 'semana') {
-                setTimeout(() => {
+                _timerAutoVista = setTimeout(() => {
+                    _timerAutoVista = null;
                     alternarVista();
                     setTimeout(() => { _iniciarCicloStats(); }, 350);
                 }, 2500);
@@ -8093,8 +8096,8 @@ Generado por Sistema Lushibosca
 
         function cerrarEdicionGrupo() {
             ModalManager.cerrar('modal-editar-grupo', () => {
-                D.setGrupoEnEdicion(null);      
-                document.dispatchEvent(new Event('scroll'));          
+                D.setGrupoEnEdicion(null);
+                document.dispatchEvent(new Event('scroll'));
             });
         }
 
@@ -8310,4 +8313,4 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('#modal-editar-grupo .btn-cancel')?.addEventListener('click', () => UILogic.cerrarEdicionGrupo());
 });
 
-    // lushibosca version 260517.1739
+// lushibosca version 260517.1739
