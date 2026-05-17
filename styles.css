@@ -84,7 +84,7 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0.5rem;
-    margin-bottom: 4rem;
+    margin-bottom: 2rem;
 }
 
 .header {
@@ -248,6 +248,14 @@ select {
     color: var(--text-main);
     height: var(--input-height);
     transition: background var(--transition-ui), color var(--transition-ui), border-color var(--transition-ui);
+}
+
+.separador-semana {
+    height: 0;
+    background: transparent;
+    margin: 1.5rem auto;
+    border: none;
+    width: 100%;
 }
 
 input:disabled,
