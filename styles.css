@@ -503,6 +503,16 @@ button:disabled {
     margin: 0.5rem 0;
 }
 
+.stats-inner {
+    min-height: 33rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.stats-inner .btn-group {
+    margin-top: auto;
+}
+
 .ciclo-fade-out {
     opacity: 0;
     transform: translateY(-6px);
