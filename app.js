@@ -1307,7 +1307,7 @@
                     let mensaje;
                     if (timerDetenido && usaHoraActual) {
                         const tiempoFuera = registroExistente.tiempoFuera || '00:00';
-                        mensaje = `Salida registrada con hora actual \nDescanso finalizado: +${tiempoFuera} \n(entrada: ${registroExistente.entrada})`;
+                        mensaje = `Salida registrada con hora actual \nTiempo fuera: +${tiempoFuera} \n(entrada: ${registroExistente.entrada})`;
                     } else if (usaHoraActual) {
                         mensaje = `Salida registrada con hora actual \n(entrada: ${registroExistente.entrada})`;
                     } else {
@@ -6545,9 +6545,9 @@ Generado por Sistema Lushibosca
             function abrirGistEnBrowser() {
                 const gistId = document.getElementById('gist-id')?.value.trim() || GistSync.getGistId();
                 if (gistId) {
-                    window.open(`https://gist.github.com/${gistId}`, '_blank');
+                    window.open(`https://gist.github.com/${gistId}`, '_blank', 'noopener,noreferrer');
                 } else {
-                    window.open('https://gist.github.com', '_blank');
+                    window.open('https://gist.github.com', '_blank', 'noopener,noreferrer');
                 }
             }
 
