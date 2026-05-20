@@ -504,7 +504,7 @@ button:disabled {
 }
 
 .stats-inner {
-    min-height: 33rem;
+    min-height: 30rem;
     display: flex;
     flex-direction: column;
 }
