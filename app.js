@@ -2001,7 +2001,7 @@
         }
 
         function saveCredentials(token, gistId) {
-            if (token) StorageHelper.setItem(STORAGE_KEYS.GIST_TOKEN, S.sanitizeString(token.trim()));
+            if (token) StorageHelper.setItem(STORAGE_KEYS.GIST_TOKEN, S.sanitizeString(token.trim(), 256));
             else StorageHelper.removeItem(STORAGE_KEYS.GIST_TOKEN);
 
             _conPerfil(perfil => {
@@ -2073,8 +2073,6 @@
 
         return { getToken, getGistId, getLastSync, formatLastSync, getMergeBehavior, setMergeBehavior, getAutoSync, setAutoSync, getRangoHorario, setRangoHorario, getSyncCount, marcarSync, superaLimite, getSyncLimite, setSyncLimite, dentroDelRangoHorario, saveCredentials, esGistIdValido, subir, bajar };
     })(SecurityAndUtils);
-
-    window.GistSync = GistSync;
 
     const UILogic = (function (S, D, GistSync) {
 
@@ -2831,6 +2829,8 @@
         }
 
         let _fondoCard = 'golden-gate';
+        let _bgFadeTimer = null;
+        let _bgActiveLayer = 'a';
 
         function setFondoCard(valor) {
             _fondoCard = valor;
@@ -2912,9 +2912,46 @@
 
             if (_fondoCard === 'ninguno') {
                 bg.innerHTML = '';
-            } else {
-                bg.innerHTML = _getSvgFondo(_fondoCard, color);
+                return;
             }
+
+            let layerA = bg.querySelector('.stats-card-bg__layer[data-layer="a"]');
+            let layerB = bg.querySelector('.stats-card-bg__layer[data-layer="b"]');
+            if (!layerA) {
+                layerA = document.createElement('div');
+                layerA.className = 'stats-card-bg__layer';
+                layerA.dataset.layer = 'a';
+                bg.appendChild(layerA);
+            }
+            if (!layerB) {
+                layerB = document.createElement('div');
+                layerB.className = 'stats-card-bg__layer';
+                layerB.dataset.layer = 'b';
+                bg.appendChild(layerB);
+            }
+
+            const nuevoSVG = _getSvgFondo(_fondoCard, color);
+            const incoming = _bgActiveLayer === 'a' ? layerB : layerA;
+            const outgoing = _bgActiveLayer === 'a' ? layerA : layerB;
+
+            incoming.style.zIndex = '2';
+            incoming.style.opacity = '0';
+            incoming.innerHTML = nuevoSVG;
+
+            outgoing.style.zIndex = '1';
+            outgoing.style.opacity = '0';
+
+            if (_bgFadeTimer) { clearTimeout(_bgFadeTimer); _bgFadeTimer = null; }
+
+            incoming.offsetHeight;
+            incoming.style.opacity = '1';
+
+            _bgActiveLayer = _bgActiveLayer === 'a' ? 'b' : 'a';
+            _bgFadeTimer = setTimeout(() => {
+                outgoing.innerHTML = '';
+                outgoing.style.opacity = '0';
+                _bgFadeTimer = null;
+            }, 650);
         }
 
         function calcularEstadoCard() {
@@ -5832,9 +5869,9 @@ Generado por Sistema Lushibosca
             }
 
             function abrirGistEnBrowser() {
-                const gistId = document.getElementById('gist-id')?.value.trim() || GistSync.getGistId();
-                if (gistId) {
-                    window.open(`https://gist.github.com/${gistId}`, '_blank', 'noopener,noreferrer');
+                const gistIdRaw = document.getElementById('gist-id')?.value.trim() || GistSync.getGistId();
+                if (gistIdRaw && GistSync.esGistIdValido(gistIdRaw)) {
+                    window.open(`https://gist.github.com/${gistIdRaw.trim()}`, '_blank', 'noopener,noreferrer');
                 } else {
                     window.open('https://gist.github.com', '_blank', 'noopener,noreferrer');
                 }
@@ -7030,14 +7067,15 @@ Generado por Sistema Lushibosca
             const esEspecial = TiposRegistro.esRegistroEspecial(reg.entrada, reg.salida);
             const fechaObj = new Date(reg.fecha + 'T12:00:00');
             const opcFecha = { weekday: 'long', day: 'numeric', month: 'long' };
-            const fechaLabel = fechaObj.toLocaleDateString('es-AR', opcFecha);
+            const fechaLabel = _esc(fechaObj.toLocaleDateString('es-AR', opcFecha));
 
             let infoHtml = '';
             if (esEspecial) {
                 const tipoConfig = TiposRegistro.obtenerTipoPorCodigo(reg.entrada, reg.salida);
-                const emoji = tipoConfig ? tipoConfig.emoji : '';
-                const label = tipoConfig ? tipoConfig.label : _esc(reg.entrada);
-                infoHtml = `<span class="cal-popup-badge cal-popup-badge--${tipoConfig?.color || 'purple'}">${emoji} ${label}</span>`;
+                const emoji = _esc(tipoConfig ? tipoConfig.emoji : '');
+                const label = tipoConfig ? _esc(tipoConfig.label) : _esc(reg.entrada);
+                const colorSafe = /^[a-z]+$/.test(tipoConfig?.color || '') ? tipoConfig.color : 'purple';
+                infoHtml = `<span class="cal-popup-badge cal-popup-badge--${colorSafe}">${emoji} ${label}</span>`;
             } else if (reg.entrada && !reg.salida) {
                 const esHoy = reg.fecha === obtenerFechaHoy();
                 infoHtml = esHoy
