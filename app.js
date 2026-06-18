@@ -9,39 +9,40 @@
     // ====================================================================
     const STORAGE_KEYS = Object.freeze({
         // ── Configuración global ──────────────────────────────────────
-        TEMA_OSCURO:           'temaOscuro',
-        VISTA_ACTUAL:          'vistaActual',
-        MODO_ESTADISTICAS:     'modoEstadisticas',
-        HOVER_POPUP:           'hoverPopupCalendario',
-        DIAS_HABILES:          'diasHabiles',
-        HORAS_DIARIAS:         'horasDiarias',
-        VISTA_HISTORICO_CAL:   'vistaHistoricoCalendario',
+        TEMA_OSCURO: 'temaOscuro',
+        VISTA_ACTUAL: 'vistaActual',
+        MODO_ESTADISTICAS: 'modoEstadisticas',
+        HOVER_POPUP: 'hoverPopupCalendario',
+        DIAS_HABILES: 'diasHabiles',
+        HORAS_DIARIAS: 'horasDiarias',
+        VISTA_HISTORICO_CAL: 'vistaHistoricoCalendario',
+        SALDO_DESDE_ENERO: 'saldoAnualDesdeEnero',
 
         // ── Configuración por perfil (useProfile = true) ──────────────
-        IGNORAR_TF:            'ignorarTiempoFuera',
-        FONDO_CARD:            'fondoCard',
-        PERSISTIR_TARJETAS:    'persistirTarjetas',
-        ORDEN_CARDS:           'ordenCards',
+        IGNORAR_TF: 'ignorarTiempoFuera',
+        FONDO_CARD: 'fondoCard',
+        PERSISTIR_TARJETAS: 'persistirTarjetas',
+        ORDEN_CARDS: 'ordenCards',
 
         // ── Estado UI persistido ──────────────────────────────────────
-        FORMULARIO_EXPANDIDO:  'formularioExpandido',
-        STATS_EXPANDIDO:       'statsExpandido',
-        HISTORICO_EXPANDIDO:   'historicoExpandido',
+        FORMULARIO_EXPANDIDO: 'formularioExpandido',
+        STATS_EXPANDIDO: 'statsExpandido',
+        HISTORICO_EXPANDIDO: 'historicoExpandido',
 
         // ── Perfiles e historial ──────────────────────────────────────
-        PERFIL_ACTIVO:         'perfilActivo',
-        PERFILES:              'perfiles',
-        HISTORY:               'history',
+        PERFIL_ACTIVO: 'perfilActivo',
+        PERFILES: 'perfiles',
+        HISTORY: 'history',
 
         // ── Gist ──────────────────────────────────────────────────────
-        GIST_TOKEN:            'gistToken',
+        GIST_TOKEN: 'gistToken',
 
         // ── Plantillas (claves con parte dinámica) ────────────────────
-        BREAK_TIME:    (perfilId) => `breakStartTime_${perfilId}`,
-        GIST_LIMITE:   (tipo)     => `gistSyncLimite_${tipo}`,
-        MES_EXPANDIDO: (clave)    => `mes-${clave}-expandido`,
-        ANIO_EXPANDIDO:(anioId)   => `anio-${anioId}-expandido`,
-        CARD_VISIBLE:  (cual)     => `cardVisible_${cual}`,
+        BREAK_TIME: (perfilId) => `breakStartTime_${perfilId}`,
+        GIST_LIMITE: (tipo) => `gistSyncLimite_${tipo}`,
+        MES_EXPANDIDO: (clave) => `mes-${clave}-expandido`,
+        ANIO_EXPANDIDO: (anioId) => `anio-${anioId}-expandido`,
+        CARD_VISIBLE: (cual) => `cardVisible_${cual}`,
     });
 
 
@@ -156,7 +157,7 @@
         }
 
         function horaAMinutos(h) {
-            if (!validarHora(h)) return 0; 
+            if (!validarHora(h)) return 0;
             const [hr, mn] = h.split(':').map(Number);
             return (hr * 60) + mn;
         }
@@ -1434,8 +1435,8 @@
 
             if (e && tf) {
                 const minutosEntrada = TimeUtils.horaAMinutos(e);
-                const minutosFuera  = TimeUtils.horaAMinutos(tf);
-                let minutosLimite   = s
+                const minutosFuera = TimeUtils.horaAMinutos(tf);
+                let minutosLimite = s
                     ? TimeUtils.horaAMinutos(s)
                     : TimeUtils.horaAMinutos(TimeUtils.obtenerHoraActual());
                 let tiempoTranscurrido = minutosLimite - minutosEntrada;
@@ -3555,32 +3556,43 @@
         // Necesita sincronizar también el estado en memoria de DataManagement.
         const { toggle: toggleIgnorarTiempoFuera, actualizarEstado: actualizarEstadoBotonIgnorarTF } =
             _crearToggleConfig({
-                getVal:    () => D.getIgnorarTiempoFuera(),
-                setVal:    (v) => { D.setIgnorarTiempoFuera(v); StorageHelper.setItem(STORAGE_KEYS.IGNORAR_TF, v, true); },
-                btnId:     'btn-toggle-ignorar-tf',
+                getVal: () => D.getIgnorarTiempoFuera(),
+                setVal: (v) => { D.setIgnorarTiempoFuera(v); StorageHelper.setItem(STORAGE_KEYS.IGNORAR_TF, v, true); },
+                btnId: 'btn-toggle-ignorar-tf',
                 mensajeOn: 'Tiempo fuera ignorado',
-                mensajeOff:'Tiempo fuera incluido',
+                mensajeOff: 'Tiempo fuera incluido',
                 onAfterToggle: () => { D.recalcularTotalesEnMemoria(); actualizarUI(); },
             });
 
         // ── hoverPopupCalendario ────────────────────────────────────────────
         const { toggle: toggleHoverPopupCalendario, actualizarEstado: actualizarEstadoBotonHoverPopup } =
             _crearToggleConfig({
-                getVal:    () => StorageHelper.getBoolean(STORAGE_KEYS.HOVER_POPUP, true),
-                setVal:    (v) => StorageHelper.setItem(STORAGE_KEYS.HOVER_POPUP, v),
-                btnId:     'btn-toggle-hover-popup',
+                getVal: () => StorageHelper.getBoolean(STORAGE_KEYS.HOVER_POPUP, true),
+                setVal: (v) => StorageHelper.setItem(STORAGE_KEYS.HOVER_POPUP, v),
+                btnId: 'btn-toggle-hover-popup',
                 mensajeOn: 'Popup activado',
-                mensajeOff:'Popup desactivado',
+                mensajeOff: 'Popup desactivado',
+            });
+
+        // ── saldoDesdeEnero ──────────────────────────────────────────────────
+        const { toggle: toggleSaldoDesdeEnero, actualizarEstado: actualizarEstadoBotonSaldoDesdeEnero } =
+            _crearToggleConfig({
+                getVal: () => StorageHelper.getBoolean(STORAGE_KEYS.SALDO_DESDE_ENERO, false),
+                setVal: (v) => StorageHelper.setItem(STORAGE_KEYS.SALDO_DESDE_ENERO, v),
+                btnId: 'btn-toggle-saldo-enero',
+                mensajeOn: 'Cálculo de saldo anual desde el primer dia del año',
+                mensajeOff: 'Cálculo de saldo anual desde el primer registro del año',
+                onAfterToggle: () => { actualizarUI(); }
             });
 
         // ── persistirTarjetas ───────────────────────────────────────────────
         const { toggle: togglePersistirTarjetas, actualizarEstado: actualizarEstadoBotonPersistir } =
             _crearToggleConfig({
-                getVal:    () => StorageHelper.getBoolean(STORAGE_KEYS.PERSISTIR_TARJETAS, true),
-                setVal:    (v) => StorageHelper.setItem(STORAGE_KEYS.PERSISTIR_TARJETAS, v),
-                btnId:     'btn-toggle-persistir-tarjetas',
+                getVal: () => StorageHelper.getBoolean(STORAGE_KEYS.PERSISTIR_TARJETAS, true),
+                setVal: (v) => StorageHelper.setItem(STORAGE_KEYS.PERSISTIR_TARJETAS, v),
+                btnId: 'btn-toggle-persistir-tarjetas',
                 mensajeOn: 'Estado guardado',
-                mensajeOff:'Tarjetas no se recuerdan al iniciar',
+                mensajeOff: 'Tarjetas no se recuerdan al iniciar',
             });
 
         function toggleVisibilidadCard(cual) {
@@ -3591,7 +3603,7 @@
             _setBtnActivo('btn-toggle-card-' + cual, nuevo);
             mostrarToast('Tarjeta ' + cual + (nuevo ? ' visible' : ' oculta'), 'info');
         }
-        
+
         function aplicarVisibilidadCard(cual, visible) {
             const card = document.getElementById('card-' + cual);
             if (card) card.style.display = visible ? '' : 'none';
@@ -3824,7 +3836,21 @@
         function calcularEstadisticasAnio(anio) {
             const anioNum = parseInt(anio);
             const registros = D.registros().filter(r => parseInt(r.fecha.substring(0, 4)) === anioNum);
-            return _calcularEstadisticasRango(registros, { regularidadPorMes: true, desde: `${anioNum}-01-01`, hasta: `${anioNum}-12-31` });
+            let fechaDesde = `${anioNum}-01-01`;
+
+            const desdeEnero = StorageHelper.getBoolean(STORAGE_KEYS.SALDO_DESDE_ENERO, false);
+            if (!desdeEnero && registros.length > 0) {
+                const primerRegistro = registros.reduce((min, r) => r.fecha < min ? r.fecha : min, registros[0].fecha);
+                if (primerRegistro > fechaDesde) {
+                    fechaDesde = primerRegistro;
+                }
+            }
+
+            return _calcularEstadisticasRango(registros, {
+                regularidadPorMes: true,
+                desde: fechaDesde,
+                hasta: `${anioNum}-12-31`
+            });
         }
 
         function poblarSelectorAnios() {
@@ -4972,7 +4998,7 @@ Generado por Sistema Lushibosca
 
             const pid = perfilEnEdicion;
             ['breakStartTime', STORAGE_KEYS.HISTORY, STORAGE_KEYS.FONDO_CARD, STORAGE_KEYS.IGNORAR_TF,
-             'cardVisible_registrar', 'cardVisible_estadisticas', 'cardVisible_historico', STORAGE_KEYS.ORDEN_CARDS
+                'cardVisible_registrar', 'cardVisible_estadisticas', 'cardVisible_historico', STORAGE_KEYS.ORDEN_CARDS
             ].forEach(k => StorageHelper.removeItem(`${k}_${pid}`));
 
             delete perfiles[perfilEnEdicion];
@@ -6091,7 +6117,7 @@ Generado por Sistema Lushibosca
 
             window.UILogic = {
                 alternarTema, cerrarConfig, pegarHoraActual, alternarVista, poblarSelectoresTipos,
-                cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast,
+                cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, toggleSaldoDesdeEnero, actualizarEstadoBotonSaldoDesdeEnero,
                 mostrarError, limpiarError, resetearBoton, restaurarBotonGuardarEdicion, abrirSelectorMesesCalendario,
                 limpiarCampo, obtenerFechaHoy, mostrarFiltros, poblarSelectorMeses, actualizarBotonLote,
                 cerrarFiltros, registrarLoteDesdeCard, cambiarMesStats, generarReporte, toggleHistorico, toggleStats,
@@ -6313,6 +6339,7 @@ Generado por Sistema Lushibosca
             UILogic.actualizarEstadoBotonIgnorarTF();
             UILogic.poblarSelectoresTipos();
             UILogic.actualizarEstadoBotonHoverPopup();
+            UILogic.actualizarEstadoBotonSaldoDesdeEnero();
             UILogic.aplicarVisibilidadCards();
             UILogic.aplicarOrdenCards(UILogic.obtenerOrdenCards());
             UILogic.iniciarDragOrdenCards();
@@ -6761,7 +6788,7 @@ Generado por Sistema Lushibosca
                 if (isExpanded) icon.classList.add('rotated');
                 else icon.classList.remove('rotated');
             }
-            
+
             if (StorageHelper.getBoolean(STORAGE_KEYS.PERSISTIR_TARJETAS, true)) {
                 StorageHelper.setItem(storageKey, isExpanded);
             }
@@ -6913,7 +6940,11 @@ Generado por Sistema Lushibosca
             const titulo = document.getElementById('calendario-titulo-mes');
             if (!grid) return;
 
-            registrarSwipe(grid, dir => navegarCalendario(dir));
+            if (grid.parentNode) {
+                registrarSwipe(grid.parentNode, dir => navegarCalendario(dir));
+            } else {
+                registrarSwipe(grid, dir => navegarCalendario(dir));
+            }
 
             const hoy = new Date();
             const anio = _calendarioMes ? _calendarioMes.anio : hoy.getFullYear();
@@ -7264,6 +7295,82 @@ Generado por Sistema Lushibosca
             }, 500);
         }
 
+        let _calendarioAnimTimeout = null;
+        let _calendarioWrapperActual = null;
+
+        function _finalizarAnimacionCalendarioPendiente() {
+            // Si habia una animacion en curso, la cerramos ya (sin esperar su setTimeout)
+            // para que el grid quede visible y medible antes de arrancar la siguiente.
+            if (_calendarioAnimTimeout) {
+                clearTimeout(_calendarioAnimTimeout);
+                _calendarioAnimTimeout = null;
+            }
+            if (_calendarioWrapperActual) {
+                const grid = document.getElementById('calendario-grid');
+                if (grid) {
+                    grid.style.display = '';
+                    _calendarioWrapperActual.parentNode?.insertBefore(grid, _calendarioWrapperActual);
+                }
+                _calendarioWrapperActual.remove();
+                _calendarioWrapperActual = null;
+            }
+        }
+
+        function _animarCalendario(delta, renderFn) {
+            const grid = document.getElementById('calendario-grid');
+            if (!grid) { renderFn(); return; }
+
+            _finalizarAnimacionCalendarioPendiente();
+
+            const anchoGrid = grid.offsetWidth;
+            const altoGrid = grid.offsetHeight; // altura fija durante toda la animacion
+            const margenTopGrid = getComputedStyle(grid).marginTop; // el wrapper no tiene este margen, hay que compensarlo
+
+            // Clonar mes viejo
+            const snapViejo = grid.cloneNode(true);
+            snapViejo.removeAttribute('id');
+            snapViejo.style.cssText = 'position:absolute;top:0;left:0;width:' + anchoGrid + 'px;pointer-events:none;';
+
+            // Renderizar nuevo mes fuera del flujo para poder clonarlo
+            grid.style.position = 'absolute';
+            grid.style.visibility = 'hidden';
+            renderFn();
+            const snapNuevo = grid.cloneNode(true);
+            snapNuevo.removeAttribute('id');
+            snapNuevo.style.cssText = 'position:absolute;top:0;width:' + anchoGrid + 'px;pointer-events:none;left:' + (delta > 0 ? anchoGrid : -anchoGrid) + 'px;';
+
+            // Wrapper con altura fija del mes viejo — no cambia durante la animacion
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:relative;overflow:hidden;pointer-events:none;width:' + anchoGrid + 'px;height:calc(' + altoGrid + 'px + ' + margenTopGrid + ');';
+            wrapper.appendChild(snapViejo);
+            wrapper.appendChild(snapNuevo);
+
+            // Reemplazar grid por wrapper en el flujo
+            grid.parentNode.insertBefore(wrapper, grid);
+            grid.style.display = 'none';
+            grid.style.position = '';
+            grid.style.visibility = '';
+            _calendarioWrapperActual = wrapper;
+
+            // Animar
+            wrapper.offsetHeight;
+            const tx = (delta > 0 ? -anchoGrid : anchoGrid) + 'px';
+            const easing = 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)';
+            snapViejo.style.transition = easing;
+            snapNuevo.style.transition = easing;
+            snapViejo.style.transform = 'translateX(' + tx + ')';
+            snapNuevo.style.transform = 'translateX(' + tx + ')';
+
+            // Al terminar: restaurar grid real y quitar wrapper
+            _calendarioAnimTimeout = setTimeout(() => {
+                grid.style.display = '';
+                wrapper.parentNode.insertBefore(grid, wrapper);
+                wrapper.remove();
+                _calendarioAnimTimeout = null;
+                _calendarioWrapperActual = null;
+            }, 340);
+        }
+
         function navegarCalendario(delta) {
             if (_popupCalendarioEl) {
                 _popupCalendarioEl.remove();
@@ -7277,16 +7384,7 @@ Generado por Sistema Lushibosca
             if (nuevoMes > 11) { nuevoMes = 0; nuevoAnio++; }
             if (nuevoMes < 0) { nuevoMes = 11; nuevoAnio--; }
             _calendarioMes = { anio: nuevoAnio, mes: nuevoMes };
-            const grid = document.getElementById('calendario-grid');
-            if (grid) {
-                grid.classList.add('fade-out');
-                setTimeout(() => {
-                    _renderizarCalendario();
-                    grid.classList.remove('fade-out');
-                }, 300);
-            } else {
-                _renderizarCalendario();
-            }
+            _animarCalendario(delta, () => _renderizarCalendario());
         }
 
         function irHoyCalendario() {
@@ -7295,17 +7393,10 @@ Generado por Sistema Lushibosca
                 (_calendarioMes.anio === hoy.getFullYear() && _calendarioMes.mes === hoy.getMonth())) {
                 return;
             }
+            const base = _calendarioMes;
+            const delta = (base.anio * 12 + base.mes) > (hoy.getFullYear() * 12 + hoy.getMonth()) ? -1 : 1;
             _calendarioMes = null;
-            const grid = document.getElementById('calendario-grid');
-            if (grid) {
-                grid.classList.add('fade-out');
-                setTimeout(() => {
-                    _renderizarCalendario();
-                    grid.classList.remove('fade-out');
-                }, 300);
-            } else {
-                _renderizarCalendario();
-            }
+            _animarCalendario(delta, () => _renderizarCalendario());
         }
 
         function toggleStats() {
@@ -7493,11 +7584,11 @@ Generado por Sistema Lushibosca
             if (isNaN(valorActual)) valorActual = D.horasDiarias();
             let nuevoValor = Math.min(24, Math.max(0, valorActual + incremento));
             if (isNaN(nuevoValor)) return;
-            
+
             $('config-horas-diarias').value = nuevoValor;
             actualizarFeedbackConfig();
             D.setHorasDiarias(nuevoValor);
-            
+
             const esDefault = window.PerfilManager && PerfilManager.obtenerPerfilActual() === 'default';
             if (esDefault) StorageHelper.setItem(STORAGE_KEYS.HORAS_DIARIAS, nuevoValor);
             D.guardarYActualizar();
@@ -7515,12 +7606,12 @@ Generado por Sistema Lushibosca
 
         return {
             init, obtenerFechaHoy, pegarHoraActual, alternarTema, alternarVista, cerrarConfig, abrirSelectorMesesCalendario,
-            cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError,
+            cerrarEdicion, mostrarImportar, cerrarImportar, actualizarUI, mostrarToast, mostrarError, actualizarEstadoBotonSaldoDesdeEnero,
             limpiarError, resetearBoton, restaurarBotonGuardarEdicion, toggleFormulario, aplicarOrdenCards, iniciarDragOrdenCards,
             limpiarCampo, mostrarFiltros, cerrarFiltros, registrarLoteDesdeCard, irHoyCalendario, obtenerOrdenCards,
             cambiarMesStats, generarReporte, toggleHistorico, toggleStats, sumarMinutosAHora, actualizarEstadoBotonHoverPopup,
             toggleTimerBreakMain, actualizarEstadoBotonTimerMain, toggleBloqueoEdicion, setBloqueoEdicion,
-            actualizarFeedbackConfig, poblarSelectorMeses, abrirSelectorPerfiles, actualizarBotonLote,
+            actualizarFeedbackConfig, poblarSelectorMeses, abrirSelectorPerfiles, actualizarBotonLote, toggleSaldoDesdeEnero,
             cerrarSelectorPerfiles, abrirEditorPerfil, cerrarEditorPerfil, guardarEdicionPerfil, toggleModoLote,
             eliminarPerfilDesdeEditor, crearPerfilDesdeSelector, renderizarListaPerfiles, ejecutarAccionRegistro,
             iniciarCambioHoras, detenerCambio, mostrarconfig, alternarFechaActual, verificarBloqueoCredito,
@@ -7565,6 +7656,9 @@ Generado por Sistema Lushibosca
                 { fecha: '2026-12-08', nombre: 'Inmaculada Concepción de María' },
                 { fecha: '2026-12-25', nombre: 'Navidad' },
             ],
+            2027: [
+                { fecha: '2027-01-01', nombre: 'Año Nuevo' },
+            ],
         };
 
         function _cargarProcesados() {
@@ -7573,7 +7667,6 @@ Generado por Sistema Lushibosca
                 if (!raw) return new Set();
                 const parsed = JSON.parse(raw);
                 if (!Array.isArray(parsed)) return new Set();
-                // Solo admitir fechas válidas según TimeUtils
                 return new Set(parsed.filter(f => typeof f === 'string' && TimeUtils.validarFecha(f)));
             } catch { return new Set(); }
         }
@@ -7612,26 +7705,89 @@ Generado por Sistema Lushibosca
             return fechaISO;
         }
 
+        function _buscarFeriado(fechaISO) {
+            const anio = parseInt(fechaISO.slice(0, 4), 10);
+            const pool = FERIADOS[anio] || [];
+            return pool.find(f => f.fecha === fechaISO) || null;
+        }
+
+        function _sumarDias(fechaISO, n) {
+            const d = TimeUtils.parsearFechaLocal(fechaISO);
+            d.setDate(d.getDate() + n);
+            return TimeUtils.formatearFechaLocal(d);
+        }
+
+        function _expandirGrupoConsecutivo(fechaISO) {
+            let desde = fechaISO;
+            while (_buscarFeriado(_sumarDias(desde, -1))) desde = _sumarDias(desde, -1);
+
+            let hasta = fechaISO;
+            while (_buscarFeriado(_sumarDias(hasta, 1))) hasta = _sumarDias(hasta, 1);
+
+            const dias = [];
+            let cursor = desde;
+            while (cursor <= hasta) {
+                dias.push(_buscarFeriado(cursor));
+                cursor = _sumarDias(cursor, 1);
+            }
+            return dias;
+        }
+
+        function _agruparConsecutivos(candidatos) {
+            const vistos = new Set();
+            const grupos = [];
+            for (const candidato of candidatos) {
+                const grupo = _expandirGrupoConsecutivo(candidato.fecha);
+                const clave = grupo[0].fecha;
+                if (vistos.has(clave)) continue;
+                vistos.add(clave);
+                grupos.push(grupo);
+            }
+            return grupos;
+        }
+
+        function _esRangoContinuo(grupo) {
+            for (let i = 1; i < grupo.length; i++) {
+                if (_sumarDias(grupo[i - 1].fecha, 1) !== grupo[i].fecha) return false;
+            }
+            return true;
+        }
+
         async function chequearYNotificar() {
             const candidatos = _getFeriadosCercanos();
             if (!candidatos.length) return;
 
             const procesados = _cargarProcesados();
+            const yaExisteRegistro = fecha => DataManagement.registros().some(r => r.fecha === fecha);
 
-            const pendientes = candidatos.filter(f => {
-                if (procesados.has(f.fecha)) return false;
-                const yaExiste = DataManagement.registros().some(r => r.fecha === f.fecha);
-                if (yaExiste) { _marcarProcesado(f.fecha); return false; }
-                return true;
-            });
+            const grupos = _agruparConsecutivos(candidatos)
+                .map(grupo => grupo.filter(f => {
+                    if (procesados.has(f.fecha)) return false;
+                    if (yaExisteRegistro(f.fecha)) { _marcarProcesado(f.fecha); return false; }
+                    return true;
+                }))
+                .filter(grupo => grupo.length > 0);
 
-            if (!pendientes.length) return;
+            if (!grupos.length) return;
             const _delay = ms => new Promise(r => setTimeout(r, ms));
-            for (let _i = 0; _i < pendientes.length; _i++) {
-                const feriado = pendientes[_i];
-                const etiqueta = _etiquetaFecha(feriado.fecha);
-                const diaSemana = TimeUtils.obtenerNombreDia(feriado.fecha);
-                const texto = `🎉 ${feriado.nombre} — ${etiqueta} ${diaSemana} (${feriado.fecha})\n¿Querés agregar este día como Feriado?`;
+
+            for (let _i = 0; _i < grupos.length; _i++) {
+                const grupo = grupos[_i];
+                const esGrupal = grupo.length > 1;
+                const nombres = [...new Set(grupo.map(f => f.nombre))].join(' / ');
+
+                let descripcionFechas;
+                if (!esGrupal) {
+                    descripcionFechas = `${_etiquetaFecha(grupo[0].fecha)} ${TimeUtils.obtenerNombreDia(grupo[0].fecha)} (${grupo[0].fecha})`;
+                } else if (_esRangoContinuo(grupo)) {
+                    descripcionFechas = `del ${TimeUtils.obtenerNombreDia(grupo[0].fecha)} (${grupo[0].fecha}) al ${TimeUtils.obtenerNombreDia(grupo[grupo.length - 1].fecha)} (${grupo[grupo.length - 1].fecha})`;
+                } else {
+                    descripcionFechas = grupo.map(f => `${TimeUtils.obtenerNombreDia(f.fecha)} (${f.fecha})`).join(', ');
+                }
+
+                const texto = esGrupal
+                    ? `🎉 ${nombres} — ${descripcionFechas}\n¿Querés agregar estos ${grupo.length} días como Feriado?`
+                    : `🎉 ${nombres} — ${descripcionFechas}\n¿Querés agregar este día como Feriado?`;
 
                 const elTitulo = document.getElementById('modal-confirmar-titulo');
                 const btnCancel = document.getElementById('modal-confirmar-cancel');
@@ -7639,23 +7795,25 @@ Generado por Sistema Lushibosca
                     ? [...btnCancel.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim())
                     : null;
                 const labelCancelOriginal = cancelTextNode ? cancelTextNode.textContent : null;
-                if (elTitulo) elTitulo.textContent = 'Feriado Próximo';
+                if (elTitulo) elTitulo.textContent = esGrupal ? 'Feriados Próximos' : 'Feriado Próximo';
                 if (cancelTextNode) cancelTextNode.textContent = ' No';
 
                 const confirmo = await confirmarModal(texto, 'Sí', '#icon-save');
 
-                _marcarProcesado(feriado.fecha);
+                grupo.forEach(f => _marcarProcesado(f.fecha));
 
                 if (confirmo) {
-                    try {
-                        await DataManagement.registrarDiaEspecial(feriado.fecha, 'feriado');
-                    } catch (e) {
+                    for (const feriado of grupo) {
+                        try {
+                            await DataManagement.registrarDiaEspecial(feriado.fecha, 'feriado');
+                        } catch (e) {
+                        }
                     }
                 }
 
                 if (elTitulo) elTitulo.textContent = 'Atención';
                 if (cancelTextNode && labelCancelOriginal !== null) cancelTextNode.textContent = labelCancelOriginal;
-                if (_i < pendientes.length - 1) await _delay(100);
+                if (_i < grupos.length - 1) await _delay(100);
             }
         }
 
@@ -7664,7 +7822,7 @@ Generado por Sistema Lushibosca
 
     UILogic.init();
 
-    setTimeout(() => FeriadosAR.chequearYNotificar(), 5000);
+    setTimeout(() => FeriadosAR.chequearYNotificar(), 4000);
 })();
 
 if ('serviceWorker' in navigator) {
@@ -7739,15 +7897,16 @@ document.addEventListener('DOMContentLoaded', function () {
     $('btn-toggle-fondo')?.addEventListener('click', () => UILogic.toggleFondoCard());
     $('btn-toggle-ignorar-tf')?.addEventListener('click', () => UILogic.toggleIgnorarTiempoFuera());
     $('btn-toggle-hover-popup')?.addEventListener('click', () => UILogic.toggleHoverPopupCalendario());
+    $('btn-toggle-saldo-enero')?.addEventListener('click', () => UILogic.toggleSaldoDesdeEnero());
     $('btn-toggle-persistir-tarjetas')?.addEventListener('click', () => UILogic.togglePersistirTarjetas());
     $('btn-toggle-card-registrar')?.addEventListener('click', () => UILogic.toggleVisibilidadCard('registrar'));
     $('btn-toggle-card-estadisticas')?.addEventListener('click', () => UILogic.toggleVisibilidadCard('estadisticas'));
     $('btn-toggle-card-historico')?.addEventListener('click', () => UILogic.toggleVisibilidadCard('historico'));
-    document.querySelector('.config-actions .btn-edit')?.addEventListener('click', () => UILogic.abrirModalGist());
+    document.querySelector('.config-actions .btn-gist')?.addEventListener('click', () => UILogic.abrirModalGist());
     document.querySelector('.config-actions .btn-backup')?.addEventListener('click', () => UILogic.mostrarImportar());
     document.querySelector('.config-actions .btn-export')?.addEventListener('click', () => UILogic.mostrarExportar());
     document.querySelector('.config-actions .btn-delete')?.addEventListener('click', () => DataManagement.borrarTodoHistorial());
-    document.querySelector('#modal-config .modal-panel-footer .btn-delete')?.addEventListener('click', () => UILogic.cerrarConfig());
+    document.querySelector('#modal-config .modal-panel-footer .btn-cancel')?.addEventListener('click', () => UILogic.cerrarConfig());
 
     const inputHoras = $('config-horas-diarias');
     if (inputHoras) {
@@ -7800,7 +7959,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelector('#modal-filtros .btn-cancel')?.addEventListener('click', () => UILogic.cerrarFiltros());
 
-    document.querySelector('#modal-selector-perfiles .btn-edit')?.addEventListener('click', () => UILogic.mostrarconfig());
+    document.querySelector('#modal-selector-perfiles .btn-settings')?.addEventListener('click', () => UILogic.mostrarconfig());
     $('theme-toggle-modal')?.addEventListener('click', () => UILogic.alternarTema());
     document.querySelector('#modal-selector-perfiles .btn-cancel')?.addEventListener('click', () => UILogic.cerrarSelectorPerfiles());
     $('btn-crear-perfil')?.addEventListener('click', () => UILogic.crearPerfilDesdeSelector());
@@ -7821,15 +7980,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // MODULOS:
 
-    // STORAGE KEYS — MODULE
-    // PWA INSTALLER MODULE
-    // TIME AND DATE UTILITIES MODULE (TimeUtils)
-    // STORAGE HELPER MODULE
-    // SECURITY AND UTILS MODULE
-    // PERFIL MANAGER MODULE
-    // MODAL MANAGER MODULE
-    // HISTORY MANAGER MODULE
-    // TIPOS DE REGISTRO MODULE
-    // DATA MANAGEMENT MODULE 
-    // LISTENERS PARA TECLA ENTER MODULE
-    // FERIADOS MODULE
+// STORAGE KEYS — MODULE
+// PWA INSTALLER MODULE
+// TIME AND DATE UTILITIES MODULE (TimeUtils)
+// STORAGE HELPER MODULE
+// SECURITY AND UTILS MODULE
+// PERFIL MANAGER MODULE
+// MODAL MANAGER MODULE
+// HISTORY MANAGER MODULE
+// TIPOS DE REGISTRO MODULE
+// DATA MANAGEMENT MODULE
+// LISTENERS PARA TECLA ENTER MODULE
+// FERIADOS MODULE
