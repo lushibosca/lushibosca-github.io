@@ -8174,7 +8174,14 @@ Generado por Sistema Lushibosca
             btnIrNuevaWeb.innerHTML = '<svg class="icon"><use href="#icon-external-link" /></svg> Ir a la pagina';
             
             btnIrNuevaWeb.onclick = () => {
-                window.open('https://lushibosca.github.io/Horarios/', '_blank');
+                const link = document.createElement('a');
+                link.href = 'https://lushibosca.github.io/Horarios/';
+                link.target = '_blank';
+                // La magia ocurre acá: rompe el vínculo con la PWA vieja
+                link.rel = 'noopener noreferrer'; 
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             };
             
             if (btnConfirm) btnConfirm.style.flex = '1'; 
