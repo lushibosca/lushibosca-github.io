@@ -8292,7 +8292,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
         if (window.UILogic) {
             // Agregamos el parámetro 6000 para que dure 6 segundos exactos
-            UILogic.mostrarToast('Se cambió el nombre de la pagina, usá lushibosca.github.io/Horarios (Click para copiar y pegar en el navegador).', 'warning', 6000);
+            UILogic.mostrarToast('Se cambió la dirección de la pagina por lushibosca.github.io/Horarios (Click para copiar).', 'warning', 6000);
         }
     }, 1500); // Aparece 1.5 segundos después de abrir la app
 
