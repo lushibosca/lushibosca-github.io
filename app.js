@@ -2197,12 +2197,12 @@
             URL.revokeObjectURL(url);
         }
 
-        function mostrarToast(mensaje, tipo = 'info') {
+        function mostrarToast(mensaje, tipo = 'info', duracion = 3000) {
             const textoLimpio = S.sanitizeString(mensaje, 200);
             const ultimo = _toastQueue[_toastQueue.length - 1];
             const actual = _toastRunning ? $('toast')?.textContent : null;
             if ((ultimo && ultimo.mensaje === textoLimpio) || actual === textoLimpio) return;
-            _toastQueue.push({ mensaje: textoLimpio, tipo, duracionBase: 3000 });
+            _toastQueue.push({ mensaje: textoLimpio, tipo, duracionBase: duracion });
             if (!_toastRunning) _procesarToastQueue();
         }
 
@@ -8130,88 +8130,9 @@ Generado por Sistema Lushibosca
         return { chequearYNotificar };
     })();
 
-    // ====================================================================
-    // MÓDULO TEMPORAL DE MIGRACIÓN / MUDANZA
-    // ====================================================================
-    async function chequearMigracionYNotificar() {
-        const registros = DataManagement.registros();
-        if (!registros || registros.length === 0) return;
-
-        const elTitulo = document.getElementById('modal-confirmar-titulo');
-        const btnCancel = document.getElementById('modal-confirmar-cancel');
-        const btnConfirm = document.getElementById('modal-confirmar-ok');
-        const btnGroup = btnCancel ? btnCancel.parentElement : null;
-        
-        const cancelTextNode = btnCancel
-            ? [...btnCancel.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim())
-            : null;
-        const labelCancelOriginal = cancelTextNode ? cancelTextNode.textContent : null;
-
-        if (elTitulo) elTitulo.textContent = 'Cambio de dirección';
-        if (cancelTextNode) cancelTextNode.textContent = ' Ignorar';
-
-        let btnIrNuevaWeb = null;
-        
-        let originalFlexWrap = '';
-        let originalCancelWidth = '';
-        let originalCancelMargin = '';
-
-        if (btnGroup) {
-            originalFlexWrap = btnGroup.style.flexWrap;
-            originalCancelWidth = btnCancel.style.width;
-            originalCancelMargin = btnCancel.style.marginTop;
-
-            btnGroup.style.flexWrap = 'wrap';
-            
-            btnCancel.style.width = '100%';
-            btnCancel.style.marginTop = '8px'; 
-
-            btnIrNuevaWeb = document.createElement('button');
-            btnIrNuevaWeb.className = 'btn-backup'; 
-            btnIrNuevaWeb.style.backgroundColor = 'var(--c-green)';
-            btnIrNuevaWeb.style.color = '#fff';
-            btnIrNuevaWeb.style.flex = '1';
-            btnIrNuevaWeb.innerHTML = '<svg class="icon"><use href="#icon-external-link" /></svg> Ir a la pagina';
-            
-            btnIrNuevaWeb.onclick = () => {
-                const link = document.createElement('a');
-                link.href = 'https://lushibosca.github.io/Horarios/';
-                link.target = '_blank';
-                // La magia ocurre acá: rompe el vínculo con la PWA vieja
-                link.rel = 'noopener noreferrer'; 
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            };
-            
-            if (btnConfirm) btnConfirm.style.flex = '1'; 
-
-            btnGroup.insertBefore(btnIrNuevaWeb, btnCancel);
-        }
-
-        const texto = 'Se creó un nuevo repositorio/dirección con un nombre mas descriptivo de la pagina y REMPLAZARLA, CREÁ UN RESPALDO DE LOS REGISTROS antes de ir a la nueva dirección en caso de error.';
-        const confirmo = await confirmarModal(texto, 'Respaldar', '#icon-download');
-
-        if (elTitulo) elTitulo.textContent = 'Atención';
-        if (cancelTextNode && labelCancelOriginal !== null) cancelTextNode.textContent = labelCancelOriginal;
-        if (btnIrNuevaWeb) btnIrNuevaWeb.remove();
-        
-        if (btnGroup) {
-            btnGroup.style.flexWrap = originalFlexWrap;
-            btnCancel.style.width = originalCancelWidth;
-            btnCancel.style.marginTop = originalCancelMargin;
-            if (btnConfirm) btnConfirm.style.flex = '';
-        }
-
-        if (confirmo) {
-            DataManagement.exportarJSON();
-            setTimeout(() => chequearMigracionYNotificar(), 500);
-        }
-    }
-
     UILogic.init();
-    setTimeout(() => chequearMigracionYNotificar(), 4000);
-    setTimeout(() => FeriadosAR.chequearYNotificar(), 7000);
+
+    setTimeout(() => FeriadosAR.chequearYNotificar(), 4000);
 })();
 
 if ('serviceWorker' in navigator) {
@@ -8364,6 +8285,42 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('#modal-editar-grupo .btn-edit')?.addEventListener('click', () => DataManagement.guardarEdicionGrupo());
     document.querySelector('#modal-editar-grupo .btn-delete')?.addEventListener('click', () => DataManagement.eliminarGrupoActual());
     document.querySelector('#modal-editar-grupo .btn-cancel')?.addEventListener('click', () => UILogic.cerrarEdicionGrupo());
+
+    // ====================================================================
+    // AVISO DE MUDANZA POR TOAST (Notificación)
+    // ====================================================================
+    setTimeout(() => {
+        if (window.UILogic) {
+            // Agregamos el parámetro 6000 para que dure 6 segundos exactos
+            UILogic.mostrarToast('Se cambió el nombre de la pagina, usá lushibosca.github.io/Horarios (Click para copiar y pegar en el navegador).', 'warning', 6000);
+        }
+    }, 1500); // Aparece 1.5 segundos después de abrir la app
+
+    const toastElement = document.getElementById('toast');
+    if (toastElement) {
+        // Evento para copiar al portapapeles al hacer clic
+        toastElement.addEventListener('click', () => {
+            if (toastElement.textContent.includes('lushibosca.github.io')) {
+                navigator.clipboard.writeText('https://lushibosca.github.io/Horarios/')
+                    .then(() => {
+                        // Este toast de éxito durará los 3 segundos predeterminados
+                        UILogic.mostrarToast('Enlace copiado al portapapeles', 'success');
+                    })
+                    .catch(err => {
+                        console.error('Error al copiar: ', err);
+                    });
+            }
+        });
+
+        // Cambiar el cursor a "manito" solo cuando es el aviso de mudanza
+        toastElement.addEventListener('mouseenter', () => {
+            if (toastElement.textContent.includes('lushibosca.github.io')) {
+                toastElement.style.cursor = 'pointer';
+            } else {
+                toastElement.style.cursor = 'default';
+            }
+        });
+    }
 });
 
 // MODULOS:
