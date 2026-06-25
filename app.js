@@ -5729,19 +5729,23 @@ Generado por Sistema Lushibosca
             }
 
             function cerrarModalGist() {
-                _gistAutoSyncTemp = null;
-                _gistLimitesTemp = null;
-                _gistLimitesOrig = null;
-                ModalManager.cerrar('modal-gist');
-                if (_gistModalPadre) {
-                    ModalManager.abrir(_gistModalPadre);
-                    if (_gistModalPadre === 'modal-config') {
-                        ModalManager.setPadre('modal-config', 'modal-selector-perfiles');
-                    }
-                }
-                _gistModalPadre = null;
-                actualizarBotonesHistorico();
-            }
+    _gistAutoSyncTemp = null;
+    _gistLimitesTemp = null;
+    _gistLimitesOrig = null;
+    
+    // Si hay un modal padre, alternamos. Si no, simplemente cerramos.
+    if (_gistModalPadre) {
+        ModalManager.alternar('modal-gist', _gistModalPadre);
+        if (_gistModalPadre === 'modal-config') {
+            ModalManager.setPadre('modal-config', 'modal-selector-perfiles');
+        }
+    } else {
+        ModalManager.cerrar('modal-gist');
+    }
+
+    _gistModalPadre = null;
+    actualizarBotonesHistorico();
+}
 
             function _calcularRegistrosMerge(modo, mergeData) {
                 const { registrosNormalizados, soloEnGist, complementarios = [], data } = mergeData;
@@ -6099,12 +6103,11 @@ Generado por Sistema Lushibosca
                             footer.appendChild(document.createElement('br'));
                             footer.appendChild(_mkStrong('Reemplazar'));
                             footer.appendChild(document.createTextNode(`: usa los ${registrosNormalizados.length} registros del Gist`));
-                            resumenEl.appendChild(footer);
-                        }
-                        ModalManager.cerrar('modal-gist');
-                        ModalManager.abrir('modal-gist-merge');
+                        resumenEl.appendChild(footer);
                     }
-                } catch (e) {
+                    ModalManager.alternar('modal-gist', 'modal-gist-merge');
+                }
+            } catch (e) {
                     console.error('Gist bajar error:', e);
                     mostrarToast('Error al bajar', 'error');
                 } finally {
