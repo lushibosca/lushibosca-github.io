@@ -3,6 +3,9 @@
 
 ## (Changelog)
 
+### 260626
+Se agrega backup a la copia del nuevo repositorio, ademas se agrega en ajustes la version eol
+
 ### 260623
 * **Mejora:** refactor y creacion de helper _crearOpcion, para los pobladores (semana, mes y anios)
 

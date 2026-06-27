@@ -8294,23 +8294,31 @@ document.addEventListener('DOMContentLoaded', function () {
     // ====================================================================
     setTimeout(() => {
         if (window.UILogic) {
-            // Agregamos el parámetro 6000 para que dure 6 segundos exactos
-            UILogic.mostrarToast('Se va a remplazar la dirección de la pagina por lushibosca.github.io/Horarios (tocá para copiar la dirección).', 'info', 6000);
-        }
+            // Actualizamos el texto para avisar de la doble acción
+            UILogic.mostrarToast('Se va a remplazar la dirección por lushibosca.github.io/Horarios tocá acá para copiar la dirección y descargar el backup).', 'warning', 6000);
+        }   
     }, 1500); // Aparece 1.5 segundos después de abrir la app
 
     const toastElement = document.getElementById('toast');
     if (toastElement) {
-        // Evento para copiar al portapapeles al hacer clic
+        // Evento para descargar backup y copiar al portapapeles al hacer clic
         toastElement.addEventListener('click', () => {
             if (toastElement.textContent.includes('lushibosca.github.io')) {
+                
+                // 1. Ejecutar la descarga del backup
+                if (window.DataManagement && typeof window.DataManagement.exportarJSON === 'function') {
+                    window.DataManagement.exportarJSON();
+                }
+
+                // 2. Copiar el enlace al portapapeles
                 navigator.clipboard.writeText('https://lushibosca.github.io/Horarios/')
                     .then(() => {
-                        // Este toast de éxito durará los 3 segundos predeterminados
-                        UILogic.mostrarToast('Enlace copiado al portapapeles', 'success');
+                        UILogic.mostrarToast('Backup descargado en el dispositivo y enlace copiado, podes pegarlo en tu navegador y restaurar los datos', 'success', 4000);
                     })
                     .catch(err => {
                         console.error('Error al copiar: ', err);
+                        // Feedback en caso de que el portapapeles falle pero el backup sí se haya hecho
+                        UILogic.mostrarToast('Backup descargado. Error copiando el enlace.', 'warning');
                     });
             }
         });
