@@ -17,6 +17,7 @@
     --c-green: rgba(76, 172, 140, 0.8);
     --c-green-bg: rgba(96, 172, 148, 0.1);
     --c-red: rgba(172, 90, 76, 0.8);
+    --c-red-bg: rgb(172, 90, 76);
     --c-red-pulse: rgba(192, 93, 118, 0.4);
     --c-purple: rgba(129, 76, 172, 0.8);
     --c-gold: rgba(172, 155, 76, 0.8);
@@ -660,13 +661,17 @@ button:disabled {
 }
 
 .registro-total.red-text,
-.toast.error,
-.toast.warning,
 .calendario-dia.dia-incompleto,
 .calendario-dia.dia-especial-red,
 .progress-fill.red,
 .cal-popup-badge--red {
     background: var(--c-red);
+}
+
+.toast.error,
+.toast.warning
+{
+    background: var(--c-red-bg);
 }
 
 .registro-total.purple-text,
