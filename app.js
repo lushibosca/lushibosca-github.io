@@ -8295,7 +8295,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setTimeout(() => {
         if (window.UILogic) {
             // Actualizamos el texto para avisar de la doble acción
-            UILogic.mostrarToast('Se va a remplazar la dirección por lushibosca.github.io/Horarios TOCA ESTA NOTIFICACIÓN para copiar la dirección y pegarla en el navegador. Se va a descargar un backup de los datos actuales.', 'warning', 10000);
+            UILogic.mostrarToast('Se va a remplazar la pagina actual por lushibosca.github.io/Horarios TOCA ESTA NOTIFICACIÓN PARA COPIAR LA DIRECCION Y PEGARLA EN EL NAVEGADOR. Se va a descargar un respaldo con los datos actuales, en caso de perdida de datos', 'warning', 20000);
         }   
     }, 1500); // Aparece 1.5 segundos después de abrir la app
 
