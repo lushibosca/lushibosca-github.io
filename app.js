@@ -7464,7 +7464,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // 2. Copiar el enlace al portapapeles
                 navigator.clipboard.writeText('https://lushibosca.github.io/Horarios/')
                     .then(() => {
-                        UILogic.mostrarToast('Backup descargado y enlace copiado: ya podés pegarlo en el navegador para usarlo e instalarlo', 'success', 5000);
+                        UILogic.mostrarToast('Backup descargado y enlace copiado: podés pegar el link en el navegador para abrir e instalar, y en caso que no hayan datos, importarlos con el respaldo', 'success', 10000);
                     })
                     .catch(err => {
                         console.error('Error al copiar: ', err);
