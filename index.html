@@ -1,241 +1,233 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
-<meta name="referrer" content="no-referrer">
-<title>Horarios — Este repositorio se cerró</title>
-<style>
-    :root {
-        --bg-body: #131314;
-        --bg-card: #1e1f20;
-        --text-main: #e3e3e3;
-        --text-muted: #b4b4b4;
-        --border: #313333;
-        --c-green: rgba(76, 172, 140, 0.9);
-        --c-green-bg: rgba(96, 172, 148, 0.12);
-        --c-red: rgba(172, 90, 76, 0.9);
-        --c-gold: rgba(172, 155, 76, 0.9);
-        --c-gold-bg: rgba(172, 155, 76, 0.12);
-        --radius: 20px;
-        --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none';">
+    <meta name="referrer" content="no-referrer">
+    <title>Horarios — Este repositorio se cerró</title>
+    <style>
+        :root {
+            --bg-body: #131314;
+            --bg-card: #1e1f20;
+            --text-main: #e3e3e3;
+            --text-muted: #b4b4b4;
+            --border: #313333;
+            --c-green: rgba(76, 172, 140, 0.9);
+            --c-green-bg: rgba(96, 172, 148, 0.12);
+            --c-red: rgba(172, 90, 76, 0.9);
+            --c-gold: rgba(172, 155, 76, 0.9);
+            --c-gold-bg: rgba(172, 155, 76, 0.12);
+            --radius: 20px;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
 
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    html, body {
-        min-height: 100%;
-    }
+        html,
+        body {
+            min-height: 100%;
+        }
 
-    body {
-        background: var(--bg-body);
-        color: var(--text-main);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1.5rem;
-        line-height: 1.5;
-    }
+        body {
+            background: var(--bg-body);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            line-height: 1.5;
+        }
 
-    .card {
-        background: var(--bg-card);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
-        padding: 2rem;
-        max-width: 440px;
-        width: 100%;
-    }
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 0.5rem;
+            max-width: 440px;
+            width: 100%;
+        }
 
-    h1 {
-        font-size: 1.35rem;
-        margin-bottom: 0.75rem;
-        text-align: center;
-    }
+        h1 {
+            font-size: 1.35rem;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
 
-    p {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-        margin-bottom: 1rem;
-    }
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
 
-    .aviso {
-        background: var(--c-gold-bg);
-        border: 1px solid var(--c-gold);
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        font-size: 0.875rem;
-        color: var(--text-main);
-        margin-bottom: 1rem;
-    }
+        .aviso {
+            background: var(--c-gold-bg);
+            border: 1px solid var(--c-gold);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+        }
 
-    .aviso.hidden {
-        display: none;
-    }
+        .aviso.hidden {
+            display: none;
+        }
 
-    ol.pasos {
-        color: var(--text-muted);
-        font-size: 0.875rem;
-        margin: 0 0 1.25rem 1.1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
-    }
+        ol.pasos {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin: 0 0 1.25rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
 
-    .perfiles-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-    }
+        .perfiles-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
 
-    .perfiles-header span {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-    }
+        .perfiles-header span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
 
-    .link-toggle {
-        background: none;
-        border: none;
-        padding: 0;
-        color: var(--c-green);
-        font-size: 0.8rem;
-        font-family: inherit;
-        cursor: pointer;
-        text-decoration: underline;
-    }
+        .link-toggle {
+            background: none;
+            border: none;
+            padding: 0;
+            color: var(--c-green);
+            font-size: 0.8rem;
+            font-family: inherit;
+            cursor: pointer;
+            text-decoration: underline;
+        }
 
-    .lista-perfiles {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
-        max-height: 220px;
-        overflow-y: auto;
-    }
+        .lista-perfiles {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+            max-height: 220px;
+            overflow-y: auto;
+        }
 
-    .lista-perfiles.hidden {
-        display: none;
-    }
+        .lista-perfiles.hidden {
+            display: none;
+        }
 
-    .perfil-item {
-        display: flex;
-        align-items: center;
-        gap: 0.65rem;
-        padding: 0.65rem 0.85rem;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        cursor: pointer;
-        transition: border-color 0.15s, background 0.15s;
-    }
+        .perfil-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.65rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+        }
 
-    .perfil-item:hover {
-        border-color: var(--c-green);
-    }
+        .perfil-item:hover {
+            border-color: var(--c-green);
+        }
 
-    .perfil-item input {
-        width: 18px;
-        height: 18px;
-        accent-color: var(--c-green);
-        flex-shrink: 0;
-        cursor: pointer;
-    }
+        .perfil-item input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--c-green);
+            flex-shrink: 0;
+            cursor: pointer;
+        }
 
-    .perfil-item .perfil-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0.1rem;
-        min-width: 0;
-    }
+        .perfil-item .perfil-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+            min-width: 0;
+        }
 
-    .perfil-item .perfil-nombre {
-        font-size: 0.9rem;
-        color: var(--text-main);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+        .perfil-item .perfil-nombre {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    .perfil-item .perfil-count {
-        font-size: 0.75rem;
-        color: var(--text-muted);
-    }
+        .perfil-item .perfil-count {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
 
-    .btn {
-        display: block;
-        width: 100%;
-        padding: 0.85rem 1rem;
-        border-radius: 12px;
-        border: none;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: filter 0.2s, opacity 0.2s;
-        margin-bottom: 0.75rem;
-        font-family: inherit;
-    }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter 0.2s, opacity 0.2s;
+            margin-bottom: 0.75rem;
+            font-family: inherit;
+        }
 
-    .btn:last-of-type {
-        margin-bottom: 0;
-    }
+        .btn:last-of-type {
+            margin-bottom: 0;
+        }
 
-    .btn:not(:disabled):hover {
-        filter: brightness(1.15);
-    }
+        .btn:not(:disabled):hover {
+            filter: brightness(1.15);
+        }
 
-    .btn:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
 
-    .btn-primary {
-        background: var(--c-green);
-        color: #0d1117;
-    }
+        .btn-primary {
+            background: var(--c-green);
+            color: #0d1117;
+        }
 
-    .btn-secondary {
-        background: transparent;
-        border: 1px solid var(--border);
-        color: var(--text-main);
-    }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
 
-    .estado {
-        margin: 1rem 0 0 0;
-        font-size: 0.875rem;
-        min-height: 1.2em;
-        color: var(--c-green);
-    }
+        .estado {
+            margin: 1rem 0 0 0;
+            font-size: 0.875rem;
+            min-height: 1.2em;
+            color: var(--c-green);
+        }
 
-    .estado.error {
-        color: var(--c-red);
-    }
-</style>
+        .estado.error {
+            color: var(--c-red);
+        }
+    </style>
 </head>
+
 <body>
     <div class="card">
         <h1>🤡 Este repositorio se cerró 🤡</h1>
         <p>La app se mudó a una nueva dirección. <strong>https://lushibosca.github.io/Horarios/</strong> </p>
         <p>Tus datos siguen guardados en este navegador, descargalos antes de continuar para no perderlos.</p>
-
-        <div id="aviso-sin-datos" class="aviso hidden">No se encontraron datos guardados en este navegador. Podés continuar directamente.</div>
-
-        <ol class="pasos">
-            <li>Elegí los perfiles de los cuales quieras descargar los datos.</li>
-            <li>Toca el boton de "Descargar mis datos".</li>
-            <li>Copiá la nueva dirección.</li>
-            <li>Abrila en una pestaña nueva y pegala.</li>
-            <li>En caso que no se encuentren los datos actuales, te va a solicitar el archivo de datos.</li>
-            <li>Una vez abierta la app, recordá sustituir o eliminar la antigua.</li>
-        </ol>
-
         <div class="perfiles-header" id="perfiles-header">
             <span>Perfiles encontrados</span>
             <button type="button" id="btn-toggle-todos" class="link-toggle">Ninguno</button>
@@ -246,219 +238,234 @@
         <button id="btn-copiar" class="btn btn-secondary" disabled>🔗 Copiar nueva dirección</button>
 
         <p id="estado" class="estado"></p>
+
+
+        <div id="aviso-sin-datos" class="aviso hidden">No se encontraron datos guardados en este navegador. Podés
+            continuar directamente.</div>
+
+        <ol class="pasos">
+            <li>Elegí los perfiles de los cuales quieras descargar los datos.</li>
+            <li>Toca el boton de "Descargar mis datos".</li>
+            <li>Copiá la nueva dirección.</li>
+            <li>Abrila en una pestaña nueva y pegala.</li>
+            <li>En caso que no se encuentren los datos actuales, te va a solicitar el archivo de datos.</li>
+            <li>Una vez abierta la app, recordá sustituir o eliminar la antigua.</li>
+        </ol>
+
     </div>
 
-<script>
-    // ⚠️ EDITAR: reemplazar por la dirección real del repositorio nuevo antes de publicar.
-    const NUEVA_URL = 'https://lushibosca.github.io/Horarios/';
+    <script>
+        // ⚠️ EDITAR: reemplazar por la dirección real del repositorio nuevo antes de publicar.
+        const NUEVA_URL = 'https://lushibosca.github.io/Horarios/';
 
-    // ⚠️ Debe coincidir con S.SECURITY_LIMITS.SCHEMA_VERSION de app.js para que el
-    // archivo generado se importe sin advertencias de "versión más nueva".
-    const SCHEMA_VERSION = 3;
+        // ⚠️ Debe coincidir con S.SECURITY_LIMITS.SCHEMA_VERSION de app.js para que el
+        // archivo generado se importe sin advertencias de "versión más nueva".
+        const SCHEMA_VERSION = 3;
 
-    // Limpieza defensiva: si quedó un service worker viejo controlando este origen,
-    // lo desregistra y borra sus caches. Sin esto, alguien que vuelva a entrar podría
-    // seguir viendo la app vieja servida desde caché en vez de este aviso.
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-    }
-    if ('caches' in window) {
-        caches.keys().then(names => names.forEach(n => caches.delete(n)));
-    }
-
-    // ────────────────────────────────────────────────────────────────────
-    // Lectura de perfiles (mismo storage key que usa PerfilManager en la app)
-    // ────────────────────────────────────────────────────────────────────
-    function leerPerfiles() {
-        try {
-            const raw = localStorage.getItem('perfiles');
-            if (!raw) return {};
-            const parsed = JSON.parse(raw);
-            return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
-        } catch (e) {
-            console.error('No se pudieron leer los perfiles:', e);
-            return {};
+        // Limpieza defensiva: si quedó un service worker viejo controlando este origen,
+        // lo desregistra y borra sus caches. Sin esto, alguien que vuelva a entrar podría
+        // seguir viendo la app vieja servida desde caché en vez de este aviso.
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
         }
-    }
+        if ('caches' in window) {
+            caches.keys().then(names => names.forEach(n => caches.delete(n)));
+        }
 
-    const perfiles = leerPerfiles();
-    const idsPerfiles = Object.keys(perfiles).filter(id => perfiles[id] && typeof perfiles[id] === 'object');
-    const idsConDatos = idsPerfiles.filter(id => Array.isArray(perfiles[id].registros) && perfiles[id].registros.length > 0);
-    const hayDatos = idsConDatos.length > 0;
+        // ────────────────────────────────────────────────────────────────────
+        // Lectura de perfiles (mismo storage key que usa PerfilManager en la app)
+        // ────────────────────────────────────────────────────────────────────
+        function leerPerfiles() {
+            try {
+                const raw = localStorage.getItem('perfiles');
+                if (!raw) return {};
+                const parsed = JSON.parse(raw);
+                return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+            } catch (e) {
+                console.error('No se pudieron leer los perfiles:', e);
+                return {};
+            }
+        }
 
-    const btnDescargar = document.getElementById('btn-descargar');
-    const btnCopiar = document.getElementById('btn-copiar');
-    const btnToggleTodos = document.getElementById('btn-toggle-todos');
-    const estado = document.getElementById('estado');
-    const avisoSinDatos = document.getElementById('aviso-sin-datos');
-    const perfilesHeader = document.getElementById('perfiles-header');
-    const listaPerfiles = document.getElementById('lista-perfiles');
+        const perfiles = leerPerfiles();
+        const idsPerfiles = Object.keys(perfiles).filter(id => perfiles[id] && typeof perfiles[id] === 'object');
+        const idsConDatos = idsPerfiles.filter(id => Array.isArray(perfiles[id].registros) && perfiles[id].registros.length > 0);
+        const hayDatos = idsConDatos.length > 0;
 
-    // ────────────────────────────────────────────────────────────────────
-    // Render del checklist de perfiles
-    // ────────────────────────────────────────────────────────────────────
-    function renderListaPerfiles() {
-        listaPerfiles.innerHTML = '';
-        idsPerfiles.forEach(id => {
-            const perfil = perfiles[id];
-            const cantidad = Array.isArray(perfil.registros) ? perfil.registros.length : 0;
+        const btnDescargar = document.getElementById('btn-descargar');
+        const btnCopiar = document.getElementById('btn-copiar');
+        const btnToggleTodos = document.getElementById('btn-toggle-todos');
+        const estado = document.getElementById('estado');
+        const avisoSinDatos = document.getElementById('aviso-sin-datos');
+        const perfilesHeader = document.getElementById('perfiles-header');
+        const listaPerfiles = document.getElementById('lista-perfiles');
 
-            const label = document.createElement('label');
-            label.className = 'perfil-item';
+        // ────────────────────────────────────────────────────────────────────
+        // Render del checklist de perfiles
+        // ────────────────────────────────────────────────────────────────────
+        function renderListaPerfiles() {
+            listaPerfiles.innerHTML = '';
+            idsPerfiles.forEach(id => {
+                const perfil = perfiles[id];
+                const cantidad = Array.isArray(perfil.registros) ? perfil.registros.length : 0;
 
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.value = id;
-            checkbox.checked = cantidad > 0;
+                const label = document.createElement('label');
+                label.className = 'perfil-item';
 
-            const info = document.createElement('div');
-            info.className = 'perfil-info';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = id;
+                checkbox.checked = cantidad > 0;
 
-            const nombreEl = document.createElement('span');
-            nombreEl.className = 'perfil-nombre';
-            nombreEl.textContent = typeof perfil.nombre === 'string' && perfil.nombre.trim() ? perfil.nombre : `Perfil ${id}`;
+                const info = document.createElement('div');
+                info.className = 'perfil-info';
 
-            const countEl = document.createElement('span');
-            countEl.className = 'perfil-count';
-            countEl.textContent = cantidad === 0 ? 'Sin registros' : `${cantidad} registro${cantidad === 1 ? '' : 's'}`;
+                const nombreEl = document.createElement('span');
+                nombreEl.className = 'perfil-nombre';
+                nombreEl.textContent = typeof perfil.nombre === 'string' && perfil.nombre.trim() ? perfil.nombre : `Perfil ${id}`;
 
-            info.appendChild(nombreEl);
-            info.appendChild(countEl);
-            label.appendChild(checkbox);
-            label.appendChild(info);
-            listaPerfiles.appendChild(label);
+                const countEl = document.createElement('span');
+                countEl.className = 'perfil-count';
+                countEl.textContent = cantidad === 0 ? 'Sin registros' : `${cantidad} registro${cantidad === 1 ? '' : 's'}`;
+
+                info.appendChild(nombreEl);
+                info.appendChild(countEl);
+                label.appendChild(checkbox);
+                label.appendChild(info);
+                listaPerfiles.appendChild(label);
+            });
+
+            listaPerfiles.addEventListener('change', actualizarEstadoBotonDescargar);
+            actualizarEstadoBotonDescargar();
+        }
+
+        function checkboxesSeleccionados() {
+            return Array.from(listaPerfiles.querySelectorAll('input[type="checkbox"]:checked'));
+        }
+
+        function actualizarEstadoBotonDescargar() {
+            const seleccionados = checkboxesSeleccionados();
+            btnDescargar.disabled = seleccionados.length === 0;
+            const totalCheckboxes = listaPerfiles.querySelectorAll('input[type="checkbox"]').length;
+            btnToggleTodos.textContent = seleccionados.length === totalCheckboxes ? 'Ninguno' : 'Todos';
+        }
+
+        btnToggleTodos.addEventListener('click', () => {
+            const totalCheckboxes = listaPerfiles.querySelectorAll('input[type="checkbox"]');
+            const marcarTodos = checkboxesSeleccionados().length !== totalCheckboxes.length;
+            totalCheckboxes.forEach(cb => { cb.checked = marcarTodos; });
+            actualizarEstadoBotonDescargar();
         });
 
-        listaPerfiles.addEventListener('change', actualizarEstadoBotonDescargar);
-        actualizarEstadoBotonDescargar();
-    }
-
-    function checkboxesSeleccionados() {
-        return Array.from(listaPerfiles.querySelectorAll('input[type="checkbox"]:checked'));
-    }
-
-    function actualizarEstadoBotonDescargar() {
-        const seleccionados = checkboxesSeleccionados();
-        btnDescargar.disabled = seleccionados.length === 0;
-        const totalCheckboxes = listaPerfiles.querySelectorAll('input[type="checkbox"]').length;
-        btnToggleTodos.textContent = seleccionados.length === totalCheckboxes ? 'Ninguno' : 'Todos';
-    }
-
-    btnToggleTodos.addEventListener('click', () => {
-        const totalCheckboxes = listaPerfiles.querySelectorAll('input[type="checkbox"]');
-        const marcarTodos = checkboxesSeleccionados().length !== totalCheckboxes.length;
-        totalCheckboxes.forEach(cb => { cb.checked = marcarTodos; });
-        actualizarEstadoBotonDescargar();
-    });
-
-    if (!hayDatos) {
-        avisoSinDatos.classList.remove('hidden');
-        perfilesHeader.classList.add('hidden');
-        listaPerfiles.classList.add('hidden');
-        btnDescargar.disabled = true;
-        btnCopiar.disabled = false;
-    } else {
-        renderListaPerfiles();
-    }
-
-    // ────────────────────────────────────────────────────────────────────
-    // Generación del backup — mismo formato que usa DataManagement.exportarJSON()
-    // en app.js, para poder importarse sin problemas en la app nueva.
-    // ────────────────────────────────────────────────────────────────────
-    async function calcularHashSHA256(data) {
-        const encoder = new TextEncoder();
-        const dataBuffer = encoder.encode(JSON.stringify(data));
-        const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function nombrePerfilSafe(nombre) {
-        const base = (typeof nombre === 'string' && nombre.trim()) ? nombre : 'Backup';
-        const limpio = base.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ'\-_ ]/g, '').trim().replace(/\s+/g, '_');
-        return limpio || 'Backup';
-    }
-
-    function fechaLocalISOFull() {
-        const d = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    }
-
-    function descargarJSON(data, nombreArchivo) {
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = Object.assign(document.createElement('a'), { href: url, download: nombreArchivo });
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-    }
-
-    async function descargarPerfil(id, perfil, fechaHoy, sufijo) {
-        const registros = Array.isArray(perfil.registros) ? perfil.registros : [];
-        const diasHabiles = Array.isArray(perfil.diasHabiles) ? perfil.diasHabiles : [1, 2, 3, 4, 5];
-        const horasDiarias = typeof perfil.horasDiarias === 'number' ? perfil.horasDiarias : 7;
-
-        const data = {
-            registros, diasHabiles, horasDiarias,
-            fecha: fechaLocalISOFull(),
-            version: SCHEMA_VERSION,
-            timestamp: Date.now()
-        };
-
-        try {
-            data.hash = await calcularHashSHA256(registros);
-        } catch (e) {
-            // Si crypto.subtle no está disponible (ej. contexto no seguro), se omite el hash;
-            // la app nueva simplemente va a pedir confirmación al importar sin verificación.
-            console.warn('No se pudo calcular el hash de integridad:', e);
+        if (!hayDatos) {
+            avisoSinDatos.classList.remove('hidden');
+            perfilesHeader.classList.add('hidden');
+            listaPerfiles.classList.add('hidden');
+            btnDescargar.disabled = true;
+            btnCopiar.disabled = false;
+        } else {
+            renderListaPerfiles();
         }
 
-        const nombreArchivo = `Horarios_${nombrePerfilSafe(perfil.nombre)}${sufijo}_${fechaHoy}.json`;
-        descargarJSON(data, nombreArchivo);
-    }
+        // ────────────────────────────────────────────────────────────────────
+        // Generación del backup — mismo formato que usa DataManagement.exportarJSON()
+        // en app.js, para poder importarse sin problemas en la app nueva.
+        // ────────────────────────────────────────────────────────────────────
+        async function calcularHashSHA256(data) {
+            const encoder = new TextEncoder();
+            const dataBuffer = encoder.encode(JSON.stringify(data));
+            const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
 
-    btnDescargar.addEventListener('click', async () => {
-        const seleccionados = checkboxesSeleccionados().map(cb => cb.value);
-        if (seleccionados.length === 0) return;
+        function nombrePerfilSafe(nombre) {
+            const base = (typeof nombre === 'string' && nombre.trim()) ? nombre : 'Backup';
+            const limpio = base.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ'\-_ ]/g, '').trim().replace(/\s+/g, '_');
+            return limpio || 'Backup';
+        }
 
-        btnDescargar.disabled = true;
-        estado.classList.remove('error');
-        estado.textContent = 'Generando backup…';
+        function fechaLocalISOFull() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
 
-        try {
-            const fechaHoy = fechaLocalISOFull().slice(0, 10);
-            const usarSufijoId = seleccionados.length > 1 && new Set(seleccionados.map(id => nombrePerfilSafe(perfiles[id].nombre))).size !== seleccionados.length;
+        function descargarJSON(data, nombreArchivo) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = Object.assign(document.createElement('a'), { href: url, download: nombreArchivo });
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
 
-            for (const id of seleccionados) {
-                const sufijo = usarSufijoId ? `_${id}` : '';
-                await descargarPerfil(id, perfiles[id], fechaHoy, sufijo);
-                // pequeño margen entre descargas para que el navegador no las bloquee
-                await new Promise(r => setTimeout(r, 250));
+        async function descargarPerfil(id, perfil, fechaHoy, sufijo) {
+            const registros = Array.isArray(perfil.registros) ? perfil.registros : [];
+            const diasHabiles = Array.isArray(perfil.diasHabiles) ? perfil.diasHabiles : [1, 2, 3, 4, 5];
+            const horasDiarias = typeof perfil.horasDiarias === 'number' ? perfil.horasDiarias : 7;
+
+            const data = {
+                registros, diasHabiles, horasDiarias,
+                fecha: fechaLocalISOFull(),
+                version: SCHEMA_VERSION,
+                timestamp: Date.now()
+            };
+
+            try {
+                data.hash = await calcularHashSHA256(registros);
+            } catch (e) {
+                // Si crypto.subtle no está disponible (ej. contexto no seguro), se omite el hash;
+                // la app nueva simplemente va a pedir confirmación al importar sin verificación.
+                console.warn('No se pudo calcular el hash de integridad:', e);
             }
 
-            estado.textContent = `✅ ${seleccionados.length} archivo${seleccionados.length === 1 ? '' : 's'} descargado${seleccionados.length === 1 ? '' : 's'}. Ya podés copiar la nueva dirección.`;
-            btnCopiar.disabled = false;
-        } catch (e) {
-            console.error(e);
-            estado.textContent = 'Ocurrió un error al generar el backup.';
-            estado.classList.add('error');
-        } finally {
-            btnDescargar.disabled = checkboxesSeleccionados().length === 0;
+            const nombreArchivo = `Horarios_${nombrePerfilSafe(perfil.nombre)}${sufijo}_${fechaHoy}.json`;
+            descargarJSON(data, nombreArchivo);
         }
-    });
 
-    btnCopiar.addEventListener('click', async () => {
-        try {
-            await navigator.clipboard.writeText(NUEVA_URL);
-            estado.textContent = '✅ Dirección copiada. Abrí una pestaña nueva del navegador y pegala.';
+        btnDescargar.addEventListener('click', async () => {
+            const seleccionados = checkboxesSeleccionados().map(cb => cb.value);
+            if (seleccionados.length === 0) return;
+
+            btnDescargar.disabled = true;
             estado.classList.remove('error');
-        } catch (e) {
-            estado.textContent = `No se pudo copiar sola. Dirección: ${NUEVA_URL}`;
-            estado.classList.add('error');
-        }
-    });
-</script>
+            estado.textContent = 'Generando backup…';
+
+            try {
+                const fechaHoy = fechaLocalISOFull().slice(0, 10);
+                const usarSufijoId = seleccionados.length > 1 && new Set(seleccionados.map(id => nombrePerfilSafe(perfiles[id].nombre))).size !== seleccionados.length;
+
+                for (const id of seleccionados) {
+                    const sufijo = usarSufijoId ? `_${id}` : '';
+                    await descargarPerfil(id, perfiles[id], fechaHoy, sufijo);
+                    // pequeño margen entre descargas para que el navegador no las bloquee
+                    await new Promise(r => setTimeout(r, 250));
+                }
+
+                estado.textContent = `✅ ${seleccionados.length} archivo${seleccionados.length === 1 ? '' : 's'} descargado${seleccionados.length === 1 ? '' : 's'}. Ya podés copiar la nueva dirección.`;
+                btnCopiar.disabled = false;
+            } catch (e) {
+                console.error(e);
+                estado.textContent = 'Ocurrió un error al generar el backup.';
+                estado.classList.add('error');
+            } finally {
+                btnDescargar.disabled = checkboxesSeleccionados().length === 0;
+            }
+        });
+
+        btnCopiar.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(NUEVA_URL);
+                estado.textContent = '✅ Dirección copiada. Abrí una pestaña nueva del navegador y pegala.';
+                estado.classList.remove('error');
+            } catch (e) {
+                estado.textContent = `No se pudo copiar sola. Dirección: ${NUEVA_URL}`;
+                estado.classList.add('error');
+            }
+        });
+    </script>
 </body>
+
 </html>
